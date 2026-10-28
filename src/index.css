@@ -1,0 +1,270 @@
+/* Calm, low-stimulus base. Real palette and brand come in Batch 6. */
+:root {
+  --bg: #0f1117;
+  --bar: #151821;
+  --line: #262b36;
+  --text: #d7dbe3;
+  --muted: #8a92a3;
+  --spark: #e8a87c;
+  --nudge: #7fb4d9;
+  --mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  color-scheme: dark;
+  font-family: var(--mono);
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app__bar {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.5rem 1rem;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+.app__brand {
+  font-weight: 700;
+}
+
+.app__board-name {
+  color: var(--muted);
+}
+
+.app__board {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.app__message {
+  padding: 1rem;
+  color: var(--muted);
+}
+
+/* React Flow overrides */
+.react-flow {
+  --xy-background-color: var(--bg);
+  --xy-edge-stroke: #4a5160;
+  --xy-edge-stroke-width: 1.5;
+}
+
+/* Idea nodes */
+.idea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 220px;
+  padding: 0.6rem 0.8rem;
+  background: var(--bar);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.idea--spark {
+  border-color: var(--spark);
+}
+
+.idea--nudge {
+  border-style: dashed;
+  border-color: var(--nudge);
+}
+
+.idea {
+  position: relative;
+}
+
+.idea__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.idea__label {
+  text-transform: lowercase;
+}
+
+.idea__id {
+  opacity: 0.7;
+}
+
+.idea__input {
+  width: 200px;
+  padding: 0.25rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  resize: none;
+}
+
+.idea__delete {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--text);
+  background: var(--bar);
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.react-flow__node.selected .idea {
+  outline: 1px solid var(--muted);
+  outline-offset: 2px;
+}
+
+.idea__text {
+  overflow-wrap: anywhere;
+}
+
+/* Link handles: faint until you hover a node, always visible on touch screens. */
+.react-flow__handle.idea__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--muted);
+  border: 2px solid var(--bg);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.react-flow__node:hover .idea__handle,
+.react-flow__node.selected .idea__handle,
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectingto {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .react-flow__handle.idea__handle {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+  }
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--text);
+}
+
+/* Board toolbar */
+.board__add {
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--bar);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.board__add:hover,
+.board__add:focus-visible {
+  border-color: var(--muted);
+}
+
+.board__hint {
+  margin-left: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Workspace: board on top, terminal below (IDE-style) */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workspace__board {
+  flex: 1;
+  min-height: 0;
+}
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  height: clamp(140px, 28vh, 260px);
+  background: var(--bar);
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+
+.terminal__title {
+  padding: 0.3rem 1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.terminal__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.4rem 1rem;
+}
+
+.terminal__line {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.terminal__line--input {
+  color: var(--muted);
+}
+
+.terminal__line--error {
+  color: #e57b7b;
+}
+
+.terminal__prompt {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem 0.6rem;
+  color: var(--muted);
+}
+
+.terminal__input {
+  flex: 1;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .board__hint {
+    display: none;
+  }
+}
