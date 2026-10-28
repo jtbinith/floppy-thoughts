@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react'
 import type { Board, BoardNode, Link } from './board'
+import { moveNodes } from './boardOps'
 
 // Converts between our saved Board and the shapes React Flow draws.
 // Kept separate from the components so it can be unit tested.
@@ -31,13 +32,9 @@ export function toFlowEdges(board: Board): Edge[] {
 
 // Copies positions from React Flow back onto the board, e.g. after a drag.
 export function withPositions(board: Board, nodes: IdeaFlowNode[], now = new Date()): Board {
-  const positions = new Map(nodes.map((n) => [n.id, n.position]))
-  return {
-    ...board,
-    nodes: board.nodes.map((node) => {
-      const p = positions.get(node.id)
-      return p ? { ...node, x: Math.round(p.x), y: Math.round(p.y) } : node
-    }),
-    updatedAt: now.toISOString(),
-  }
+  return moveNodes(
+    board,
+    nodes.map((n) => ({ id: n.id, ...n.position })),
+    now,
+  )
 }

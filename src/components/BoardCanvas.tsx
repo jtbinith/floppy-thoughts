@@ -30,13 +30,12 @@ type Props = {
   board: Board
   onChange: (board: Board) => void
   onAddAt: (position: { x: number; y: number }) => void
-  onAddButton: () => void
   onLink: (a: string, b: string) => void
 }
 
-export function BoardCanvas({ board, onChange, onAddAt, onAddButton, onLink }: Props) {
+export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, swap } = useBoardActions()
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
@@ -102,8 +101,21 @@ export function BoardCanvas({ board, onChange, onAddAt, onAddButton, onLink }: P
   // Keyboard: Enter edits the selected idea; Delete/Backspace removes selected ideas and links.
   function handleKeyDown(event: KeyboardEvent) {
     if (editingId || (event.target as Element).closest('input, textarea')) return
-    const selected = getNodes().filter((n) => n.selected && n.data.kind === 'user')
-    if (event.key === 'Enter' && selected.length === 1) {
+    const allSelected = getNodes().filter((n) => n.selected)
+    const selected = allSelected.filter((n) => n.data.kind === 'user')
+    const deletable = allSelected.filter((n) => n.data.kind !== 'spark')
+    const plainKey = !event.ctrlKey && !event.metaKey && !event.altKey
+    if ((event.key === 's' || event.key === 'S') && plainKey && allSelected.length === 1 && allSelected[0].data.kind === 'spark') {
+      event.preventDefault()
+      swap(allSelected[0].id)
+    } else if ((event.key === 'n' || event.key === 'N') && !event.ctrlKey && !event.metaKey && !event.altKey && allSelected.length === 1) {
+      event.preventDefault()
+      nudge(allSelected[0].id)
+    } else if (event.key === 'Tab' && !event.shiftKey && allSelected.length === 1) {
+      // Any node, including sparks, can grow a linked idea.
+      event.preventDefault()
+      branch(allSelected[0].id)
+    } else if (event.key === 'Enter' && selected.length === 1) {
       event.preventDefault()
       startEdit(selected[0].id)
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -113,7 +125,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onAddButton, onLink }: P
         const r = removeLink(next, e.source, e.target)
         if (r.ok) next = r.board
       }
-      for (const n of selected) {
+      for (const n of deletable) {
         const r = deleteUserNode(next, n.id)
         if (r.ok) next = r.board
       }
@@ -152,11 +164,8 @@ export function BoardCanvas({ board, onChange, onAddAt, onAddButton, onLink }: P
       <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2a2f3a" />
       <Controls showInteractive={false} />
       <Panel position="top-left">
-        <button type="button" className="board__add" onClick={onAddButton}>
-          + idea
-        </button>
         <span className="board__hint">
-          double-click the board to add · double-click an idea to edit · drag from a dot to link
+          double-click to add · select an idea: Tab = linked idea, N = nudge, S = swap a spark · drag a dot to link · Ctrl+Z undo
         </span>
       </Panel>
     </ReactFlow>

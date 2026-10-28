@@ -16,4 +16,9 @@ npm run dev
 - [Vision](docs/vision.md): the big idea and its principles
 - [MVP PRD](docs/mvp/prd.md)
 - [MVP architecture](docs/mvp/architecture.md)
-- [Decision records](docs/adr/)
+
+## Credits
+
+- [React Flow](https://reactflow.dev) (MIT) draws the board: nodes, links, panning and zooming. Thank you to the xyflow team. React Flow's attribution link is shown on the board, as they ask for projects without a Pro subscription.
+- [Zod](https://zod.dev) (MIT) validates saved boards.
+- [Datamuse](https://www.datamuse.com/api/) will power word-based nudges.

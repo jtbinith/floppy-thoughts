@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_NODE_TEXT, parseBoard, type Board } from './board'
-import { addLink, addUserNode, deleteUserNode, editUserNode, nextNodeId, removeLink } from './boardOps'
+import { BOARD_CAPACITY, MAX_NODE_TEXT, parseBoard, type Board } from './board'
+import { BOARD_FULL_MESSAGE, addLink, addUserNode, deleteUserNode, editUserNode, nextNodeId, removeLink, spaceLeft } from './boardOps'
 
 const now = new Date('2026-10-28T12:00:00Z')
 
@@ -62,12 +62,12 @@ describe('board operations', () => {
     expect(editUserNode(board(), 'n99', 'x')).toEqual({ ok: false, error: 'No node called n99' })
   })
 
-  it('deletes a user node and its links, but not sparks or nudges', () => {
+  it('deletes ideas and nudges with their links, but never sparks', () => {
     const r = expectOk(deleteUserNode(board(), 'n2', now))
     expect(r.board.nodes.map((n) => n.id)).toEqual(['n1', 'n7'])
     expect(r.board.links).toEqual([{ from: 'n1', to: 'n7' }])
-    expect(deleteUserNode(board(), 'n1').ok).toBe(false)
-    expect(deleteUserNode(board(), 'n7').ok).toBe(false)
+    expect(expectOk(deleteUserNode(board(), 'n7')).board.nodes.map((n) => n.id)).toEqual(['n1', 'n2'])
+    expect(deleteUserNode(board(), 'n1')).toEqual({ ok: false, error: 'n1 is a spark: sparks can be swapped, not deleted' })
   })
 
   it('never mutates the original board', () => {
@@ -94,5 +94,15 @@ describe('board operations', () => {
       { from: 'n2', to: 'n7' },
       { from: 'n1', to: 'n7' },
     ])
+  })
+
+  it('stops adding when the board is full, and makes room again after a delete', () => {
+    let b = board()
+    expect(spaceLeft(b)).toBe(BOARD_CAPACITY - 3)
+    while (spaceLeft(b) > 0) b = expectOk(addUserNode(b, 'idea', { x: 0, y: 0 })).board
+    expect(b.nodes).toHaveLength(BOARD_CAPACITY)
+    expect(addUserNode(b, 'one more', { x: 0, y: 0 })).toEqual({ ok: false, error: BOARD_FULL_MESSAGE })
+    const freed = expectOk(deleteUserNode(b, 'n2')).board
+    expect(addUserNode(freed, 'fits now', { x: 0, y: 0 }).ok).toBe(true)
   })
 })

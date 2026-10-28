@@ -5,7 +5,16 @@ export type BoardActions = {
   editingId: string | null
   startEdit: (id: string) => void
   commitEdit: (id: string, text: string) => void
+  // Save the edit, then add a new idea linked to this one (Tab while typing).
+  commitAndBranch: (id: string, text: string) => void
+  // Add a new idea linked to this one (Tab on a selected node).
+  branch: (id: string) => void
   cancelEdit: () => void
+  // Ask for a nudge on this idea (N key).
+  nudge: (id: string) => void
+  // Swap a spark for a new one (S key or the swap button).
+  swap: (id: string) => void
+  swapsLeft: number
   deleteNode: (id: string) => void
 }
 

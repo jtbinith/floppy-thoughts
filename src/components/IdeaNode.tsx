@@ -6,7 +6,7 @@ import { useBoardActions } from './boardActions'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, cancelEdit, deleteNode } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, swap, swapsLeft } = useBoardActions()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -28,7 +28,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     frame = requestAnimationFrame(tryFocus)
     return () => cancelAnimationFrame(frame)
   }, [editing])
-  const isOwn = data.kind === 'user'
+  const deletable = data.kind !== 'spark'
   const label = data.kind === 'spark' ? (data.locked ? 'theme' : 'spark') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
@@ -56,6 +56,11 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
               e.preventDefault()
               finished.current = true
               commitEdit(id, e.currentTarget.value)
+            } else if (e.key === 'Tab' && !e.shiftKey) {
+              // Keep going: save this idea and start a new one linked to it.
+              e.preventDefault()
+              finished.current = true
+              commitAndBranch(id, e.currentTarget.value)
             } else if (e.key === 'Escape') {
               finished.current = true
               cancelEdit()
@@ -67,9 +72,14 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
         <span className="idea__text">{data.text}</span>
       )}
 
-      {isOwn && selected && !editing && (
+      {deletable && selected && !editing && (
         <button type="button" className="idea__delete nodrag" aria-label={`Delete ${id}`} onClick={() => deleteNode(id)}>
           ×
+        </button>
+      )}
+      {data.kind === 'spark' && !data.locked && selected && swapsLeft > 0 && (
+        <button type="button" className="idea__swap nodrag" aria-label={`Swap ${id}`} title="Swap this spark (S)" onClick={() => swap(id)}>
+          ⇄ swap
         </button>
       )}
       <Handle type="source" position={Position.Bottom} className="idea__handle" />

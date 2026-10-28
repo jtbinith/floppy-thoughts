@@ -1,5 +1,5 @@
 import type { Board } from './board'
-import { addLink, addUserNode, deleteUserNode, editUserNode, removeLink, type OpResult } from './boardOps'
+import { addLink, addUserNode, deleteUserNode, editUserNode, removeLink, spaceLeft, type OpResult } from './boardOps'
 
 // The terminal's command language. Pure: takes a board and a line of input,
 // returns the new board (if it changed) and lines to print.
@@ -22,12 +22,19 @@ export const HELP = [
   '  add <text>          add your own idea',
   '  edit <id> <text>    change one of your ideas',
   '  delete <id>         delete one of your ideas (and its links)',
+  '  nudge <id> [type]   get a word or question to push that idea (or press N)',
+  '                      types: related opposite described perspective scale senses push wildcard',
+  '  swap <id>           swap a spark for a new one (3 per board, or press S)',
   '  link <id> <id>      link two nodes',
   '  unlink <id> <id>    remove a link',
   '  list                show everything on the board',
+  '  new                 start a new board',
+  '  boards / open <n>   list your boards, open one',
+  '  undo / redo         step back or forward (also Ctrl+Z / Ctrl+Shift+Z)',
   '  clear               clear the terminal',
   '  help                show this',
   'ids like n4 are shown on each node. tip: ↑ ↓ for previous commands',
+  'on the board: select an idea, then Tab = linked idea, N = nudge',
 ]
 
 const fail = (message: string): CommandResult => ({ output: [message], error: true })
@@ -52,13 +59,13 @@ export function runCommand(board: Board, input: string, ctx: CommandContext): Co
 
     case 'list':
       return {
-        output: board.nodes.map((n) => {
+        output: [...board.nodes.map((n) => {
           const links = board.links
             .filter((l) => l.from === n.id || l.to === n.id)
             .map((l) => (l.from === n.id ? l.to : l.from))
           const kind = n.kind === 'spark' ? (n.locked ? 'theme' : 'spark') : n.kind === 'nudge' ? n.nudgeType : 'idea'
           return `  ${n.id.padEnd(4)} ${kind?.padEnd(11)} ${n.text}${links.length ? `  ↔ ${links.join(' ')}` : ''}`
-        }),
+        }), `  ${spaceLeft(board)} spaces left on the board`],
       }
 
     case 'add':

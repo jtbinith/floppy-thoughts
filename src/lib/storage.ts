@@ -8,7 +8,7 @@ export type LoadResult =
   | { status: 'invalid'; errors: string[] }
 
 // The rest of the app only talks to this interface, never to localStorage directly.
-// Methods are async so a Supabase adapter can be added later without changing callers (ADR 002).
+// Methods are async so a Supabase adapter can be added later without changing callers.
 export interface StorageAdapter {
   saveBoard(board: Board): Promise<void>
   loadBoard(id: string): Promise<LoadResult>
