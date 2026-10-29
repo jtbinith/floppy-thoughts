@@ -165,7 +165,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       <Controls showInteractive={false} />
       <Panel position="top-left">
         <span className="board__hint">
-          double-click to add · select an idea: Tab = linked idea, N = nudge, S = swap a spark · drag a dot to link · Ctrl+Z undo
+          double-click to add · select an idea: Tab = linked idea, N = nudge, S = swap a disk · drag a dot to link · Ctrl+Z undo
         </span>
       </Panel>
     </ReactFlow>

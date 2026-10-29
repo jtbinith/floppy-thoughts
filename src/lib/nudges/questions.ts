@@ -46,7 +46,6 @@ export const QUESTIONS = {
     'What if it had to be silent?',
     'What would make someone laugh out loud?',
     'What if it ran on a single button?',
-    'What is the part you would demo first?',
   ],
 } as const
 

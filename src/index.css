@@ -5,7 +5,7 @@
 */
 :root {
   /* Page and device frame */
-  --page: #2a1d17;
+  --page: #17110e;
   --frame: #c4733a;
   --frame-light: #e2955a;
   --frame-dark: #8c4a22;
@@ -23,6 +23,9 @@
   --error: #ff7a6b;
 
   --mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  /* Change these two to try other fonts. */
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-heading: 'Bricolage Grotesque', system-ui, sans-serif;
 
   color-scheme: dark;
   font-family: var(--mono);
@@ -45,6 +48,18 @@ button {
   font: inherit;
 }
 
+/* The device frame and board behave like an app, not a document: no accidental text highlighting
+   from double-clicks or Ctrl+A. Text you might want to copy (terminal output, inputs) stays selectable. */
+.page {
+  user-select: none;
+}
+
+.terminal__log,
+input,
+textarea {
+  user-select: text;
+}
+
 /* ---------- Page and device ---------- */
 
 .page {
@@ -57,6 +72,7 @@ button {
 
 .device__label {
   margin-bottom: 0.6rem;
+  text-decoration: none;
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.04em;
@@ -76,7 +92,7 @@ button {
   flex: 1;
   gap: 0.8rem;
   width: 100%;
-  max-width: 1280px;
+  max-width: 1680px;
   min-height: 0;
   padding: 1.1rem;
   background: var(--frame);
@@ -294,12 +310,7 @@ button {
 }
 
 .idea--spark {
-  border-color: var(--spark);
-}
-
-.idea--nudge {
-  border-style: dashed;
-  border-color: var(--nudge);
+  border-color: var(--cat, var(--spark));
 }
 
 .react-flow__node.selected .idea {
@@ -320,7 +331,18 @@ button {
 }
 
 .idea__id {
+  margin-left: auto;
   opacity: 0.7;
+}
+
+.lock-icon {
+  vertical-align: -1px;
+}
+
+/* Category and the separate lock are only shown by some spark styles. */
+.idea__category,
+.idea__lock {
+  display: none;
 }
 
 .idea__text {
@@ -340,12 +362,12 @@ button {
 
 .idea__swap {
   align-self: flex-start;
-  margin-top: 0.3rem;
+  margin: 0.3rem 0 0 0.7rem;
   padding: 0.1rem 0.45rem;
   font-size: 0.7rem;
-  color: var(--spark);
+  color: var(--cat, var(--spark));
   background: transparent;
-  border: 1px solid var(--spark);
+  border: 1px solid var(--cat, var(--spark));
   border-radius: 3px;
   cursor: pointer;
 }
@@ -470,6 +492,11 @@ button {
 
 /* ---------- New board screen ---------- */
 
+.start,
+.vend__display {
+  font-family: var(--mono);
+}
+
 .start {
   display: flex;
   flex-direction: column;
@@ -585,4 +612,642 @@ button {
   margin: 0;
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+/* ---------- Disk boxes: a tiny file in the IDE, ~/category in the title bar ---------- */
+
+/* Each disk uses its category colour, matching the vending machine and tray. */
+.idea--spark { --cat: var(--spark); }
+.idea--cat-theme { --cat: #f6e3cc; }
+.idea--cat-words { --cat: #ff7a52; }
+.idea--cat-objects { --cat: #f2b544; }
+.idea--cat-problems { --cat: #7fb7c9; }
+.idea--cat-curiosities { --cat: #c69ae0; }
+.idea--cat-nature { --cat: #9fd46a; }
+.idea--cat-headlines { --cat: #ff7a52; }
+
+.idea--spark {
+  padding: 0 0 0.6rem;
+  border: 1px solid var(--cat);
+  border-radius: 3px;
+}
+.idea--spark .idea__meta {
+  padding: 0.2rem 0.6rem;
+  color: var(--screen);
+  background: var(--cat);
+}
+.idea--spark .idea__label {
+  display: none;
+}
+.idea--spark .idea__lock {
+  display: inline;
+  margin-right: -0.6rem;
+}
+.idea--spark .idea__category {
+  display: inline;
+  font-weight: 700;
+}
+.idea--spark .idea__category::before {
+  content: '~/';
+  font-weight: 400;
+}
+.idea--spark .idea__id {
+  opacity: 0.8;
+}
+.idea--spark .idea__text {
+  padding: 0.4rem 0.7rem 0;
+}
+.idea--spark .idea__text::before {
+  content: '> ';
+  color: var(--cat);
+}
+
+/* ---------- Ideas and nudges: the same window shape as sparks, quieter ---------- */
+
+.idea--user,
+.idea--nudge {
+  padding: 0 0 0.6rem;
+  border-radius: 3px;
+}
+
+.idea--user .idea__meta,
+.idea--nudge .idea__meta {
+  padding: 0.2rem 0.6rem;
+}
+
+.idea--user .idea__text,
+.idea--nudge .idea__text,
+.idea--user .idea__input {
+  margin: 0.4rem 0.7rem 0;
+}
+
+/* Your ideas: solid but quiet, with a dim ~/idea title bar. */
+.idea--user {
+  border: 1px solid #5a4232;
+}
+
+.idea--user .idea__meta {
+  color: var(--text);
+  background: #3a2a20;
+}
+
+.idea--user .idea__label::before {
+  content: '~/';
+}
+
+/* Nudges: a // comment someone left you. Take it or leave it. */
+.idea--nudge {
+  /* See-through: the board shows behind it. Links stop at the edge, so none run inside. */
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--nudge) 60%, transparent);
+}
+
+.idea--nudge .idea__label::before {
+  content: '// ';
+}
+
+.idea--nudge .idea__meta,
+.idea--nudge .idea__text {
+  font-style: italic;
+  color: var(--nudge);
+}
+
+/* ---------- Home page (outside the device) ---------- */
+
+.home {
+  min-height: 100%;
+  overflow-y: auto;
+  color: var(--text);
+  background: var(--page);
+  user-select: text;
+}
+
+.home a {
+  color: inherit;
+}
+
+.home__nav,
+.home main,
+.home__footer {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 3rem;
+}
+
+.home__nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.4rem;
+  padding-bottom: 1.4rem;
+}
+
+.home__logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--frame-light);
+}
+
+.home__link {
+  font-size: 0.85rem;
+  color: var(--muted) !important;
+}
+
+.home__hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+  padding: 4rem 0 5rem;
+}
+
+.home__hero h1 {
+  margin: 0 0 1.2rem;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.1;
+}
+
+.home__hero h1 span {
+  display: block;
+  color: var(--spark);
+}
+
+.home__lede {
+  margin: 0 0 2rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.home__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.home__cta {
+  display: inline-block;
+  padding: 0.75rem 1.4rem;
+  font-weight: 700;
+  color: var(--screen) !important;
+  text-decoration: none;
+  background: var(--spark);
+  border-radius: 3px;
+}
+
+.home__cta--quiet {
+  color: var(--text) !important;
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.home__cta:hover,
+.home__cta:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.home__placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 140px;
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+  background: var(--screen);
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+
+.home__placeholder--tall {
+  aspect-ratio: 16 / 10;
+}
+
+.home__placeholder span {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home__placeholder small {
+  max-width: 28ch;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.home__section {
+  padding: 3rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.home__section h2 {
+  margin: 0 0 1.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--frame-light);
+}
+
+.home__section h2::before {
+  content: '~/';
+  color: var(--muted);
+}
+
+.home__section p {
+  max-width: 62ch;
+  margin: 0 0 1rem;
+  line-height: 1.7;
+}
+
+.home__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home__steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  line-height: 1.5;
+}
+
+.home__steps span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.home__examples {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.home__example {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 0.85rem;
+  background: var(--screen);
+  border: 1px solid var(--spark);
+  border-radius: 3px;
+}
+
+.home__example header {
+  padding: 0.25rem 0.7rem;
+  font-weight: 700;
+  color: var(--screen);
+  background: var(--spark);
+}
+
+.home__sparks {
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.3rem;
+  list-style: none;
+  line-height: 1.6;
+}
+
+.home__chain {
+  flex: 1;
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  font-style: italic;
+  color: var(--nudge);
+}
+
+.home__idea {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  line-height: 1.5;
+  background: var(--idea-bg, #3a2a20);
+}
+
+.home__idea span {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.home__idea span::before {
+  content: '~/';
+}
+
+.home__section--end {
+  display: flex;
+  justify-content: center;
+}
+
+.home__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .home__hero,
+  .home__steps,
+  .home__examples {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Vending machine (drawn placeholder until the real illustration) ---------- */
+
+.vend {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 3rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.vend__machine {
+  position: relative;
+  width: 440px;
+}
+
+.vend__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vend__machine--vending .vend__art {
+  animation: hum 0.12s linear infinite;
+}
+
+.vend__wobble {
+  animation: wobble 0.15s steps(2) infinite;
+}
+
+.vend__sign {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  fill: #2f2526;
+}
+
+.vend__price {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: #2f2526;
+}
+
+.vend__mark {
+  font-family: var(--mono);
+  font-size: 8px;
+  fill: #4b454c;
+}
+
+/* Overlays positioned over the drawing's side panel (in % of the 320 × 470 drawing). */
+.vend__screen {
+  position: absolute;
+  top: calc(88 / 470 * 100%);
+  left: calc(207 / 320 * 100%);
+  width: calc(46 / 320 * 100%);
+  height: calc(20 / 470 * 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: #9fd46a;
+}
+
+.vend__keys {
+  position: absolute;
+  top: calc(118 / 470 * 100%);
+  left: calc(206 / 320 * 100%);
+  width: calc(48 / 320 * 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.vend__key {
+  aspect-ratio: 1;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2f2526;
+  background: #ece7ee;
+  border: 2px solid #2f2526;
+  border-radius: 6px;
+  box-shadow: 0 3px 0 #2f2526;
+  cursor: pointer;
+}
+
+.vend__key:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #2f2526;
+}
+
+.vend__key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.vend__key:focus-visible {
+  outline: 3px solid var(--spark);
+  outline-offset: 2px;
+}
+
+.vend__intro {
+  margin: 0;
+  font-family: var(--font-body);
+  line-height: 1.8;
+}
+
+.vend__intro kbd {
+  padding: 0.05rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--screen);
+  background: var(--text);
+  border-radius: 3px;
+}
+
+.vend__out {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.vend__tray {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@keyframes hum {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, 0); }
+  75% { transform: translate(0, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* A floppy disk: coloured case, metal shutter, paper label with the spark. */
+.disk {
+  --disk: #ff7a52;
+  position: relative;
+  display: flex;
+  gap: 0.8rem;
+  align-items: stretch;
+  min-height: 96px;
+  padding: 10px;
+  background: var(--disk);
+  border: 3px solid rgb(0 0 0 / 45%);
+  border-radius: 2px 10px 2px 2px;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 35%);
+}
+
+
+.disk--slot {
+  background: transparent;
+  border: 3px dashed var(--line);
+  box-shadow: none;
+}
+
+.disk__shutter {
+  flex: 0 0 56px;
+  background: linear-gradient(90deg, #c9ccd1 0 60%, #8e9399 60% 72%, #c9ccd1 72%);
+  border: 2px solid rgb(0 0 0 / 35%);
+}
+
+.disk__label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-body);
+  line-height: 1.35;
+  color: #2b1a12;
+  background: #fbf6ee;
+  border: 2px solid rgb(0 0 0 / 15%);
+}
+
+.disk__label small {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6e5446;
+}
+
+/* It drops in, then "loads": the label wipes in like a progress bar. */
+.disk--loaded {
+  animation: drop-in 0.5s cubic-bezier(0.3, 1.5, 0.6, 1) both;
+}
+
+.disk--loaded .disk__label {
+  animation: load 0.6s steps(8) 0.35s both;
+}
+
+@keyframes load {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes wobble {
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes drop-in {
+  0% { transform: translateY(-40px) scale(0.6); opacity: 0; }
+  70% { transform: translateY(4px) scale(1.03); opacity: 1; }
+  100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vend__machine--vending .vend__art,
+  .vend__wobble,
+  .disk--loaded,
+  .disk--loaded .disk__label {
+    animation: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .vend {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Brand: deep sea palette, readable body text, swappable heading font ---------- */
+
+.home {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+}
+
+/* Board-like bits on the home page keep the monospace look. */
+.home__example,
+.home__section h2,
+.home__placeholder span {
+  font-family: var(--mono);
+}
+
+.home h1,
+.home__logo,
+.home__steps strong {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.home__steps strong {
+  font-size: 1.15rem;
+}
+
+/* Chunky pixel-bevel buttons, like the device (not pills). */
+.home__cta {
+  border-radius: 0;
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 25%),
+    inset 3px 3px 0 rgb(255 255 255 / 25%),
+    4px 4px 0 rgb(0 0 0 / 25%);
+}
+
+.home__cta:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgb(0 0 0 / 25%);
+}
+
+.home__cta--quiet {
+  box-shadow: none;
+  border: 2px solid var(--text);
+}
+
+.home {
+  --screen: #221914;
+  --text: #f6e3cc;
+  --muted: #bfa086;
+  --spark: #ff7a52;
+  --frame-light: #ff7a52;
+  --nudge: #7fb7c9;
+  --line: #4a3a30;
+  --idea-bg: #33261e;
 }

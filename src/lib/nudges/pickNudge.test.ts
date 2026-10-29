@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { parseBoard, type Board } from '../board'
 import { addNudge } from '../boardOps'
 import { fetchWords } from './datamuse'
-import { chooseType, keywordOf, pickNudge } from './pickNudge'
+import { chooseType, distanceFromSpark, fittingTypes, keywordOf, pickNudge } from './pickNudge'
 import { fillQuestion } from './questions'
 
 const board: Board = {
@@ -62,9 +62,10 @@ describe('pickNudge', () => {
     expect(nudge).toEqual({ type: 'related', text: 'cassette → makes people think of: tape' })
   })
 
-  it('falls back to a question when Datamuse has nothing', async () => {
+  it('falls back to a question that fits when Datamuse has nothing', async () => {
     const nudge = await pickNudge(board, 'n1', { type: 'opposite', random: first, fetchImpl: fakeFetch([]) })
-    expect(nudge).toEqual({ type: 'push', text: 'Make it weirder.' })
+    // The first fitting question type for a word is perspective.
+    expect(nudge).toEqual({ type: 'perspective', text: 'How would a 7-year-old use cassette?' })
   })
 
   it('fills questions with the idea', async () => {
@@ -97,5 +98,50 @@ describe('addNudge', () => {
 
   it('refuses unknown targets', () => {
     expect(addNudge(board, 'n9', { type: 'push', text: 'x' }, { x: 0, y: 0 }).ok).toBe(false)
+  })
+})
+
+describe('nudges that fit', () => {
+  const b: Board = {
+    ...board,
+    nodes: [
+      ...board.nodes,
+      { id: 'n3', text: 'mixtape for plants', kind: 'user', x: 0, y: 0 },
+      { id: 'n4', text: 'a plant that DJs its own playlist while you are away', kind: 'user', x: 0, y: 0 },
+      { id: 'n5', text: 'what does this sound like?', kind: 'nudge', nudgeType: 'senses', x: 0, y: 0 },
+      { id: 'n6', text: 'lonely idea', kind: 'user', x: 0, y: 0 },
+    ],
+    links: [
+      { from: 'n1', to: 'n3' },
+      { from: 'n3', to: 'n4' },
+      { from: 'n1', to: 'n5' },
+    ],
+  }
+
+  it('measures how far an idea is from a spark', () => {
+    expect(distanceFromSpark(b, 'n1')).toBe(0)
+    expect(distanceFromSpark(b, 'n3')).toBe(1)
+    expect(distanceFromSpark(b, 'n4')).toBe(2)
+    expect(distanceFromSpark(b, 'n6')).toBe(Infinity)
+  })
+
+  it('gives word nudges to short sparks, and none to problems', () => {
+    expect(fittingTypes(b, 'n1')).toContain('related')
+    expect(fittingTypes(b, 'n2')).toEqual(['perspective', 'scale', 'push', 'wildcard'])
+  })
+
+  it('pushes developed ideas instead of playing word games', () => {
+    expect(fittingTypes(b, 'n3')).toContain('related')
+    expect(fittingTypes(b, 'n4')).toEqual(['perspective', 'scale', 'push', 'wildcard'])
+  })
+
+  it('never nudges a nudge', async () => {
+    expect(fittingTypes(b, 'n5')).toEqual([])
+    expect(chooseType(b, 'n5')).toBeNull()
+    expect(await pickNudge(b, 'n5', { random: first })).toBeNull()
+  })
+
+  it('always allows a wildcard', () => {
+    for (const id of ['n1', 'n2', 'n3', 'n4', 'n6']) expect(fittingTypes(b, id), id).toContain('wildcard')
   })
 })

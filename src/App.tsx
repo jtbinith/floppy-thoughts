@@ -1,25 +1,40 @@
 import { useEffect, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
+import { Home } from './components/Home'
 import { StartScreen, type NewBoardRequest } from './components/StartScreen'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
-import { dealSparks } from './lib/sparks/deal'
 import { createBoard } from './lib/sparks/newBoard'
-import { loadSeen, rememberSeen } from './lib/sparks/seen'
+import { rememberSeen } from './lib/sparks/seen'
 import { LocalStorageAdapter, type BoardSummary } from './lib/storage'
 
 const storage = new LocalStorageAdapter()
 
-type View = { kind: 'loading' } | { kind: 'start' } | { kind: 'board'; board: Board }
+// Pages, kept in the URL hash so they work on GitHub Pages:
+//   #/       home page
+//   #/new    new-board screen
+//   #/board  the board you had open last
+type Route = 'home' | 'new' | 'board'
+const routeFromHash = (): Route => (location.hash === '#/new' ? 'new' : location.hash === '#/board' ? 'board' : 'home')
+const go = (route: Route) => {
+  location.hash = route === 'home' ? '/' : `/${route}`
+}
 
-// Which board you had open last, so a refresh brings you back to it.
+// Which board you had open last, so coming back brings you to it.
 const LAST_BOARD_KEY = 'hunchhack:ui:last-board'
 const rememberOpen = (id: string) => localStorage.setItem(LAST_BOARD_KEY, id)
 
 export default function App() {
-  const [view, setView] = useState<View>({ kind: 'loading' })
-  const [boards, setBoards] = useState<BoardSummary[]>([])
+  const [route, setRoute] = useState<Route>(routeFromHash)
+  const [boards, setBoards] = useState<BoardSummary[] | null>(null)
+  const [board, setBoard] = useState<Board | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const onHash = () => setRoute(routeFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   async function refreshList() {
     const list = await storage.listBoards()
@@ -31,21 +46,22 @@ export default function App() {
     const result = await storage.loadBoard(id)
     if (result.status === 'ok') {
       rememberOpen(id)
-      setView({ kind: 'board', board: result.board })
+      setBoard(result.board)
+      go('board')
     } else setError(result.status === 'invalid' ? `That board couldn't be opened: ${result.errors[0]}` : 'Board not found')
   }
 
-  // First visit: the new-board screen. After that: the board you had open last.
+  // Load the board list once, and open the last board if the URL asks for it.
   useEffect(() => {
     let cancelled = false
     storage.listBoards().then(
       async (list) => {
         if (cancelled) return
         setBoards(list)
-        if (!list[0]) return setView({ kind: 'start' })
-        const last = localStorage.getItem(LAST_BOARD_KEY)
-        const result = await storage.loadBoard(list.some((b) => b.id === last) ? last! : list[0].id)
-        if (!cancelled) setView(result.status === 'ok' ? { kind: 'board', board: result.board } : { kind: 'start' })
+        const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
+        if (!last) return
+        const result = await storage.loadBoard(last.id)
+        if (!cancelled && result.status === 'ok') setBoard(result.board)
       },
       (e: unknown) => !cancelled && setError(String(e)),
     )
@@ -55,36 +71,46 @@ export default function App() {
   }, [])
 
   async function create(request: NewBoardRequest) {
-    const seen = loadSeen()
-    const sparks = dealSparks(request.theme ? 2 : 3, { seen })
+    const sparks = request.sparks
     // Boards without a theme or name get a number, so they're easy to tell apart.
-    const board = createBoard({ sparks, theme: request.theme, name: request.name || (request.theme ? undefined : `board ${boards.length + 1}`) })
+    const created = createBoard({
+      sparks,
+      theme: request.theme,
+      name: request.name || (request.theme ? undefined : `board ${(boards?.length ?? 0) + 1}`),
+    })
     try {
-      await storage.saveBoard(board)
+      await storage.saveBoard(created)
       rememberSeen(sparks.map((s) => s.text))
-      rememberOpen(board.id)
+      rememberOpen(created.id)
       await refreshList()
-      setView({ kind: 'board', board })
+      setBoard(created)
+      go('board')
     } catch (e) {
       setError(String(e))
     }
   }
 
   function handleChange(next: Board) {
-    setView({ kind: 'board', board: next })
+    setBoard(next)
     storage
       .saveBoard(next)
       .then(refreshList)
       .catch((e: unknown) => setError(String(e)))
   }
 
-  const current = view.kind === 'board' ? view.board : null
+  if (boards === null && !error) return null
+  const hasBoards = (boards?.length ?? 0) > 0
+
+  if (route === 'home') return <Home hasBoards={hasBoards} />
+
+  // No board to show yet: go to the new-board screen instead.
+  const showStart = route === 'new' || !board
 
   return (
     <div className="page">
-      <div className="device__label">
-        HunchHack<small>ideas worth hacking on</small>
-      </div>
+      <a className="device__label" href="#/">
+        Floppy Thoughts<small>ideas worth hacking on</small>
+      </a>
       <div className="device">
         {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
           <span key={corner} className={`device__screw device__screw--${corner}`} aria-hidden="true" />
@@ -95,20 +121,16 @@ export default function App() {
               {error}
             </p>
           </div>
-        ) : view.kind === 'loading' ? (
-          <div className="device__screen">
-            <p className="screen__message">Loading…</p>
-          </div>
-        ) : view.kind === 'start' ? (
-          <StartScreen onCreate={create} onCancel={boards[0] ? () => open(boards[0].id) : undefined} />
+        ) : showStart ? (
+          <StartScreen onCreate={create} onCancel={board ? () => go('board') : undefined} />
         ) : (
-          current && (
-            <ReactFlowProvider key={current.id}>
+          board && (
+            <ReactFlowProvider key={board.id}>
               <Workspace
-                board={current}
-                boards={boards}
+                board={board}
+                boards={boards ?? []}
                 onChange={handleChange}
-                onNewBoard={() => setView({ kind: 'start' })}
+                onNewBoard={() => go('new')}
                 onOpenBoard={open}
               />
             </ReactFlowProvider>

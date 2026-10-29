@@ -66,18 +66,23 @@ describe('swapping sparks', () => {
     id: 'b3',
   })
 
-  it('replaces a spark from a different category, using a swap', () => {
+  it('replaces a disk with another from the same category, using a swap', () => {
     const others = board.nodes.filter((n) => n.id !== 'n2').map((n) => ({ text: n.text, category: n.category! }))
     const next = swapFor({ text: 'cassette', category: 'words' }, others, { random: seeded(7) })
-    // It may be another word, but never the same category as the other sparks.
-    expect(['objects', 'theme']).not.toContain(next.category)
+    expect(next.category).toBe('words')
     expect(next.text).not.toBe('cassette')
     const r = swapSpark(board, 'n2', next)
     if (!r.ok) throw new Error(r.error)
     expect(r.board.swapsLeft).toBe(2)
-    expect(r.board.nodes[1]).toMatchObject({ id: 'n2', text: next.text, category: next.category })
-    expect(r.board.history?.at(-1)).toMatchObject({ type: 'swap', id: 'n2', text: next.text })
+    expect(r.board.nodes[1]).toMatchObject({ id: 'n2', text: next.text, category: 'words' })
     expect(parseBoard(r.board).ok).toBe(true)
+  })
+
+  it('never swaps in a disk already on the board', () => {
+    for (let seed = 1; seed < 30; seed++) {
+      const next = swapFor({ text: 'cassette', category: 'words' }, [{ text: 'kettle', category: 'words' }], { random: seeded(seed) })
+      expect(['cassette', 'kettle']).not.toContain(next.text)
+    }
   })
 
   it('never swaps the theme, ideas, or with no swaps left', () => {

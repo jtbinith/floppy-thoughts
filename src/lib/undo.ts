@@ -2,7 +2,6 @@ import type { Board } from './board'
 
 // Undo and redo keep whole-board snapshots in memory for this session.
 // Boards are small (15 nodes), so snapshots are cheap and can't get out of step.
-// Each snapshot carries its own history log, so undoing a change also removes it from the replay.
 
 export const UNDO_LIMIT = 100
 

@@ -1,5 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react'
 import type { CommandResult } from '../lib/commands'
+import type { Completion } from '../lib/complete'
 
 type Line = { text: string; kind: 'input' | 'output' | 'error' }
 
@@ -13,6 +14,8 @@ export type TerminalHandle = {
 
 type Props = {
   onRun: (input: string) => CommandResult
+  // Tab completion: the completed input, plus choices to show when it's ambiguous.
+  onComplete?: (input: string) => Completion
   ref?: Ref<TerminalHandle>
 }
 
@@ -30,7 +33,7 @@ function savedHeight(): number {
   return Number.isFinite(saved) && saved > 0 ? clampHeight(saved) : DEFAULT_HEIGHT
 }
 
-export function Terminal({ onRun, ref }: Props) {
+export function Terminal({ onRun, onComplete, ref }: Props) {
   const [lines, setLines] = useState<Line[]>(WELCOME)
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -156,7 +159,13 @@ export function Terminal({ onRun, ref }: Props) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'ArrowUp') {
+            if (e.key === 'Tab' && !e.shiftKey && onComplete) {
+              // Stay in the terminal and complete, like a shell.
+              e.preventDefault()
+              const { value: completed, options } = onComplete(value)
+              setValue(completed)
+              if (options.length) print([`  ${options.join('   ')}`])
+            } else if (e.key === 'ArrowUp') {
               e.preventDefault()
               browseHistory(-1)
             } else if (e.key === 'ArrowDown') {

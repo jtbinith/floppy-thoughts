@@ -3,6 +3,7 @@ import { useReactFlow } from '@xyflow/react'
 import { BOARD_CAPACITY, type Board } from '../lib/board'
 import { addLink, addLinkedIdea, addNudge, addUserNode, deleteUserNode, editUserNode, findNode, swapSpark } from '../lib/boardOps'
 import { runCommand, type CommandResult } from '../lib/commands'
+import { complete } from '../lib/complete'
 import { NUDGE_CHOICES, pickNudge, type NudgeChoice } from '../lib/nudges/pickNudge'
 import { freeSpotNear } from '../lib/placement'
 import { swapFor, type Spark } from '../lib/sparks/deal'
@@ -125,7 +126,12 @@ export function Workspace({ board, boards, onChange, onNewBoard, onOpenBoard }: 
     const nudge = await pickNudge(latest.current, targetId, { type })
     const current = latest.current
     const target = findNode(current, targetId)
-    if (!nudge || !target) return { text: `No node called ${targetId}`, error: true }
+    if (!target) return { text: `No node called ${targetId}`, error: true }
+    if (!nudge) {
+      const message = `${targetId} is a nudge already. Nudge the idea or disk it's about instead.`
+      setNotice(message)
+      return { text: message, error: true }
+    }
     const at = freeSpotNear(current, { x: target.x + 380, y: target.y + 45 })
     const result = addNudge(current, targetId, nudge, at)
     if (!result.ok) {
@@ -148,7 +154,7 @@ export function Workspace({ board, boards, onChange, onNewBoard, onOpenBoard }: 
   // Swap a spark for a new one from a category the other sparks don't use. Uses one of the board's 3 swaps.
   function swap(id: string): { text: string; error?: boolean } {
     const node = findNode(board, id)
-    if (!node || node.kind !== 'spark' || !node.category) return { text: `${id} isn't a spark: only sparks can be swapped`, error: true }
+    if (!node || node.kind !== 'spark' || !node.category) return { text: `${id} isn't a disk: only disks can be swapped`, error: true }
     const others: Spark[] = board.nodes
       .filter((n) => n.kind === 'spark' && n.id !== id && n.category)
       .map((n) => ({ text: n.text, category: n.category! }))
@@ -273,7 +279,7 @@ export function Workspace({ board, boards, onChange, onNewBoard, onOpenBoard }: 
             <button type="button" className="screen__new" onClick={onNewBoard}>
               + new board
             </button>
-            <span className="screen__swaps" title="Swap a spark: select it and press S">
+            <span className="screen__swaps" title="Swap a disk: select it and press S">
               swaps left: {board.swapsLeft}
             </span>
             {notice && (
@@ -293,7 +299,7 @@ export function Workspace({ board, boards, onChange, onNewBoard, onOpenBoard }: 
               }}
             />
           </div>
-          <Terminal ref={terminalRef} onRun={handleCommand} />
+          <Terminal ref={terminalRef} onRun={handleCommand} onComplete={(input) => complete(input, board, boards.length)} />
         </div>
 
         {/* How full the board is. A full board is the cue to stop exploring. */}

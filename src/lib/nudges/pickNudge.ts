@@ -1,4 +1,4 @@
-import type { Board, NudgeType } from '../board'
+import type { Board, NudgeType, SparkCategory } from '../board'
 import { fetchWords, type DatamuseRelation } from './datamuse'
 import { QUESTIONS, WILDCARDS, fillQuestion, type QuestionType } from './questions'
 
@@ -36,14 +36,60 @@ const BLAND = new Set('many most other common popular next nearest same new old 
 
 const pick = <T,>(items: readonly T[], random: () => number): T => items[Math.floor(random() * items.length)]
 
-// Avoid giving the same kind of nudge twice in a row on the same idea.
-export function chooseType(board: Board, targetId: string, random: () => number = Math.random): NudgeChoice {
+// Which nudges make sense for a node. A nudge that doesn't fit is just noise.
+// Wildcards fit everywhere: a deliberately random leap is part of the point.
+const WORD_TYPES: readonly NudgeChoice[] = ['related', 'opposite', 'described']
+
+const FIT_BY_CATEGORY: Record<SparkCategory, readonly NudgeChoice[]> = {
+  theme: ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  words: ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  objects: ['related', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  problems: ['perspective', 'scale', 'push', 'wildcard'],
+  curiosities: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
+  nature: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
+  headlines: ['perspective', 'scale', 'push', 'wildcard'],
+}
+
+// How many links a node is from the nearest spark (Infinity if it isn't connected to one).
+export function distanceFromSpark(board: Board, id: string): number {
+  const neighbours = (n: string) => board.links.filter((l) => l.from === n || l.to === n).map((l) => (l.from === n ? l.to : l.from))
+  const seen = new Set([id])
+  let frontier = [id]
+  for (let d = 0; frontier.length; d++) {
+    if (frontier.some((n) => board.nodes.find((x) => x.id === n)?.kind === 'spark')) return d
+    frontier = frontier.flatMap(neighbours).filter((n) => !seen.has(n) && seen.add(n))
+  }
+  return Infinity
+}
+
+// Word nudges look up one keyword, which only works reliably on short text.
+const isShort = (text: string) => text.replace(/["']/g, '').trim().split(/\s+/).length <= 3
+
+export function fittingTypes(board: Board, targetId: string): NudgeChoice[] {
+  const target = board.nodes.find((n) => n.id === targetId)
+  if (!target || target.kind === 'nudge') return []
+  let fit: readonly NudgeChoice[]
+  if (target.kind === 'spark') fit = FIT_BY_CATEGORY[target.category ?? 'words']
+  else
+    fit =
+      distanceFromSpark(board, targetId) <= 1
+        ? // An early idea: still exploring.
+          ['related', 'opposite', 'perspective', 'scale', 'senses', 'push', 'wildcard']
+        : // A developed idea: push it further rather than play word games.
+          ['perspective', 'scale', 'push', 'wildcard']
+  return fit.filter((t) => !WORD_TYPES.includes(t) || isShort(target.text))
+}
+
+// Picks a fitting type, avoiding types the idea already has a nudge of.
+export function chooseType(board: Board, targetId: string, random: () => number = Math.random): NudgeChoice | null {
+  const fit = fittingTypes(board, targetId)
+  if (!fit.length) return null
   const neighbours = new Set(
     board.links.filter((l) => l.from === targetId || l.to === targetId).map((l) => (l.from === targetId ? l.to : l.from)),
   )
   const used = new Set(board.nodes.filter((n) => n.kind === 'nudge' && neighbours.has(n.id)).map((n) => n.nudgeType))
-  const fresh = NUDGE_CHOICES.filter((t) => !used.has(t))
-  return pick(fresh.length ? fresh : NUDGE_CHOICES, random)
+  const fresh = fit.filter((t) => !used.has(t))
+  return pick(fresh.length ? fresh : fit, random)
 }
 
 function questionNudge(type: QuestionType, subject: string, random: () => number): Nudge {
@@ -57,8 +103,10 @@ export async function pickNudge(
 ): Promise<Nudge | null> {
   const random = options.random ?? Math.random
   const target = board.nodes.find((n) => n.id === targetId)
-  if (!target) return null
+  // Nudging a nudge just goes in circles.
+  if (!target || target.kind === 'nudge') return null
   const type = options.type ?? chooseType(board, targetId, random)
+  if (!type) return null
 
   if (type === 'wildcard') {
     const onBoard = new Set(board.nodes.map((n) => n.text.toLowerCase()))
@@ -82,8 +130,9 @@ export async function pickNudge(
         return { type, text: `${label}: ${word}` }
       }
     }
-    // Nothing useful from Datamuse: fall back to a push question rather than leaving the user stuck.
-    return questionNudge('push', target.text, random)
+    // Nothing useful from Datamuse: fall back to a question that fits, rather than leaving the user stuck.
+    const questions = fittingTypes(board, targetId).filter((t): t is QuestionType => t in QUESTIONS)
+    return questionNudge(questions.length ? pick(questions, random) : 'push', target.text, random)
   }
 
   return questionNudge(type as QuestionType, target.text, random)

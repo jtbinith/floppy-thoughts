@@ -24,7 +24,7 @@ export const HELP = [
   '  delete <id>         delete one of your ideas (and its links)',
   '  nudge <id> [type]   get a word or question to push that idea (or press N)',
   '                      types: related opposite described perspective scale senses push wildcard',
-  '  swap <id>           swap a spark for a new one (3 per board, or press S)',
+  '  swap <id>           swap a disk for a new one (3 per board, or press S)',
   '  link <id> <id>      link two nodes',
   '  unlink <id> <id>    remove a link',
   '  list                show everything on the board',
@@ -33,7 +33,7 @@ export const HELP = [
   '  undo / redo         step back or forward (also Ctrl+Z / Ctrl+Shift+Z)',
   '  clear               clear the terminal',
   '  help                show this',
-  'ids like n4 are shown on each node. tip: ↑ ↓ for previous commands',
+  'ids like n4 are shown on each node. tips: Tab completes commands and ids, ↑ ↓ for previous commands',
   'on the board: select an idea, then Tab = linked idea, N = nudge',
 ]
 
@@ -63,7 +63,7 @@ export function runCommand(board: Board, input: string, ctx: CommandContext): Co
           const links = board.links
             .filter((l) => l.from === n.id || l.to === n.id)
             .map((l) => (l.from === n.id ? l.to : l.from))
-          const kind = n.kind === 'spark' ? (n.locked ? 'theme' : 'spark') : n.kind === 'nudge' ? n.nudgeType : 'idea'
+          const kind = n.kind === 'spark' ? (n.locked ? 'theme' : 'disk') : n.kind === 'nudge' ? n.nudgeType : 'idea'
           return `  ${n.id.padEnd(4)} ${kind?.padEnd(11)} ${n.text}${links.length ? `  ↔ ${links.join(' ')}` : ''}`
         }), `  ${spaceLeft(board)} spaces left on the board`],
       }

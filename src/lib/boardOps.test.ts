@@ -57,7 +57,7 @@ describe('board operations', () => {
     expect(expectOk(editUserNode(board(), 'n2', 'mixtapes', now)).node?.text).toBe('mixtapes')
     expect(editUserNode(board(), 'n1', 'hacked')).toEqual({
       ok: false,
-      error: 'n1 is a spark: only your own ideas can be edited',
+      error: 'n1 is a disk: only your own ideas can be edited',
     })
     expect(editUserNode(board(), 'n99', 'x')).toEqual({ ok: false, error: 'No node called n99' })
   })
@@ -67,7 +67,7 @@ describe('board operations', () => {
     expect(r.board.nodes.map((n) => n.id)).toEqual(['n1', 'n7'])
     expect(r.board.links).toEqual([{ from: 'n1', to: 'n7' }])
     expect(expectOk(deleteUserNode(board(), 'n7')).board.nodes.map((n) => n.id)).toEqual(['n1', 'n2'])
-    expect(deleteUserNode(board(), 'n1')).toEqual({ ok: false, error: 'n1 is a spark: sparks can be swapped, not deleted' })
+    expect(deleteUserNode(board(), 'n1')).toEqual({ ok: false, error: 'n1 is a disk: disks can be swapped, not deleted' })
   })
 
   it('never mutates the original board', () => {

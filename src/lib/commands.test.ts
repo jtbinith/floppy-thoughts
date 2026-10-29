@@ -58,7 +58,7 @@ describe('terminal commands', () => {
     expect(runCommand(board, 'list', ctx).output).toEqual([
       '  n1   theme       Time  ↔ n2',
       '  n2   idea        plants  ↔ n1',
-      '  13 spaces left on the board',
+      '  18 spaces left on the board',
     ])
   })
 

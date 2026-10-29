@@ -38,15 +38,17 @@ export function dealSparks(
   return categories.map((c) => sparkFrom(c, seen, random))
 }
 
-// A replacement for one spark: from a category none of the other sparks use, and never the same text.
+// A replacement for one disk: from the same category (you chose it), never the same text.
+// A theme can't be swapped; anything else without a content category gets a random one.
 export function swapFor(
   current: Spark,
   others: readonly Spark[],
   options: { seen?: ReadonlySet<string>; random?: () => number } = {},
 ): Spark {
   const random = options.random ?? Math.random
-  const taken = new Set(others.map((s) => s.category))
-  const choices = CONTENT_CATEGORIES.filter((c) => !taken.has(c))
-  const category = pick(choices.length ? choices : CONTENT_CATEGORIES, random)
-  return sparkFrom(category, options.seen ?? new Set(), random, new Set([current.text]))
+  const category: ContentCategory = (CONTENT_CATEGORIES as readonly string[]).includes(current.category)
+    ? (current.category as ContentCategory)
+    : pick(CONTENT_CATEGORIES, random)
+  const exclude = new Set([current.text, ...others.map((s) => s.text)])
+  return sparkFrom(category, options.seen ?? new Set(), random, exclude)
 }

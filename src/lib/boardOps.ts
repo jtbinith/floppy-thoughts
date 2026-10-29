@@ -1,19 +1,13 @@
-import { BOARD_CAPACITY, MAX_HISTORY, MAX_NODE_TEXT, type Board, type BoardNode, type HistoryEntry, type NudgeType, type SparkCategory } from './board'
+import { BOARD_CAPACITY, MAX_NODE_TEXT, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
 
 // Pure board edits. Each returns a new board; nothing is mutated.
 // Only your own ideas can be edited. Ideas and nudges can be deleted; sparks are swapped instead (Batch 2).
 
 export type OpResult = { ok: true; board: Board; node?: BoardNode } | { ok: false; error: string }
 
-// Spreading a Distributive Omit keeps each history entry type intact.
-type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never
-export type Change = DistributiveOmit<HistoryEntry, 't'>
-
-// Stamps the board as updated and records what changed, for replay.
-export function record(board: Board, changes: Change[], now: Date): Board {
-  const t = now.toISOString()
-  const history = [...(board.history ?? []), ...changes.map((c) => ({ ...c, t }) as HistoryEntry)]
-  return { ...board, updatedAt: t, history: history.slice(-MAX_HISTORY) }
+// Marks the board as just updated.
+export function touch(board: Board, now: Date): Board {
+  return { ...board, updatedAt: now.toISOString() }
 }
 
 export function cleanText(text: string): string {
@@ -44,10 +38,9 @@ export function addUserNode(board: Board, text: string, at: { x: number; y: numb
   const clean = cleanText(text)
   if (!clean) return { ok: false, error: 'An idea needs some text' }
   const node: BoardNode = { id: nextNodeId(board), text: clean, kind: 'user', x: Math.round(at.x), y: Math.round(at.y) }
-  const { id, x, y } = node
   return {
     ok: true,
-    board: record({ ...board, nodes: [...board.nodes, node] }, [{ type: 'add', id, text: clean, x, y }], now),
+    board: touch({ ...board, nodes: [...board.nodes, node] }, now),
     node,
   }
 }
@@ -55,13 +48,13 @@ export function addUserNode(board: Board, text: string, at: { x: number; y: numb
 export function editUserNode(board: Board, id: string, text: string, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind !== 'user') return { ok: false, error: `${id} is a ${node.kind}: only your own ideas can be edited` }
+  if (node.kind !== 'user') return { ok: false, error: `${id} is a ${node.kind === 'spark' ? 'disk' : node.kind}: only your own ideas can be edited` }
   const clean = cleanText(text)
   if (!clean) return { ok: false, error: 'An idea needs some text' }
   const edited = { ...node, text: clean }
   return {
     ok: true,
-    board: record({ ...board, nodes: board.nodes.map((n) => (n.id === id ? edited : n)) }, [{ type: 'edit', id, text: clean }], now),
+    board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? edited : n)) }, now),
     node: edited,
   }
 }
@@ -69,17 +62,16 @@ export function editUserNode(board: Board, id: string, text: string, now = new D
 export function deleteUserNode(board: Board, id: string, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind === 'spark') return { ok: false, error: `${id} is a spark: sparks can be swapped, not deleted` }
+  if (node.kind === 'spark') return { ok: false, error: `${id} is a disk: disks can be swapped, not deleted` }
   return {
     ok: true,
-    board: record(
+    board: touch(
       {
         ...board,
         nodes: board.nodes.filter((n) => n.id !== id),
         // Links to a deleted node go with it.
         links: board.links.filter((l) => l.from !== id && l.to !== id),
       },
-      [{ type: 'delete', id }],
       now,
     ),
     node,
@@ -94,30 +86,30 @@ export function addLink(board: Board, a: string, b: string, now = new Date()): O
   if (a === b) return { ok: false, error: 'A node cannot link to itself' }
   for (const id of [a, b]) if (!findNode(board, id)) return { ok: false, error: `No node called ${id}` }
   if (board.links.some(sameLink(a, b))) return { ok: false, error: `${a} and ${b} are already linked` }
-  return { ok: true, board: record({ ...board, links: [...board.links, { from: a, to: b }] }, [{ type: 'link', from: a, to: b }], now) }
+  return { ok: true, board: touch({ ...board, links: [...board.links, { from: a, to: b }] }, now) }
 }
 
 export function removeLink(board: Board, a: string, b: string, now = new Date()): OpResult {
   if (!board.links.some(sameLink(a, b))) return { ok: false, error: `${a} and ${b} aren't linked` }
   return {
     ok: true,
-    board: record({ ...board, links: board.links.filter((l) => !sameLink(a, b)(l)) }, [{ type: 'unlink', from: a, to: b }], now),
+    board: touch({ ...board, links: board.links.filter((l) => !sameLink(a, b)(l)) }, now),
   }
 }
 
-// Moves nodes, e.g. after a drag. Only nodes that actually moved are recorded.
+// Moves nodes, e.g. after a drag. Returns the same board if nothing actually moved.
 export function moveNodes(board: Board, positions: { id: string; x: number; y: number }[], now = new Date()): Board {
-  const changes: Change[] = []
+  let moved = false
   const nodes = board.nodes.map((node) => {
     const p = positions.find((q) => q.id === node.id)
     if (!p) return node
     const x = Math.round(p.x)
     const y = Math.round(p.y)
     if (x === node.x && y === node.y) return node
-    changes.push({ type: 'move', id: node.id, x, y })
+    moved = true
     return { ...node, x, y }
   })
-  return changes.length ? record({ ...board, nodes }, changes, now) : board
+  return moved ? touch({ ...board, nodes }, now) : board
 }
 
 // Adds a new idea already linked to an existing node: the fast way to build a chain.
@@ -142,7 +134,7 @@ export function addNudge(
   const text = cleanText(nudge.text)
   if (!text) return { ok: false, error: 'A nudge needs some text' }
   const node: BoardNode = { id: nextNodeId(board), text, kind: 'nudge', nudgeType: nudge.type, x: Math.round(at.x), y: Math.round(at.y) }
-  const added = record({ ...board, nodes: [...board.nodes, node] }, [{ type: 'add', id: node.id, text, x: node.x, y: node.y }], now)
+  const added = touch({ ...board, nodes: [...board.nodes, node] }, now)
   const linked = addLink(added, targetId, node.id, now)
   return linked.ok ? { ...linked, node } : linked
 }
@@ -153,17 +145,13 @@ export const NO_SWAPS_MESSAGE = 'No swaps left on this board. Work with what you
 export function swapSpark(board: Board, id: string, spark: { text: string; category: SparkCategory }, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind !== 'spark') return { ok: false, error: `${id} isn't a spark: only sparks can be swapped` }
+  if (node.kind !== 'spark') return { ok: false, error: `${id} isn't a disk: only disks can be swapped` }
   if (node.locked) return { ok: false, error: `${id} is the theme: it stays locked` }
   if (board.swapsLeft <= 0) return { ok: false, error: NO_SWAPS_MESSAGE }
   const swapped: BoardNode = { ...node, text: spark.text, category: spark.category }
   return {
     ok: true,
-    board: record(
-      { ...board, swapsLeft: board.swapsLeft - 1, nodes: board.nodes.map((n) => (n.id === id ? swapped : n)) },
-      [{ type: 'swap', id, text: spark.text }],
-      now,
-    ),
+    board: touch({ ...board, swapsLeft: board.swapsLeft - 1, nodes: board.nodes.map((n) => (n.id === id ? swapped : n)) }, now),
     node: swapped,
   }
 }

@@ -35,7 +35,6 @@ export function createBoard(options: {
     swapsLeft: SWAP_BUDGET,
     nodes,
     links: [],
-    history: [],
     createdAt: now,
     updatedAt: now,
   }

@@ -8,11 +8,9 @@ export const SPARKS_PER_BOARD = 3
 export const MAX_NODE_TEXT = 200
 export const MAX_BOARD_NAME = 80
 // How many nodes fit on a board. A full board is the cue to stop exploring.
-export const BOARD_CAPACITY = 15
+export const BOARD_CAPACITY = 20
 // Hard safety cap for imported or corrupted data, well above the capacity so old boards still load.
 export const MAX_NODES = 500
-// How many changes are kept for replaying how a board grew. Oldest are dropped first.
-export const MAX_HISTORY = 1000
 
 export const NODE_KINDS = ['spark', 'nudge', 'user'] as const
 export const SPARK_CATEGORIES = [
@@ -24,6 +22,17 @@ export const SPARK_CATEGORIES = [
   'nature',
   'problems',
 ] as const
+// How each spark category is shown (singular, as in a file path: ~/object).
+export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> = {
+  theme: 'theme',
+  words: 'word',
+  headlines: 'headline',
+  curiosities: 'curiosity',
+  objects: 'object',
+  nature: 'nature',
+  problems: 'problem',
+}
+
 export const NUDGE_TYPES = [
   'related',
   'opposite',
@@ -57,19 +66,6 @@ export const linkSchema = z.object({
   to: id,
 })
 
-// One change to a board, recorded so the board's growth can be replayed later.
-const when = z.iso.datetime()
-const historyText = z.string().max(MAX_NODE_TEXT)
-export const historyEntrySchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('add'), t: when, id, text: historyText, x: coordinate, y: coordinate }),
-  z.object({ type: z.literal('edit'), t: when, id, text: historyText }),
-  z.object({ type: z.literal('delete'), t: when, id }),
-  z.object({ type: z.literal('link'), t: when, from: id, to: id }),
-  z.object({ type: z.literal('unlink'), t: when, from: id, to: id }),
-  z.object({ type: z.literal('move'), t: when, id, x: coordinate, y: coordinate }),
-  z.object({ type: z.literal('swap'), t: when, id, text: historyText }),
-])
-
 export const boardSchema = z
   .object({
     version: z.literal(BOARD_VERSION),
@@ -79,8 +75,6 @@ export const boardSchema = z
     swapsLeft: z.number().int().min(0).max(SWAP_BUDGET),
     nodes: z.array(boardNodeSchema).max(MAX_NODES),
     links: z.array(linkSchema),
-    // Optional so boards saved before history existed still load.
-    history: z.array(historyEntrySchema).max(MAX_HISTORY).optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
@@ -133,7 +127,6 @@ export const boardSchema = z
 export type Board = z.infer<typeof boardSchema>
 export type BoardNode = z.infer<typeof boardNodeSchema>
 export type Link = z.infer<typeof linkSchema>
-export type HistoryEntry = z.infer<typeof historyEntrySchema>
 export type NodeKind = (typeof NODE_KINDS)[number]
 export type SparkCategory = (typeof SPARK_CATEGORIES)[number]
 export type NudgeType = (typeof NUDGE_TYPES)[number]

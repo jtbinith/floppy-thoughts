@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { MAX_NODE_TEXT } from '../lib/board'
+import { CATEGORY_LABEL, MAX_NODE_TEXT } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
+import { LockIcon } from './LockIcon'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
@@ -29,17 +30,27 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     return () => cancelAnimationFrame(frame)
   }, [editing])
   const deletable = data.kind !== 'spark'
-  const label = data.kind === 'spark' ? (data.locked ? 'theme' : 'spark') : data.kind === 'nudge' ? data.nudgeType : 'idea'
+  const label = data.kind === 'spark' ? (data.locked ? 'theme' : 'disk') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
-    <div className={`idea idea--${data.kind}${editing ? ' idea--editing' : ''}`}>
+    <div className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}`}>
       {/* Drag from either dot to another node to link them. */}
       <Handle type="target" position={Position.Top} className="idea__handle" />
       <span className="idea__meta">
         <span className="idea__label">
-          {data.locked && <span aria-label="locked">🔒 </span>}
+          {data.locked && <LockIcon />} 
           {label}
         </span>
+        {data.kind === 'spark' && data.category && (
+          <>
+            {data.locked && (
+              <span className="idea__lock">
+                <LockIcon />
+              </span>
+            )}
+            <span className="idea__category">{CATEGORY_LABEL[data.category]}</span>
+          </>
+        )}
         <span className="idea__id">{id}</span>
       </span>
 
@@ -78,7 +89,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
         </button>
       )}
       {data.kind === 'spark' && !data.locked && selected && swapsLeft > 0 && (
-        <button type="button" className="idea__swap nodrag" aria-label={`Swap ${id}`} title="Swap this spark (S)" onClick={() => swap(id)}>
+        <button type="button" className="idea__swap nodrag" aria-label={`Swap ${id}`} title="Swap this disk (S)" onClick={() => swap(id)}>
           ⇄ swap
         </button>
       )}

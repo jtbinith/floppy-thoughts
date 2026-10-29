@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages serves the site from /hunchhack/
-  base: '/hunchhack/',
+  // GitHub Pages serves the site from /floppy-thoughts/
+  base: '/floppy-thoughts/',
   plugins: [react()],
 })
