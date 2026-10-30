@@ -1,21 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
+import { BoardsPage } from './components/BoardsPage'
 import { Home } from './components/Home'
-import { StartScreen, type NewBoardRequest } from './components/StartScreen'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
+import { MAX_BOARD_NAME } from './lib/board'
+import { cleanText, toggleFavourite, touch } from './lib/boardOps'
+import { loadSettings, saveSettings, type Settings } from './lib/settings'
+import { dealSparks } from './lib/sparks/deal'
 import { createBoard } from './lib/sparks/newBoard'
-import { rememberSeen } from './lib/sparks/seen'
-import { LocalStorageAdapter, type BoardSummary } from './lib/storage'
+import { loadSeen, rememberSeen } from './lib/sparks/seen'
+import { LocalStorageAdapter, type BoardSummary, type Favourite } from './lib/storage'
 
 const storage = new LocalStorageAdapter()
 
 // Pages, kept in the URL hash so they work on GitHub Pages:
-//   #/       home page
-//   #/new    new-board screen
-//   #/board  the board you had open last
-type Route = 'home' | 'new' | 'board'
-const routeFromHash = (): Route => (location.hash === '#/new' ? 'new' : location.hash === '#/board' ? 'board' : 'home')
+//   #/        home page
+//   #/new     makes a new, blank board straight away, then shows it
+//   #/board   the board you had open last
+//   #/boards  all your boards: open, rename, delete
+type Route = 'home' | 'new' | 'board' | 'boards'
+const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards' }
+const routeFromHash = (): Route => ROUTES[location.hash] ?? 'home'
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
 }
@@ -28,7 +34,14 @@ export default function App() {
   const [route, setRoute] = useState<Route>(routeFromHash)
   const [boards, setBoards] = useState<BoardSummary[] | null>(null)
   const [board, setBoard] = useState<Board | null>(null)
+  const [favourites, setFavourites] = useState<Favourite[]>([])
+  const [focusId, setFocusId] = useState<string | undefined>()
+  // The board just made with "+ new board", which asks for a theme first.
+  const [freshId, setFreshId] = useState<string | null>(null)
+  const [settings, setSettings] = useState<Settings>(loadSettings)
   const [error, setError] = useState<string | null>(null)
+  // React's StrictMode runs effects twice in development; this stops that making two boards.
+  const creating = useRef(false)
 
   useEffect(() => {
     const onHash = () => setRoute(routeFromHash())
@@ -39,13 +52,15 @@ export default function App() {
   async function refreshList() {
     const list = await storage.listBoards()
     setBoards(list)
+    setFavourites(await storage.listFavourites())
     return list
   }
 
-  async function open(id: string) {
+  async function open(id: string, focus?: string) {
     const result = await storage.loadBoard(id)
     if (result.status === 'ok') {
       rememberOpen(id)
+      setFocusId(focus)
       setBoard(result.board)
       go('board')
     } else setError(result.status === 'invalid' ? `That board couldn't be opened: ${result.errors[0]}` : 'Board not found')
@@ -58,6 +73,7 @@ export default function App() {
       async (list) => {
         if (cancelled) return
         setBoards(list)
+        setFavourites(await storage.listFavourites())
         const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
         if (!last) return
         const result = await storage.loadBoard(last.id)
@@ -70,23 +86,85 @@ export default function App() {
     }
   }, [])
 
-  async function create(request: NewBoardRequest) {
-    const sparks = request.sparks
-    // Boards without a theme or name get a number, so they're easy to tell apart.
-    const created = createBoard({
-      sparks,
-      theme: request.theme,
-      name: request.name || (request.theme ? undefined : `board ${(boards?.length ?? 0) + 1}`),
-    })
+  // A new board opens straight away: blank, unless you've asked for starting notes (`starting <n>`).
+  // Boards get a number for a name, so they're easy to tell apart; rename them any time.
+  async function create() {
+    if (creating.current) return
+    creating.current = true
+    const sparks = dealSparks(settings.startingNotes, { seen: loadSeen() })
+    const list = await storage.listBoards()
+    const created = createBoard({ sparks, name: `board ${list.length + 1}` })
     try {
       await storage.saveBoard(created)
       rememberSeen(sparks.map((s) => s.text))
       rememberOpen(created.id)
       await refreshList()
+      setFocusId(undefined)
+      setFreshId(created.id)
       setBoard(created)
-      go('board')
+      // Replace #/new so going back doesn't make another board.
+      history.replaceState(null, '', '#/board')
+      setRoute('board')
     } catch (e) {
       setError(String(e))
+    } finally {
+      creating.current = false
+    }
+  }
+
+  // Visiting #/new (from the home page or "+ new board") makes the board, once the list has loaded.
+  const ready = boards !== null
+  useEffect(() => {
+    if (route === 'new' && ready) void create()
+    // create reads the latest settings itself; it only needs to run when the route changes.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, ready])
+
+  function changeStartingNotes(n: number) {
+    setSettings(saveSettings({ ...settings, startingNotes: n }))
+  }
+
+  // Unfavouriting something on another board, from the favourites list.
+  async function unfavouriteElsewhere(f: Favourite) {
+    const result = await storage.loadBoard(f.boardId)
+    if (result.status !== 'ok') return
+    const toggled = toggleFavourite(result.board, f.node.id)
+    if (!toggled.ok) return
+    await storage.saveBoard(toggled.board)
+    await refreshList()
+  }
+
+  // Saves a board made elsewhere (like a favourites board) and opens it.
+  async function openNew(made: Board) {
+    try {
+      await storage.saveBoard(made)
+      await refreshList()
+      await open(made.id)
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  async function renameBoard(id: string, name: string) {
+    const clean = cleanText(name).slice(0, MAX_BOARD_NAME)
+    if (!clean) return
+    if (board?.id === id) return handleChange(touch({ ...board, name: clean }, new Date()))
+    const result = await storage.loadBoard(id)
+    if (result.status !== 'ok') return
+    await storage.saveBoard(touch({ ...result.board, name: clean }, new Date()))
+    await refreshList()
+  }
+
+  // Deleting the open board moves you to your most recent other board, or the boards page.
+  async function deleteBoard(id: string) {
+    await storage.deleteBoard(id)
+    const list = await refreshList()
+    if (board?.id !== id) return
+    const next = list[0]
+    if (next) await open(next.id)
+    else {
+      setBoard(null)
+      go('boards')
     }
   }
 
@@ -102,9 +180,8 @@ export default function App() {
   const hasBoards = (boards?.length ?? 0) > 0
 
   if (route === 'home') return <Home hasBoards={hasBoards} />
-
-  // No board to show yet: go to the new-board screen instead.
-  const showStart = route === 'new' || !board
+  if (route === 'boards')
+    return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} />
 
   return (
     <div className="page">
@@ -121,20 +198,30 @@ export default function App() {
               {error}
             </p>
           </div>
-        ) : showStart ? (
-          <StartScreen onCreate={create} onCancel={board ? () => go('board') : undefined} />
+        ) : board && route === 'board' ? (
+          <ReactFlowProvider key={board.id}>
+            <Workspace
+              board={board}
+              boards={boards ?? []}
+              favourites={favourites}
+              startingNotes={settings.startingNotes}
+              onStartingNotes={changeStartingNotes}
+              onChange={handleChange}
+              onNewBoard={() => go('new')}
+              onOpenBoard={open}
+              onUnfavouriteElsewhere={unfavouriteElsewhere}
+              onOpenNew={openNew}
+              onRenameBoard={renameBoard}
+              onDeleteBoard={deleteBoard}
+              focusId={focusId}
+              askTheme={freshId === board.id}
+              onThemeAsked={() => setFreshId(null)}
+            />
+          </ReactFlowProvider>
         ) : (
-          board && (
-            <ReactFlowProvider key={board.id}>
-              <Workspace
-                board={board}
-                boards={boards ?? []}
-                onChange={handleChange}
-                onNewBoard={() => go('new')}
-                onOpenBoard={open}
-              />
-            </ReactFlowProvider>
-          )
+          <div className="device__screen">
+            <p className="screen__message">{route === 'new' ? 'making your board…' : <a href="#/new">start a board →</a>}</p>
+          </div>
         )}
       </div>
     </div>

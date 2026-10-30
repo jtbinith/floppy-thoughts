@@ -1,16 +1,12 @@
 import { z } from 'zod'
 
-// Bump when the saved JSON shape changes, and add a migration for older boards.
-export const BOARD_VERSION = 1
+// Bump when the saved JSON shape changes, and add a migration for older boards (see migrate below).
+export const BOARD_VERSION = 2
 
-export const SWAP_BUDGET = 3
-export const SPARKS_PER_BOARD = 3
 export const MAX_NODE_TEXT = 200
 export const MAX_BOARD_NAME = 80
-// How many nodes fit on a board. A full board is the cue to stop exploring.
-export const BOARD_CAPACITY = 20
-// Hard safety cap for imported or corrupted data, well above the capacity so old boards still load.
-export const MAX_NODES = 500
+// There's no limit on ideas or notes. This only stops a runaway board from filling browser storage.
+export const MAX_NODES = 1000
 
 export const NODE_KINDS = ['spark', 'nudge', 'user'] as const
 export const SPARK_CATEGORIES = [
@@ -24,7 +20,7 @@ export const SPARK_CATEGORIES = [
 ] as const
 // How each spark category is shown (singular, as in a file path: ~/object).
 export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> = {
-  theme: 'theme',
+  theme: 'main-theme',
   words: 'word',
   headlines: 'headline',
   curiosities: 'curiosity',
@@ -59,6 +55,10 @@ export const boardNodeSchema = z.object({
   locked: z.boolean().optional(),
   // Nudges only
   nudgeType: z.enum(NUDGE_TYPES).optional(),
+  // Any node can be a favourite.
+  favourite: z.boolean().optional(),
+  // The idea you've decided to go with. At most one per board.
+  chosen: z.boolean().optional(),
 })
 
 export const linkSchema = z.object({
@@ -71,8 +71,6 @@ export const boardSchema = z
     version: z.literal(BOARD_VERSION),
     id,
     name: z.string().trim().min(1).max(MAX_BOARD_NAME),
-    mode: z.enum(['blank', 'theme']),
-    swapsLeft: z.number().int().min(0).max(SWAP_BUDGET),
     nodes: z.array(boardNodeSchema).max(MAX_NODES),
     links: z.array(linkSchema),
     createdAt: z.iso.datetime(),
@@ -99,18 +97,7 @@ export const boardSchema = z
         issue('Only nudges have a nudgeType', ['nodes', i, 'nudgeType'])
     })
 
-    const sparks = board.nodes.filter((n) => n.kind === 'spark')
-    if (sparks.length > SPARKS_PER_BOARD)
-      issue(`A board has at most ${SPARKS_PER_BOARD} sparks`, ['nodes'])
-
-    // Theme mode: exactly one locked theme spark. Blank mode: no theme spark.
-    const themeSparks = sparks.filter((n) => n.category === 'theme')
-    if (board.mode === 'theme') {
-      if (themeSparks.length !== 1 || !themeSparks[0].locked)
-        issue('Theme boards need exactly one locked theme spark', ['nodes'])
-    } else if (themeSparks.length > 0) {
-      issue('Blank boards have no theme spark', ['nodes'])
-    }
+    if (board.nodes.filter((n) => n.chosen).length > 1) issue('Only one idea can be the chosen one', ['nodes'])
 
     // Links are undirected: a→b and b→a count as the same link.
     const seen = new Set<string>()
@@ -133,9 +120,18 @@ export type NudgeType = (typeof NUDGE_TYPES)[number]
 
 export type ParseResult = { ok: true; board: Board } | { ok: false; errors: string[] }
 
+// Version 1 boards had a 3-swap budget and a blank/theme mode. Both went when the limits did.
+function migrate(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) return data
+  const old = data as Record<string, unknown>
+  if (old.version !== 1) return data
+  const { swapsLeft: _swaps, mode: _mode, ...rest } = old
+  return { ...rest, version: 2 }
+}
+
 // Use this for anything that didn't come from our own code: localStorage, imported files.
 export function parseBoard(data: unknown): ParseResult {
-  const result = boardSchema.safeParse(data)
+  const result = boardSchema.safeParse(migrate(data))
   if (result.success) return { ok: true, board: result.data }
   return {
     ok: false,

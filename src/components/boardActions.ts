@@ -12,10 +12,15 @@ export type BoardActions = {
   cancelEdit: () => void
   // Ask for a nudge on this idea (N key).
   nudge: (id: string) => void
-  // Swap a spark for a new one (S key or the swap button).
+  // Swap a note for another from the same row (S key or the swap button).
   swap: (id: string) => void
-  swapsLeft: number
+  // Favourite or unfavourite anything (F key or the heart button).
+  favourite: (id: string) => void
+  // Mark the idea you're going with.
+  pick: (id: string) => void
   deleteNode: (id: string) => void
+  // Delete several things at once (and remove selected links), as one change.
+  deleteMany: (ids: string[], links: [string, string][]) => void
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null)

@@ -6,11 +6,9 @@ import { chooseType, distanceFromSpark, fittingTypes, keywordOf, pickNudge } fro
 import { fillQuestion } from './questions'
 
 const board: Board = {
-  version: 1,
+  version: 2,
   id: 'b',
   name: 'b',
-  mode: 'blank',
-  swapsLeft: 3,
   nodes: [
     { id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
     { id: 'n2', text: '"My houseplants die while I\'m away"', kind: 'spark', category: 'problems', x: 0, y: 100 },

@@ -7,7 +7,7 @@ type Props = {
 
 type Example = { title: string; sparks: string[]; chain: string[]; idea: string }
 
-// Illustrative boards showing disks turning into an idea worth building.
+// Illustrative boards showing shrimp notes turning into an idea worth building.
 const EXAMPLES: Example[] = [
   {
     title: 'time',
@@ -44,8 +44,8 @@ export function Home({ hasBoards }: Props) {
       <header className="home__nav">
         <span className="home__logo">Floppy Thoughts</span>
         {hasBoards && (
-          <a className="home__link" href="#/board">
-            open my boards →
+          <a className="home__link" href="#/boards">
+            my boards →
           </a>
         )}
       </header>
@@ -57,8 +57,8 @@ export function Home({ hasBoards }: Props) {
               ideas worth <span>hacking on</span>
             </h1>
             <p className="home__lede">
-              A brainstorming board that hands you three random floppy disks, each with a starting thought, and helps you
-              push them into an idea you&apos;d actually want to build.
+              A brainstorming board for your own thoughts, with a vending machine full of shrimp when you want a push. Each
+              one cracks open like a fortune cookie to hand you a random starting thought, and the board helps you push them into an idea you&apos;d actually want to build.
             </p>
             <div className="home__ctas">
               <a className="home__cta" href="#/new">
@@ -71,7 +71,7 @@ export function Home({ hasBoards }: Props) {
               )}
             </div>
           </div>
-          <Placeholder label="video coming soon" alt="A short video showing a board going from three disks to an idea" tall />
+          <Placeholder label="video coming soon" alt="A short video showing a board going from a few shrimp notes to an idea" tall />
         </section>
 
         <section className="home__section">
@@ -81,8 +81,8 @@ export function Home({ hasBoards }: Props) {
             weekend, or just an itch to make something, your head tends to serve up the same few ideas everyone else has.
           </p>
           <p>
-            Floppy Thoughts gives your brain something to push against. Three random disks, a nudge when you&apos;re stuck,
-            and a board that makes you go deeper instead of wider. The idea is still yours. Floppy Thoughts just gets it moving.
+            Floppy Thoughts gives your brain something to push against: random notes from the vending machine, a nudge
+            when you&apos;re stuck, and a board for following one thought somewhere unexpected. The idea is still yours. Floppy Thoughts just gets it moving.
           </p>
         </section>
 
@@ -90,19 +90,19 @@ export function Home({ hasBoards }: Props) {
           <h2>how it works</h2>
           <ol className="home__steps">
             <li>
-              <Placeholder label="screenshot" alt="Three disks loaded onto a new board: a word, an object and a problem" />
-              <strong>1. get three random disks</strong>
-              <span>A word, an object, a problem, a curious fact. Swap up to three you don&apos;t like.</span>
+              <Placeholder label="screenshot" alt="The vending machine beside a new board, a shrimp handing over a note" />
+              <strong>1. get some shrimp notes</strong>
+              <span>A word, an object, a problem, a curious fact. Take as many or as few as you like, or bring your own theme.</span>
             </li>
             <li>
-              <Placeholder label="screenshot" alt="Ideas linked between disks, with a nudge beside one of them" />
+              <Placeholder label="screenshot" alt="Ideas linked between notes, with a nudge beside one of them" />
               <strong>2. connect and push them</strong>
               <span>Add your own ideas, link them, and press N for a nudge when you&apos;re stuck.</span>
             </li>
             <li>
-              <Placeholder label="screenshot" alt="A full board with one idea developed several steps from the disks" />
+              <Placeholder label="screenshot" alt="A board with one idea developed several steps from the notes, marked as a favourite" />
               <strong>3. land on an idea</strong>
-              <span>Twenty spaces on a board, so you go deep on one idea instead of jotting down fifty.</span>
+              <span>Heart the thoughts you like. Your favourites from every board are kept in one place.</span>
             </li>
           </ol>
         </section>

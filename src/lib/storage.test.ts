@@ -30,11 +30,9 @@ class MemoryStorage implements Storage {
 
 function board(id: string, updatedAt = '2026-10-27T10:00:00Z'): Board {
   return {
-    version: 1,
+    version: 2,
     id,
     name: `board ${id}`,
-    mode: 'blank',
-    swapsLeft: 3,
     nodes: [{ id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
     links: [],
     createdAt: '2026-10-27T09:00:00Z',
@@ -76,13 +74,13 @@ describe('LocalStorageAdapter', () => {
   })
 
   it('reports tampered data as invalid', async () => {
-    storage.setItem('hunchhack:board:bad', JSON.stringify({ ...board('bad'), swapsLeft: 999 }))
+    storage.setItem('hunchhack:board:bad', JSON.stringify({ ...board('bad'), version: 999 }))
     const result = await adapter.loadBoard('bad')
     expect(result.status).toBe('invalid')
   })
 
   it('refuses to save an invalid board', async () => {
-    await expect(adapter.saveBoard({ ...board('a'), swapsLeft: 999 })).rejects.toThrow()
+    await expect(adapter.saveBoard({ ...board('a'), name: '   ' })).rejects.toThrow()
     expect(storage.length).toBe(0)
   })
 
@@ -94,7 +92,8 @@ describe('LocalStorageAdapter', () => {
 
     const list = await adapter.listBoards()
     expect(list.map((b) => b.id)).toEqual(['new', 'old'])
-    expect(list[0]).toEqual({ id: 'new', name: 'board new', mode: 'blank', updatedAt: '2026-10-27T00:00:00Z' })
+    expect(list[0]).toMatchObject({ id: 'new', name: 'board new', updatedAt: '2026-10-27T00:00:00Z' })
+    expect(list[0].nodeCount).toBeGreaterThan(0)
     // Broken data is skipped, not deleted.
     expect(storage.getItem('hunchhack:board:broken')).toBe('oops')
   })
@@ -108,5 +107,18 @@ describe('LocalStorageAdapter', () => {
   it('throws a friendly error when storage is full', async () => {
     storage.quotaBytes = 10
     await expect(adapter.saveBoard(board('a'))).rejects.toBeInstanceOf(StorageFullError)
+  })
+})
+
+describe('favourites across boards', () => {
+  it('lists every favourite with the board it is on', async () => {
+    const storage = new MemoryStorage()
+    const adapter = new LocalStorageAdapter(storage)
+    const a = board('a', '2026-10-01T00:00:00Z')
+    const b = board('b', '2026-10-02T00:00:00Z')
+    a.nodes[0] = { ...a.nodes[0], favourite: true }
+    await adapter.saveBoard(a)
+    await adapter.saveBoard(b)
+    expect(await adapter.listFavourites()).toEqual([{ boardId: 'a', boardName: a.name, node: a.nodes[0] }])
   })
 })

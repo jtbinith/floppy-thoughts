@@ -3,11 +3,9 @@ import type { Board } from './board'
 import { freeSpotNear } from './placement'
 
 const empty: Board = {
-  version: 1,
+  version: 2,
   id: 'b',
   name: 'b',
-  mode: 'blank',
-  swapsLeft: 3,
   nodes: [],
   links: [],
   createdAt: '2026-10-28T10:00:00Z',

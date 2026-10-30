@@ -5,11 +5,9 @@ import { addLinkedIdea, moveNodes } from './boardOps'
 const now = new Date('2026-10-28T12:00:00Z')
 
 const base: Board = {
-  version: 1,
+  version: 2,
   id: 'b1',
   name: 'test',
-  mode: 'blank',
-  swapsLeft: 3,
   nodes: [{ id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
   links: [],
   createdAt: '2026-10-28T10:00:00Z',

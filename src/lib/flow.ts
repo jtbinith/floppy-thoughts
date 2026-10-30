@@ -5,15 +5,15 @@ import { moveNodes } from './boardOps'
 // Converts between our saved Board and the shapes React Flow draws.
 // Kept separate from the components so it can be unit tested.
 
-export type IdeaNodeData = Pick<BoardNode, 'text' | 'kind' | 'category' | 'locked' | 'nudgeType'>
+export type IdeaNodeData = Pick<BoardNode, 'text' | 'kind' | 'category' | 'locked' | 'nudgeType' | 'favourite' | 'chosen'>
 export type IdeaFlowNode = Node<IdeaNodeData, 'idea'>
 
 export function toFlowNodes(board: Board): IdeaFlowNode[] {
-  return board.nodes.map(({ id, x, y, text, kind, category, locked, nudgeType }) => ({
+  return board.nodes.map(({ id, x, y, text, kind, category, locked, nudgeType, favourite, chosen }) => ({
     id,
     type: 'idea',
     position: { x, y },
-    data: { text, kind, category, locked, nudgeType },
+    data: { text, kind, category, locked, nudgeType, favourite, chosen },
   }))
 }
 

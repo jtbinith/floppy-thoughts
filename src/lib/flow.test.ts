@@ -3,11 +3,9 @@ import type { Board } from './board'
 import { toFlowEdges, toFlowNodes, withPositions } from './flow'
 
 const board: Board = {
-  version: 1,
+  version: 2,
   id: 'b1',
   name: 'test',
-  mode: 'blank',
-  swapsLeft: 3,
   nodes: [
     { id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
     { id: 'n2', text: 'plants', kind: 'user', x: 100, y: 50 },

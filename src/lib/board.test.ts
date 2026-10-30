@@ -3,11 +3,9 @@ import { MAX_NODE_TEXT, parseBoard, type Board } from './board'
 
 function validBoard(): Board {
   return {
-    version: 1,
+    version: 2,
     id: 'b1',
     name: 'time',
-    mode: 'theme',
-    swapsLeft: 3,
     nodes: [
       { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
       { id: 'n2', text: 'cassette', kind: 'spark', category: 'words', x: 180, y: 40 },
@@ -33,12 +31,17 @@ describe('parseBoard', () => {
     expect(parseBoard(validBoard())).toEqual({ ok: true, board: validBoard() })
   })
 
-  it('accepts a blank board with no theme spark', () => {
+  it('accepts any number of notes and themes, and favourites on any node', () => {
     const board = validBoard()
-    board.mode = 'blank'
-    board.nodes = board.nodes.filter((n) => n.category !== 'theme')
-    board.links = [{ from: 'n2', to: 'n3' }]
+    for (let i = 5; i < 15; i++) board.nodes.push({ id: `n${i}`, text: `note ${i}`, kind: 'spark', category: i % 2 ? 'theme' : 'words', x: 0, y: 0 })
+    board.nodes[2].favourite = true
     expect(parseBoard(board).ok).toBe(true)
+  })
+
+  it('upgrades version 1 boards, dropping swaps and mode', () => {
+    const { version: _, ...rest } = validBoard()
+    const result = parseBoard({ ...rest, version: 1, mode: 'theme', swapsLeft: 2 })
+    expect(result).toEqual({ ok: true, board: validBoard() })
   })
 
   it('rejects things that are not boards', () => {
@@ -89,34 +92,6 @@ describe('parseBoard', () => {
     const dupe = validBoard()
     dupe.links.push({ from: 'n2', to: 'n1' })
     expect(errorsFor(dupe)).toContain('links.2: Duplicate link')
-  })
-
-  it('rejects more swaps than the budget, or negative swaps', () => {
-    expect(parseBoard({ ...validBoard(), swapsLeft: 4 }).ok).toBe(false)
-    expect(parseBoard({ ...validBoard(), swapsLeft: -1 }).ok).toBe(false)
-  })
-
-  it('rejects a theme board without exactly one locked theme spark', () => {
-    const unlocked = validBoard()
-    unlocked.nodes[0].locked = false
-    expect(errorsFor(unlocked)).toContain('nodes: Theme boards need exactly one locked theme spark')
-
-    const missing = validBoard()
-    missing.nodes[0].category = 'words'
-    expect(parseBoard(missing).ok).toBe(false)
-  })
-
-  it('rejects a theme spark on a blank board', () => {
-    expect(errorsFor({ ...validBoard(), mode: 'blank' })).toContain('nodes: Blank boards have no theme spark')
-  })
-
-  it('rejects more than 3 sparks', () => {
-    const board = validBoard()
-    board.nodes.push(
-      { id: 'n5', text: 'banana', kind: 'spark', category: 'words', x: 0, y: 0 },
-      { id: 'n6', text: 'mammoth', kind: 'spark', category: 'words', x: 0, y: 0 },
-    )
-    expect(errorsFor(board)).toContain('nodes: A board has at most 3 sparks')
   })
 
   it('rejects fields on the wrong kind of node', () => {

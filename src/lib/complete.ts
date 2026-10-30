@@ -1,20 +1,25 @@
 import type { Board } from './board'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
+import { VEND_ROWS } from './sparks/vend'
 
 // Tab completion for the terminal, like a shell: completes as far as it can,
 // and lists the options when there's more than one.
 
 export const COMMANDS = [
-  'add', 'edit', 'delete', 'rm', 'link', 'unlink', 'nudge', 'swap', 'list',
-  'new', 'boards', 'open', 'undo', 'redo', 'clear', 'help',
+  'add', 'edit', 'delete', 'rm', 'vend', 'theme', 'link', 'unlink', 'nudge', 'swap', 'fav', 'favs',
+  'favboard', 'pick', 'summary', 'list', 'rename', 'new', 'starting', 'boards', 'open', 'undo', 'redo',
+  'clear', 'help',
 ] as const
 
 // What each argument of a command expects.
-type Arg = 'node' | 'own' | 'spark' | 'nudgeType' | 'board' | 'text'
+type Arg = 'node' | 'own' | 'spark' | 'nudgeType' | 'row' | 'board' | 'text'
 const ARGS: Partial<Record<(typeof COMMANDS)[number], Arg[]>> = {
   edit: ['own', 'text'],
-  delete: ['own'],
-  rm: ['own'],
+  delete: ['node'],
+  rm: ['node'],
+  fav: ['node'],
+  pick: ['node'],
+  vend: ['row'],
   link: ['node', 'node'],
   unlink: ['node', 'node'],
   nudge: ['node', 'nudgeType'],
@@ -36,11 +41,13 @@ function candidates(arg: Arg, board: Board, boardCount: number): string[] {
     case 'node':
       return board.nodes.map((n) => n.id)
     case 'own':
-      return board.nodes.filter((n) => n.kind !== 'spark').map((n) => n.id)
+      return board.nodes.filter((n) => n.kind === 'user').map((n) => n.id)
     case 'spark':
       return board.nodes.filter((n) => n.kind === 'spark' && !n.locked).map((n) => n.id)
     case 'nudgeType':
       return [...NUDGE_CHOICES]
+    case 'row':
+      return [...VEND_ROWS]
     case 'board':
       return Array.from({ length: boardCount }, (_, i) => String(i + 1))
     case 'text':

@@ -3,11 +3,12 @@ import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { CATEGORY_LABEL, MAX_NODE_TEXT } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
+import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, swap, swapsLeft } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, swap, favourite, pick } = useBoardActions()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -29,11 +30,13 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     frame = requestAnimationFrame(tryFocus)
     return () => cancelAnimationFrame(frame)
   }, [editing])
-  const deletable = data.kind !== 'spark'
-  const label = data.kind === 'spark' ? (data.locked ? 'theme' : 'disk') : data.kind === 'nudge' ? data.nudgeType : 'idea'
+  const isTheme = data.category === 'theme'
+  const label = data.kind === 'spark' ? (isTheme ? 'main theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
-    <div className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}`}>
+    <div
+      className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${data.favourite ? ' idea--favourite' : ''}${data.chosen ? ' idea--chosen' : ''}`}
+    >
       {/* Drag from either dot to another node to link them. */}
       <Handle type="target" position={Position.Top} className="idea__handle" />
       <span className="idea__meta">
@@ -50,6 +53,12 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             )}
             <span className="idea__category">{CATEGORY_LABEL[data.category]}</span>
           </>
+        )}
+        {data.chosen && <span className="idea__chosen-mark">✓ the one</span>}
+        {data.favourite && (
+          <span className="idea__fav-mark" title="A favourite">
+            <HeartIcon size={9} />
+          </span>
         )}
         <span className="idea__id">{id}</span>
       </span>
@@ -83,15 +92,40 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
         <span className="idea__text">{data.text}</span>
       )}
 
-      {deletable && selected && !editing && (
+      {selected && !editing && (
         <button type="button" className="idea__delete nodrag" aria-label={`Delete ${id}`} onClick={() => deleteNode(id)}>
           ×
         </button>
       )}
-      {data.kind === 'spark' && !data.locked && selected && swapsLeft > 0 && (
-        <button type="button" className="idea__swap nodrag" aria-label={`Swap ${id}`} title="Swap this disk (S)" onClick={() => swap(id)}>
-          ⇄ swap
-        </button>
+      {selected && !editing && (
+        <span className="idea__tools">
+          <button
+            type="button"
+            className={`idea__tool idea__fav nodrag${data.favourite ? ' idea__fav--on' : ''}`}
+            aria-label={data.favourite ? `Unfavourite ${id}` : `Favourite ${id}`}
+            aria-pressed={!!data.favourite}
+            title="Favourite (F)"
+            onClick={() => favourite(id)}
+          >
+            <HeartIcon filled={!!data.favourite} />
+          </button>
+          {!isTheme && data.kind !== 'nudge' && (
+            <button
+              type="button"
+              className={`idea__tool nodrag${data.chosen ? ' idea__chosen--on' : ''}`}
+              aria-pressed={!!data.chosen}
+              title="The idea you're going with: see how you got there"
+              onClick={() => pick(id)}
+            >
+              {data.chosen ? '✓ the one' : 'this is the one'}
+            </button>
+          )}
+          {data.kind === 'spark' && !isTheme && (
+            <button type="button" className="idea__tool nodrag" aria-label={`Swap ${id}`} title="Swap for another note from the same row (S)" onClick={() => swap(id)}>
+              ⇄ swap
+            </button>
+          )}
+        </span>
       )}
       <Handle type="source" position={Position.Bottom} className="idea__handle" />
     </div>

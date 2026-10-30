@@ -17,7 +17,6 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import type { Board } from '../lib/board'
-import { deleteUserNode, removeLink } from '../lib/boardOps'
 import { toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { CentreEdge } from './CentreEdge'
@@ -35,7 +34,7 @@ type Props = {
 
 export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, swap } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, swap, favourite, deleteMany } = useBoardActions()
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
@@ -98,17 +97,20 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
     if (editingId && document.activeElement instanceof HTMLElement) document.activeElement.blur()
   }
 
-  // Keyboard: Enter edits the selected idea; Delete/Backspace removes selected ideas and links.
+  // Keyboard: Enter edits the selected idea; Delete/Backspace removes whatever is selected.
   function handleKeyDown(event: KeyboardEvent) {
     if (editingId || (event.target as Element).closest('input, textarea')) return
     const allSelected = getNodes().filter((n) => n.selected)
-    const selected = allSelected.filter((n) => n.data.kind === 'user')
-    const deletable = allSelected.filter((n) => n.data.kind !== 'spark')
+    // What you wrote yourself can be edited: your ideas and the main theme.
+    const selected = allSelected.filter((n) => n.data.kind === 'user' || n.data.category === 'theme')
     const plainKey = !event.ctrlKey && !event.metaKey && !event.altKey
     if ((event.key === 's' || event.key === 'S') && plainKey && allSelected.length === 1 && allSelected[0].data.kind === 'spark') {
       event.preventDefault()
       swap(allSelected[0].id)
-    } else if ((event.key === 'n' || event.key === 'N') && !event.ctrlKey && !event.metaKey && !event.altKey && allSelected.length === 1) {
+    } else if ((event.key === 'f' || event.key === 'F') && plainKey && allSelected.length === 1) {
+      event.preventDefault()
+      favourite(allSelected[0].id)
+    } else if ((event.key === 'n' || event.key === 'N') && plainKey && allSelected.length === 1) {
       event.preventDefault()
       nudge(allSelected[0].id)
     } else if (event.key === 'Tab' && !event.shiftKey && allSelected.length === 1) {
@@ -119,17 +121,11 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       event.preventDefault()
       startEdit(selected[0].id)
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
-      // Apply every removal to one board, so deleting several things at once saves them all.
-      let next = board
-      for (const e of getEdges().filter((e) => e.selected)) {
-        const r = removeLink(next, e.source, e.target)
-        if (r.ok) next = r.board
-      }
-      for (const n of deletable) {
-        const r = deleteUserNode(next, n.id)
-        if (r.ok) next = r.board
-      }
-      if (next !== board) onChange(next)
+      // Everything selected goes as one change (asking first if it would break a chain).
+      const links = getEdges()
+        .filter((e) => e.selected)
+        .map((e): [string, string] => [e.source, e.target])
+      if (allSelected.length || links.length) deleteMany(allSelected.map((n) => n.id), links)
     }
   }
 
@@ -147,7 +143,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       connectionMode={ConnectionMode.Loose}
       connectionRadius={40}
       onNodeDragStop={handleDragStop}
-      onNodeDoubleClick={(_e, node) => node.data.kind === 'user' && startEdit(node.id)}
+      onNodeDoubleClick={(_e, node) => (node.data.kind === 'user' || node.data.category === 'theme') && startEdit(node.id)}
       onDoubleClick={handleDoubleClick}
       onPaneClick={finishEditing}
       onNodeClick={(_e, node) => node.id !== editingId && finishEditing()}
@@ -158,14 +154,14 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       fitViewOptions={{ padding: 0.4, maxZoom: 1.2 }}
       minZoom={0.3}
       maxZoom={2}
-      // We handle deleting ourselves, so sparks and nudges can't be removed.
+      // We handle deleting ourselves, so one Delete removes everything selected as one undo step.
       deleteKeyCode={null}
     >
       <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2a2f3a" />
       <Controls showInteractive={false} />
       <Panel position="top-left">
         <span className="board__hint">
-          double-click to add · select an idea: Tab = linked idea, N = nudge, S = swap a disk · drag a dot to link · Ctrl+Z undo
+          double-click or type below to add · V = vending machine · select something: Tab = linked idea, N = nudge, F = favourite · drag a dot to link · Ctrl+Z undo
         </span>
       </Panel>
     </ReactFlow>

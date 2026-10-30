@@ -1,6 +1,10 @@
-import { boardSchema, parseBoard, type Board } from './board'
+import { boardSchema, parseBoard, type Board, type BoardNode } from './board'
 
-export type BoardSummary = Pick<Board, 'id' | 'name' | 'mode' | 'updatedAt'>
+// What a board list shows: enough to recognise a board without opening it.
+export type BoardSummary = Pick<Board, 'id' | 'name' | 'updatedAt'> & { nodeCount: number; favouriteCount: number }
+
+// A favourite, with the board it lives on.
+export type Favourite = { boardId: string; boardName: string; node: BoardNode }
 
 export type LoadResult =
   | { status: 'ok'; board: Board }
@@ -13,6 +17,8 @@ export interface StorageAdapter {
   saveBoard(board: Board): Promise<void>
   loadBoard(id: string): Promise<LoadResult>
   listBoards(): Promise<BoardSummary[]>
+  // Every favourite across all boards, newest board first.
+  listFavourites(): Promise<Favourite[]>
   deleteBoard(id: string): Promise<void>
 }
 
@@ -53,15 +59,29 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async listBoards(): Promise<BoardSummary[]> {
-    const summaries: BoardSummary[] = []
+    return this.allBoards().map(({ id, name, updatedAt, nodes }) => ({
+      id,
+      name,
+      updatedAt,
+      nodeCount: nodes.length,
+      favouriteCount: nodes.filter((n) => n.favourite).length,
+    }))
+  }
+
+  async listFavourites(): Promise<Favourite[]> {
+    return this.allBoards().flatMap((board) =>
+      board.nodes.filter((n) => n.favourite).map((node) => ({ boardId: board.id, boardName: board.name, node })),
+    )
+  }
+
+  private allBoards(): Board[] {
+    const boards: Board[] = []
     for (const key of this.boardKeys()) {
       const result = this.parse(this.storage.getItem(key) ?? '')
       // Skip broken entries but leave them in storage, so nothing is lost silently.
-      if (result.status !== 'ok') continue
-      const { id, name, mode, updatedAt } = result.board
-      summaries.push({ id, name, mode, updatedAt })
+      if (result.status === 'ok') boards.push(result.board)
     }
-    return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    return boards.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
 
   async deleteBoard(id: string): Promise<void> {

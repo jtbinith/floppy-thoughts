@@ -1,7 +1,11 @@
-import { BOARD_CAPACITY, MAX_NODE_TEXT, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
+import { MAX_NODE_TEXT, MAX_NODES, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
 
 // Pure board edits. Each returns a new board; nothing is mutated.
-// Only your own ideas can be edited. Ideas and nudges can be deleted; sparks are swapped instead (Batch 2).
+// Only what you wrote can be edited: your ideas and the main theme. Anything can be deleted or favourited.
+// In the UI sparks are called notes: the shrimp notes from the vending machine.
+
+const sameLink = (a: string, b: string) => (l: { from: string; to: string }) =>
+  (l.from === a && l.to === b) || (l.from === b && l.to === a)
 
 export type OpResult = { ok: true; board: Board; node?: BoardNode } | { ok: false; error: string }
 
@@ -27,14 +31,34 @@ export function findNode(board: Board, id: string): BoardNode | undefined {
   return board.nodes.find((n) => n.id === id)
 }
 
-export const BOARD_FULL_MESSAGE = `The board is full (${BOARD_CAPACITY} ideas). Time to pick a direction, or delete something to make room.`
+export const isTheme = (node: BoardNode) => node.kind === 'spark' && node.category === 'theme'
 
-export function spaceLeft(board: Board): number {
-  return Math.max(0, BOARD_CAPACITY - board.nodes.length)
+// The board's main theme, if it has one (e.g. a hackathon theme like "Time").
+export function mainTheme(board: Board): BoardNode | undefined {
+  return board.nodes.find(isTheme)
 }
 
+// The nodes linked to `id`.
+export function neighbours(board: Board, id: string): string[] {
+  return board.links.filter((l) => l.from === id || l.to === id).map((l) => (l.from === id ? l.to : l.from))
+}
+
+// If `id` sits in the middle of a chain (linked to exactly two things), those two.
+// Deleting it could keep the chain connected by linking them to each other.
+export function chainAround(board: Board, id: string): [string, string] | null {
+  const around = neighbours(board, id)
+  if (around.length !== 2) return null
+  if (board.links.some(sameLink(around[0], around[1]))) return null
+  return [around[0], around[1]]
+}
+
+// Only reached by runaway boards: it keeps browser storage from filling up.
+export const BOARD_FULL_MESSAGE = `This board has ${MAX_NODES} things on it, the most one board can hold. Start a new board to keep going.`
+
+const isFull = (board: Board) => board.nodes.length >= MAX_NODES
+
 export function addUserNode(board: Board, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
-  if (spaceLeft(board) === 0) return { ok: false, error: BOARD_FULL_MESSAGE }
+  if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
   const clean = cleanText(text)
   if (!clean) return { ok: false, error: 'An idea needs some text' }
   const node: BoardNode = { id: nextNodeId(board), text: clean, kind: 'user', x: Math.round(at.x), y: Math.round(at.y) }
@@ -48,7 +72,8 @@ export function addUserNode(board: Board, text: string, at: { x: number; y: numb
 export function editUserNode(board: Board, id: string, text: string, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind !== 'user') return { ok: false, error: `${id} is a ${node.kind === 'spark' ? 'disk' : node.kind}: only your own ideas can be edited` }
+  if (node.kind !== 'user' && !isTheme(node))
+    return { ok: false, error: `${id} is a ${node.kind === 'spark' ? 'note' : node.kind}: only your own ideas can be edited` }
   const clean = cleanText(text)
   if (!clean) return { ok: false, error: 'An idea needs some text' }
   const edited = { ...node, text: clean }
@@ -62,7 +87,6 @@ export function editUserNode(board: Board, id: string, text: string, now = new D
 export function deleteUserNode(board: Board, id: string, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind === 'spark') return { ok: false, error: `${id} is a disk: disks can be swapped, not deleted` }
   return {
     ok: true,
     board: touch(
@@ -78,8 +102,23 @@ export function deleteUserNode(board: Board, id: string, now = new Date()): OpRe
   }
 }
 
-const sameLink = (a: string, b: string) => (l: { from: string; to: string }) =>
-  (l.from === a && l.to === b) || (l.from === b && l.to === a)
+// Deletes several nodes as one change. With `reconnect`, any deleted node that sat in the middle
+// of a chain has its two neighbours linked, so the trail isn't broken.
+export function deleteNodes(board: Board, ids: string[], options: { reconnect?: boolean; now?: Date } = {}): Board {
+  const gone = new Set(ids.filter((id) => findNode(board, id)))
+  if (gone.size === 0) return board
+  const bridges = options.reconnect ? [...gone].map((id) => chainAround(board, id)).filter((c): c is [string, string] => !!c) : []
+  let next: Board = {
+    ...board,
+    nodes: board.nodes.filter((n) => !gone.has(n.id)),
+    links: board.links.filter((l) => !gone.has(l.from) && !gone.has(l.to)),
+  }
+  for (const [a, b] of bridges) {
+    if (gone.has(a) || gone.has(b) || next.links.some(sameLink(a, b))) continue
+    next = { ...next, links: [...next.links, { from: a, to: b }] }
+  }
+  return touch(next, options.now ?? new Date())
+}
 
 // Any two nodes can be linked, whatever their kind. Links are undirected.
 export function addLink(board: Board, a: string, b: string, now = new Date()): OpResult {
@@ -130,7 +169,7 @@ export function addNudge(
   now = new Date(),
 ): OpResult {
   if (!findNode(board, targetId)) return { ok: false, error: `No node called ${targetId}` }
-  if (spaceLeft(board) === 0) return { ok: false, error: BOARD_FULL_MESSAGE }
+  if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
   const text = cleanText(nudge.text)
   if (!text) return { ok: false, error: 'A nudge needs some text' }
   const node: BoardNode = { id: nextNodeId(board), text, kind: 'nudge', nudgeType: nudge.type, x: Math.round(at.x), y: Math.round(at.y) }
@@ -139,19 +178,65 @@ export function addNudge(
   return linked.ok ? { ...linked, node } : linked
 }
 
-export const NO_SWAPS_MESSAGE = 'No swaps left on this board. Work with what you have: that is where the interesting ideas are.'
+// Adds a note from the vending machine, or a theme you typed (themes are locked: they can't be swapped).
+export function addNote(board: Board, note: { text: string; category: SparkCategory }, at: { x: number; y: number }, now = new Date()): OpResult {
+  if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
+  const text = cleanText(note.text)
+  if (!text) return { ok: false, error: 'A note needs some text' }
+  const node: BoardNode = {
+    id: nextNodeId(board),
+    text,
+    kind: 'spark',
+    category: note.category,
+    ...(note.category === 'theme' ? { locked: true } : {}),
+    x: Math.round(at.x),
+    y: Math.round(at.y),
+  }
+  return { ok: true, board: touch({ ...board, nodes: [...board.nodes, node] }, now), node }
+}
 
-// Replaces a spark with a new one, using up a swap. Its links stay, so your thinking around it isn't lost.
+// Replaces a note with a new one. Its links stay, so your thinking around it isn't lost.
 export function swapSpark(board: Board, id: string, spark: { text: string; category: SparkCategory }, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind !== 'spark') return { ok: false, error: `${id} isn't a disk: only disks can be swapped` }
-  if (node.locked) return { ok: false, error: `${id} is the theme: it stays locked` }
-  if (board.swapsLeft <= 0) return { ok: false, error: NO_SWAPS_MESSAGE }
+  if (node.kind !== 'spark') return { ok: false, error: `${id} isn't a note: only notes can be swapped` }
+  if (node.locked) return { ok: false, error: `${id} is a theme: it stays as you wrote it` }
   const swapped: BoardNode = { ...node, text: spark.text, category: spark.category }
   return {
     ok: true,
-    board: touch({ ...board, swapsLeft: board.swapsLeft - 1, nodes: board.nodes.map((n) => (n.id === id ? swapped : n)) }, now),
+    board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? swapped : n)) }, now),
     node: swapped,
   }
+}
+
+// Marks or unmarks anything on the board as a favourite.
+export function toggleFavourite(board: Board, id: string, now = new Date()): OpResult {
+  const node = findNode(board, id)
+  if (!node) return { ok: false, error: `No node called ${id}` }
+  const { favourite, ...rest } = node
+  const toggled: BoardNode = favourite ? rest : { ...rest, favourite: true }
+  return {
+    ok: true,
+    board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? toggled : n)) }, now),
+    node: toggled,
+  }
+}
+
+// Sets the board's main theme: changes the text if there is one, otherwise adds it at `at`.
+export function setMainTheme(board: Board, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
+  const current = mainTheme(board)
+  if (!current) return addNote(board, { text, category: 'theme' }, at, now)
+  return editUserNode(board, current.id, text, now)
+}
+
+// Marks the idea you're going with (or unmarks it). Only one per board.
+export function chooseIdea(board: Board, id: string, now = new Date()): OpResult {
+  const node = findNode(board, id)
+  if (!node) return { ok: false, error: `No node called ${id}` }
+  const choosing = !node.chosen
+  const nodes = board.nodes.map((n) => {
+    const { chosen: _, ...rest } = n
+    return choosing && n.id === id ? { ...rest, chosen: true } : rest
+  })
+  return { ok: true, board: touch({ ...board, nodes }, now), node: nodes.find((n) => n.id === id) }
 }

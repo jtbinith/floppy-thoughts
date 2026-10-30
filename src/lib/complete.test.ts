@@ -3,11 +3,9 @@ import type { Board } from './board'
 import { complete } from './complete'
 
 const board: Board = {
-  version: 1,
+  version: 2,
   id: 'b',
   name: 'b',
-  mode: 'theme',
-  swapsLeft: 3,
   nodes: [
     { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
     { id: 'n2', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
@@ -36,7 +34,7 @@ describe('tab completion', () => {
   })
 
   it('only offers ids that make sense for the command', () => {
-    expect(complete('delete ', board).options).toEqual(['n3', 'n12'])
+    expect(complete('edit ', board).options).toEqual(['n3', 'n12'])
     expect(complete('swap ', board)).toEqual({ value: 'swap n2 ', options: [] })
   })
 

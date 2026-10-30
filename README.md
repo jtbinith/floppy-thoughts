@@ -2,7 +2,7 @@
 
 > Ideas worth hacking on.
 
-A calm, playful brainstorming board that helps you come up with your own fun, unique coding project ideas. Floppy Thoughts gives you floppy disks of starting thoughts, plus nudges (words and questions, never answers) and leaves the thinking to you.
+A calm, playful brainstorming board that helps you come up with your own fun, unique coding project ideas. Floppy Thoughts gives you starting thoughts from a vending machine full of shrimp (each opens like a fortune cookie to hand you a note), plus nudges (words and questions, never answers) and leaves the thinking to you.
 
 ## Run it
 

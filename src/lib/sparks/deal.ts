@@ -1,7 +1,7 @@
 import type { SparkCategory } from '../board'
 import { CONTENT_CATEGORIES, SPARKS, type ContentCategory } from './content'
 
-// Deals sparks that clash: each one from a different category, ideally ones you haven't seen.
+// Deals notes that clash: each from a different category where possible, ideally ones you haven't seen.
 
 export type Spark = { text: string; category: SparkCategory }
 
@@ -23,7 +23,8 @@ export function sparkFrom(category: ContentCategory, seen: ReadonlySet<string>, 
   return { text: pick(fresh.length ? fresh : pool, random), category }
 }
 
-// `count` sparks, each from a different category and not in `avoid` categories.
+// `count` notes, not in `avoid` categories. Categories only repeat once every one has been used,
+// and the same text never comes up twice.
 export function dealSparks(
   count: number,
   options: { seen?: ReadonlySet<string>; avoid?: readonly SparkCategory[]; random?: () => number } = {},
@@ -31,14 +32,19 @@ export function dealSparks(
   const random = options.random ?? Math.random
   const seen = options.seen ?? new Set<string>()
   const avoid = new Set(options.avoid ?? [])
-  const categories = shuffle(
-    CONTENT_CATEGORIES.filter((c) => !avoid.has(c)),
-    random,
-  ).slice(0, count)
-  return categories.map((c) => sparkFrom(c, seen, random))
+  const allowed = CONTENT_CATEGORIES.filter((c) => !avoid.has(c))
+  if (allowed.length === 0) return []
+  const dealt: Spark[] = []
+  let round: ContentCategory[] = []
+  while (dealt.length < count) {
+    if (round.length === 0) round = shuffle(allowed, random)
+    const category = round.shift()!
+    dealt.push(sparkFrom(category, seen, random, new Set(dealt.map((s) => s.text))))
+  }
+  return dealt
 }
 
-// A replacement for one disk: from the same category (you chose it), never the same text.
+// A replacement for one note: from the same category (you chose it), never the same text.
 // A theme can't be swapped; anything else without a content category gets a random one.
 export function swapFor(
   current: Spark,
