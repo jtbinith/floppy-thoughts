@@ -33,7 +33,7 @@ npm run dev
 
 ## Built with
 
-React, TypeScript and Vite. Board logic is pure functions over immutable data; commands come from a single registry (see the [architecture](docs/mvp/architecture.md)).
+React, TypeScript and Vite. How it fits together is in the [architecture](docs/mvp/architecture.md).
 
 ## Docs
 
@@ -44,7 +44,7 @@ React, TypeScript and Vite. Board logic is pure functions over immutable data; c
 
 ## Credits
 
-- [React Flow](https://reactflow.dev) (MIT) draws the board: boxes, links, panning and zooming. Thank you to the xyflow team. React Flow's attribution link is shown on the board, as they ask for projects without a Pro subscription.
+- [React Flow](https://reactflow.dev) (MIT) by xyflow draws the board: boxes, links, panning and zooming.
 - [d3-force](https://d3js.org/d3-force) (ISC) lays the board out when you tidy it.
 - [Zod](https://zod.dev) (MIT) checks saved boards.
 - [Datamuse](https://www.datamuse.com/api/) provides words for word nudges.
