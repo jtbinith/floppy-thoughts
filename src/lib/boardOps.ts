@@ -1,4 +1,4 @@
-import { MAX_NODE_TEXT, MAX_NODES, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
+import { MAX_NODE_TEXT, MAX_NODES, shown, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
 
 // Pure board edits. Each returns a new board; nothing is mutated.
 // Only what you wrote can be edited: your ideas and the main theme. Anything can be deleted or favourited.
@@ -71,9 +71,9 @@ export function addUserNode(board: Board, text: string, at: { x: number; y: numb
 
 export function editUserNode(board: Board, id: string, text: string, now = new Date()): OpResult {
   const node = findNode(board, id)
-  if (!node) return { ok: false, error: `No node called ${id}` }
+  if (!node) return { ok: false, error: `Nothing numbered ${shown(id)}` }
   if (node.kind !== 'user' && !isTheme(node))
-    return { ok: false, error: `${id} is a ${node.kind === 'spark' ? 'note' : node.kind}: only your own ideas can be edited` }
+    return { ok: false, error: `${shown(id)} is a ${node.kind === 'spark' ? 'note' : node.kind}: only your own ideas can be edited` }
   const clean = cleanText(text)
   if (!clean) return { ok: false, error: 'An idea needs some text' }
   const edited = { ...node, text: clean }
@@ -86,7 +86,7 @@ export function editUserNode(board: Board, id: string, text: string, now = new D
 
 export function deleteUserNode(board: Board, id: string, now = new Date()): OpResult {
   const node = findNode(board, id)
-  if (!node) return { ok: false, error: `No node called ${id}` }
+  if (!node) return { ok: false, error: `Nothing numbered ${shown(id)}` }
   return {
     ok: true,
     board: touch(
@@ -123,13 +123,13 @@ export function deleteNodes(board: Board, ids: string[], options: { reconnect?: 
 // Any two nodes can be linked, whatever their kind. Links are undirected.
 export function addLink(board: Board, a: string, b: string, now = new Date()): OpResult {
   if (a === b) return { ok: false, error: 'A node cannot link to itself' }
-  for (const id of [a, b]) if (!findNode(board, id)) return { ok: false, error: `No node called ${id}` }
-  if (board.links.some(sameLink(a, b))) return { ok: false, error: `${a} and ${b} are already linked` }
+  for (const id of [a, b]) if (!findNode(board, id)) return { ok: false, error: `Nothing numbered ${shown(id)}` }
+  if (board.links.some(sameLink(a, b))) return { ok: false, error: `${shown(a)} and ${shown(b)} are already linked` }
   return { ok: true, board: touch({ ...board, links: [...board.links, { from: a, to: b }] }, now) }
 }
 
 export function removeLink(board: Board, a: string, b: string, now = new Date()): OpResult {
-  if (!board.links.some(sameLink(a, b))) return { ok: false, error: `${a} and ${b} aren't linked` }
+  if (!board.links.some(sameLink(a, b))) return { ok: false, error: `${shown(a)} and ${shown(b)} aren't linked` }
   return {
     ok: true,
     board: touch({ ...board, links: board.links.filter((l) => !sameLink(a, b)(l)) }, now),
@@ -153,7 +153,7 @@ export function moveNodes(board: Board, positions: { id: string; x: number; y: n
 
 // Adds a new idea already linked to an existing node: the fast way to build a chain.
 export function addLinkedIdea(board: Board, fromId: string, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
-  if (!findNode(board, fromId)) return { ok: false, error: `No node called ${fromId}` }
+  if (!findNode(board, fromId)) return { ok: false, error: `Nothing numbered ${shown(fromId)}` }
   const added = addUserNode(board, text, at, now)
   if (!added.ok || !added.node) return added
   const linked = addLink(added.board, fromId, added.node.id, now)
@@ -168,7 +168,7 @@ export function addNudge(
   at: { x: number; y: number },
   now = new Date(),
 ): OpResult {
-  if (!findNode(board, targetId)) return { ok: false, error: `No node called ${targetId}` }
+  if (!findNode(board, targetId)) return { ok: false, error: `Nothing numbered ${shown(targetId)}` }
   if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
   const text = cleanText(nudge.text)
   if (!text) return { ok: false, error: 'A nudge needs some text' }
@@ -198,7 +198,7 @@ export function addNote(board: Board, note: { text: string; category: SparkCateg
 // Marks or unmarks anything on the board as a favourite.
 export function toggleFavourite(board: Board, id: string, now = new Date()): OpResult {
   const node = findNode(board, id)
-  if (!node) return { ok: false, error: `No node called ${id}` }
+  if (!node) return { ok: false, error: `Nothing numbered ${shown(id)}` }
   const { favourite, ...rest } = node
   const toggled: BoardNode = favourite ? rest : { ...rest, favourite: true }
   return {
@@ -218,7 +218,7 @@ export function setMainTheme(board: Board, text: string, at: { x: number; y: num
 // Marks the idea you're going with (or unmarks it). Only one per board.
 export function chooseIdea(board: Board, id: string, now = new Date()): OpResult {
   const node = findNode(board, id)
-  if (!node) return { ok: false, error: `No node called ${id}` }
+  if (!node) return { ok: false, error: `Nothing numbered ${shown(id)}` }
   const choosing = !node.chosen
   const nodes = board.nodes.map((n) => {
     const { chosen: _, ...rest } = n

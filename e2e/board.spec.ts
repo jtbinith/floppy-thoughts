@@ -20,9 +20,17 @@ test.describe('adding ideas', () => {
     await expect(box(page, 'n2')).toHaveClass(/selected/)
   })
 
-  test('commands still work, and look-alike thoughts are added as ideas', async ({ page }) => {
-    await type(page, 'help my nan with video calls')
-    await expect(box(page, 'n1')).toContainText('help my nan with video calls')
+  test('anything without a / is a thought, even if it starts like a command', async ({ page }) => {
+    await type(page, 'link music and maths')
+    await type(page, 'tidy my desk')
+    await expect(boxes(page)).toHaveCount(2)
+    await expect(box(page, 'n1')).toContainText('link music and maths')
+  })
+
+  test('a mistyped command explains itself instead of becoming an idea', async ({ page }) => {
+    await type(page, '/link n1')
+    await expect(page.locator('.terminal__line').last()).toContainText('usage: /link')
+    await expect(boxes(page)).toHaveCount(0)
   })
 })
 
@@ -50,8 +58,8 @@ test.describe('deleting', () => {
   })
 
   test('deleting from the middle of a chain asks, and can keep it connected', async ({ page }) => {
-    for (const line of ['a', 'b', 'c', 'link n1 n2', 'link n2 n3']) await type(page, line)
-    await type(page, 'delete n2')
+    for (const line of ['a', 'b', 'c', '/link n1 n2', '/link n2 n3']) await type(page, line)
+    await type(page, '/del n2')
     await expect(page.getByRole('dialog', { name: 'Keep the chain connected?' })).toBeVisible()
     await page.getByRole('button', { name: 'keep it connected' }).click()
     await expect(boxes(page)).toHaveCount(2)
@@ -60,23 +68,23 @@ test.describe('deleting', () => {
 
   test('undo brings a deleted idea back', async ({ page }) => {
     await type(page, 'keep me')
-    await type(page, 'delete n1')
+    await type(page, '/delete n1')
     await expect(boxes(page)).toHaveCount(0)
-    await type(page, 'undo')
+    await type(page, '/undo')
     await expect(boxes(page)).toHaveCount(1)
   })
 })
 
 test.describe('links and layout', () => {
   test('link one idea to several at once', async ({ page }) => {
-    for (const line of ['a', 'b', 'c', 'link n1 n2 n3']) await type(page, line)
+    for (const line of ['a', 'b', 'c', '/link n1 n2 n3']) await type(page, line)
     await expect(links(page)).toHaveCount(2)
   })
 
   test('dragging from a dot onto another box links them', async ({ page }) => {
     await type(page, 'from here')
     await type(page, 'to here')
-    await type(page, 'fit')
+    await type(page, '/fit')
     const from = box(page, 'n1')
     await from.hover()
     const dot = await from.locator('.react-flow__handle.source').boundingBox()
@@ -91,7 +99,7 @@ test.describe('links and layout', () => {
   })
 
   test('the fit button and the fit command frame the board the same way', async ({ page }) => {
-    for (const line of ['a', 'b', 'c', 'd', 'link n1 n2 n3 n4']) await type(page, line)
+    for (const line of ['a', 'b', 'c', 'd', '/link n1 n2 n3 n4']) await type(page, line)
     const viewport = () => page.locator('.react-flow__viewport').getAttribute('style')
     await page.mouse.move(600, 400)
     await page.mouse.wheel(0, 900)
@@ -99,18 +107,18 @@ test.describe('links and layout', () => {
     await page.waitForTimeout(500)
     const fromButton = await viewport()
     await page.mouse.wheel(0, 900)
-    await type(page, 'fit')
+    await type(page, '/fit')
     await page.waitForTimeout(500)
     expect(await viewport()).toBe(fromButton)
   })
 
   test('tidy moves things, and one undo puts them back', async ({ page }) => {
-    for (const line of ['a', 'b', 'c', 'd', 'link n1 n2', 'link n3 n4']) await type(page, line)
+    for (const line of ['a', 'b', 'c', 'd', '/link n1 n2', '/link n3 n4']) await type(page, line)
     const before = await boxes(page).evaluateAll((ns) => ns.map((n) => (n as HTMLElement).style.transform))
-    await type(page, 'tidy')
+    await type(page, '/tidy')
     await expect.poll(() => boxes(page).evaluateAll((ns) => ns.map((n) => (n as HTMLElement).style.transform))).not.toEqual(before)
     await page.waitForTimeout(600)
-    await type(page, 'undo')
+    await type(page, '/undo')
     await expect.poll(() => boxes(page).evaluateAll((ns) => ns.map((n) => (n as HTMLElement).style.transform))).toEqual(before)
   })
 })
@@ -139,13 +147,28 @@ test.describe('the vending machine', () => {
   })
 
   test('putting a note back leaves the board alone', async ({ page }) => {
-    await type(page, 'vend')
+    await type(page, '/vend')
     await page.getByRole('button', { name: 'put it back' }).click()
     await expect(boxes(page)).toHaveCount(0)
   })
 })
 
 test.describe('terminal', () => {
+  test('/ and Ctrl+` both jump back to the terminal from the board', async ({ page }) => {
+    await type(page, 'an idea')
+    const terminal = page.getByLabel('Terminal command')
+    await terminal.press('Escape')
+    await expect(terminal).not.toBeFocused()
+    await page.keyboard.press('/')
+    await expect(terminal).toBeFocused()
+    // "/" starts a command, so it's already typed.
+    await expect(terminal).toHaveValue('/')
+    await terminal.fill('')
+    await terminal.press('Escape')
+    await page.keyboard.press('Control+Backquote')
+    await expect(terminal).toBeFocused()
+  })
+
   test('Ctrl+C cancels the line', async ({ page }) => {
     const terminal = page.getByLabel('Terminal command')
     await terminal.fill('half a thought')
@@ -158,16 +181,16 @@ test.describe('terminal', () => {
 
 test.describe('commands tab', () => {
   test('help opens the commands beside the board, and clicking one puts it in the terminal', async ({ page }) => {
-    await type(page, 'help')
+    await type(page, '/help')
     const tab = page.getByRole('complementary', { name: 'Commands' })
     await expect(tab).toBeVisible()
     await tab.locator('.commands__entry', { hasText: 'unlink' }).click()
-    await expect(page.getByLabel('Terminal command')).toHaveValue('unlink ')
+    await expect(page.getByLabel('Terminal command')).toHaveValue('/unlink ')
     await expect(page.getByLabel('Terminal command')).toBeFocused()
   })
 
   test('the drawer tabs stay full height above a long tab', async ({ page }) => {
-    await type(page, 'help')
+    await type(page, '/help')
     const tabs = page.locator('.panel__tabs')
     expect((await tabs.boundingBox())!.height).toBeGreaterThan(25)
   })
@@ -184,8 +207,8 @@ test.describe('nudges', () => {
 
 test.describe('switching boards', () => {
   test('recent boards are in the Board menu, one click away', async ({ page }) => {
-    await type(page, 'rename first board')
-    await type(page, 'new')
+    await type(page, '/rename first board')
+    await type(page, '/new')
     await page.getByRole('button', { name: 'skip' }).click()
     await page.getByRole('menuitem', { name: 'Board' }).click()
     await page.getByRole('menuitem', { name: 'first board' }).click()
@@ -199,7 +222,46 @@ test.describe('switching boards', () => {
   })
 
   test('the drawer has no boards tab', async ({ page }) => {
-    await type(page, 'help')
+    await type(page, '/help')
     await expect(page.getByRole('tab', { name: 'boards' })).toHaveCount(0)
+  })
+})
+
+test.describe('ids as numbers', () => {
+  test('you can type plain numbers', async ({ page }) => {
+    for (const line of ['a', 'b', 'c', '/link 1 2 3']) await type(page, line)
+    await expect(links(page)).toHaveCount(2)
+  })
+
+  test('Tab finds a thought by its words and fills in its number', async ({ page }) => {
+    await type(page, 'clocks that grow')
+    await type(page, 'a bag that remembers')
+    const terminal = page.getByLabel('Terminal command')
+    await terminal.fill('/link 1 bag')
+    await terminal.press('Tab')
+    await expect(terminal).toHaveValue('/link 1 2 ')
+  })
+
+  test('numbers only show on boxes while you type a command', async ({ page }) => {
+    await type(page, 'an idea')
+    const id = box(page, 'n1').locator('.idea__id')
+    await expect(id).toBeHidden()
+    await page.getByLabel('Terminal command').fill('/fav ')
+    await expect(id).toBeVisible()
+    await expect(id).toHaveText('1')
+    await page.getByLabel('Terminal command').fill('just a thought')
+    await expect(id).toBeHidden()
+  })
+})
+
+test.describe('unlinking', () => {
+  test('/unlink with one number clears its links, and undo brings them back', async ({ page }) => {
+    for (const line of ['hub', 'a', 'b', '/link 1 2 3']) await type(page, line)
+    await expect(links(page)).toHaveCount(2)
+    await type(page, '/unlink 1')
+    await expect(links(page)).toHaveCount(0)
+    await expect(boxes(page)).toHaveCount(3)
+    await type(page, '/undo')
+    await expect(links(page)).toHaveCount(2)
   })
 })

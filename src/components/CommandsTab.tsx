@@ -8,7 +8,7 @@ const GROUPS = helpGroups()
 
 // What to put in the terminal for an entry: the command itself, up to its first argument.
 const commandOf = (usage: string) => {
-  const first = usage.split(' / ')[0]
+  const first = usage.split(', ')[0]
   const name = first.split(/\s+[<[]/)[0].trim()
   return first.includes('<') || first.includes('[') ? `${name} ` : name
 }
@@ -16,7 +16,7 @@ const commandOf = (usage: string) => {
 export function CommandsTab({ onUse }: { onUse: (command: string) => void }) {
   return (
     <div className="commands">
-      <p className="commands__intro">Just type a thought and press Enter to add it. Everything else:</p>
+      <p className="commands__intro">Type a thought and press Enter to add it. Commands start with /:</p>
       {GROUPS.map((g) => (
         <section key={g.heading} className="commands__group">
           <h3>{g.heading}</h3>

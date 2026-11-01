@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { CATEGORY_LABEL, MAX_NODE_TEXT } from '../lib/board'
+import { CATEGORY_LABEL, MAX_NODE_TEXT, shown } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { HeartIcon } from './HeartIcon'
@@ -60,7 +60,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             <HeartIcon size={9} />
           </span>
         )}
-        <span className="idea__id">{id}</span>
+        <span className="idea__id">{shown(id)}</span>
       </span>
 
       {editing ? (

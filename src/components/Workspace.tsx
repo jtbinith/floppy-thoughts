@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { MAX_BOARD_NAME, type Board } from '../lib/board'
+import { MAX_BOARD_NAME, shown, type Board } from '../lib/board'
 import { addLink, addLinkedIdea, addNote, addNudge, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, mainTheme, moveNodes, setMainTheme, toggleFavourite, touch } from '../lib/boardOps'
-import { looksLikeCommand, runCommand, type CommandResult } from '../lib/commands'
+import { commandProblem, looksLikeCommand, parseCommand, runCommand, type CommandResult } from '../lib/commands'
 import { favouritesBoard } from '../lib/favouritesBoard'
 import { FIT_VIEW } from '../lib/flow'
 import { complete } from '../lib/complete'
@@ -77,6 +77,8 @@ export function Workspace(props: Props) {
   } | null>(null)
   const [showSummary, setShowSummary] = useState(false)
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false)
+  // Box numbers only show while you're typing a command, so the board stays calm otherwise.
+  const [showIds, setShowIds] = useState(false)
   // "set a theme" from the empty board opens the same question again.
   const [themeAgain, setThemeAgain] = useState(false)
   const onThemeAskedAgain = () => setThemeAgain(true)
@@ -237,9 +239,9 @@ export function Workspace(props: Props) {
     const nudge = await pickNudge(latest.current, targetId, { type })
     const current = latest.current
     const target = findNode(current, targetId)
-    if (!target) return { text: `No node called ${targetId}`, error: true }
+    if (!target) return { text: `Nothing numbered ${shown(targetId)}`, error: true }
     if (!nudge) {
-      const message = `${targetId} is a nudge already. Nudge the idea or note it's about instead.`
+      const message = `${shown(targetId)} is a nudge already. Nudge the idea or note it's about instead.`
       setNotice(message)
       return { text: message, error: true }
     }
@@ -251,7 +253,7 @@ export function Workspace(props: Props) {
     }
     commit(current, result.board)
     reveal(at)
-    return { text: `${result.node?.id} (${nudge.type}): ${nudge.text}` }
+    return { text: `${shown(result.node?.id)} (${nudge.type}): ${nudge.text}` }
   }
 
   function nudgeSelected() {
@@ -285,7 +287,7 @@ export function Workspace(props: Props) {
     if (note.category !== 'theme') rememberSeen([note.text])
     commit(current, result.board)
     reveal(at)
-    return { text: `${result.node?.id}: ${note.text}` }
+    return { text: `${shown(result.node?.id)}: ${note.text}` }
   }
 
   // `vend` in the terminal brings up the same popup as the machine.
@@ -331,7 +333,7 @@ export function Workspace(props: Props) {
 
   function makeFavouritesBoard(): string {
     const made = favouritesBoard(board)
-    if (!made) return 'no favourites on this board yet. try: fav <id>'
+    if (!made) return 'no favourites on this board yet. try /fav <id>'
     onOpenNew(made)
     return `made ${made.name}`
   }
@@ -399,68 +401,69 @@ export function Workspace(props: Props) {
   function handleCommand(input: string): CommandResult {
     // Not a command: it's a thought, so add it as an idea.
     if (!looksLikeCommand(input)) return runAndCommit(input)
-    const word = input.trim().toLowerCase().replace(/\s+/g, ' ')
-    const [name, id] = word.split(' ')
-    if (name === 'delete' || name === 'rm') {
-      if (!findNode(board, id)) return { output: [`No node called ${id}`], error: true }
+    const problem = commandProblem(input)
+    if (problem) return { output: [problem], error: true }
+    const { name, args } = parseCommand(input)
+    const [id] = args
+    if (name === 'del' || name === 'delete' || name === 'rm') {
+      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
       const text = findNode(board, id)?.text
-      return requestDelete([id]) ? { output: [`deleted ${id}: ${text}`] } : { output: [`${id} is in the middle of a chain: answer on the board`] }
+      return requestDelete([id]) ? { output: [`deleted ${shown(id)}: ${text}`] } : { output: [`${shown(id)} is in the middle of a chain: answer on the board`] }
     }
-    if (word === 'help' || word === '?') {
+    if (name === 'help' || name === '?') {
       setPanel('commands')
       return { output: ['the commands are open on the right'] }
     }
-    if (word === 'favboard') return { output: [makeFavouritesBoard()] }
-    if (word === 'tidy') return { output: [tidy()] }
-    if (word === 'fit') {
+    if (name === 'favboard') return { output: [makeFavouritesBoard()] }
+    if (name === 'tidy') return { output: [tidy()] }
+    if (name === 'fit') {
       void fitView(FIT_VIEW)
       return { output: [board.nodes.length ? 'fitted the board to the screen' : 'the board is empty'] }
     }
-    if (word === 'summary') {
-      if (!board.nodes.some((n) => n.chosen)) return { output: ['no idea picked yet. try: pick <id>'], error: true }
+    if (name === 'summary') {
+      if (!board.nodes.some((n) => n.chosen)) return { output: ['no idea picked yet. try /pick <id>'], error: true }
       setShowSummary(true)
       return { output: ['showing your summary'] }
     }
     if (name === 'pick') {
-      if (!findNode(board, id)) return { output: [`No node called ${id}`], error: true }
+      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
       pick(id)
-      return { output: [findNode(latest.current, id)?.chosen ? `${id} is the one` : `${id} is no longer the one`] }
+      return { output: [findNode(latest.current, id)?.chosen ? `${shown(id)} is the one` : `${shown(id)} is no longer the one`] }
     }
-    if (word === 'undo') return { output: [stepBack()] }
-    if (word === 'redo') return { output: [stepForward()] }
-    if (word === 'new') {
+    if (name === 'undo') return { output: [stepBack()] }
+    if (name === 'redo') return { output: [stepForward()] }
+    if (name === 'new') {
       onNewBoard()
       return { output: ['opening a new board…'] }
     }
-    if (word === 'boards') {
-      return { output: boards.map((b, i) => `  ${String(i + 1).padStart(2)}  ${b.name}${b.id === board.id ? '  ← open' : ''}`).concat('open one with: open <number>') }
+    if (name === 'boards') {
+      return { output: boards.map((b, i) => `  ${String(i + 1).padStart(2)}  ${b.name}${b.id === board.id ? '  ← open' : ''}`).concat('open one with: /open <number>') }
     }
-    if (word.startsWith('open')) {
-      const n = Number(word.split(/\s+/)[1])
+    if (name === 'open') {
+      const n = Number(id)
       const target = boards[n - 1]
-      if (!target) return { output: ['usage: open <number> (see: boards)'], error: true }
+      if (!target) return { output: ['no board with that number. see: /boards'], error: true }
       onOpenBoard(target.id)
       return { output: [`opening ${target.name}…`] }
     }
-    if (word === 'favs') {
+    if (name === 'favs') {
       const mine = board.nodes.filter((n) => n.favourite)
-      if (mine.length === 0) return { output: ['no favourites on this board yet. try: fav <id>'] }
-      return { output: mine.map((n) => `  ♥ ${n.id.padEnd(4)} ${n.text}`) }
+      if (mine.length === 0) return { output: ['no favourites on this board yet. try /fav <id>'] }
+      return { output: mine.map((n) => `  ♥ ${shown(n.id).padEnd(3)} ${n.text}`) }
     }
-    if (word.startsWith('vend')) {
-      const [, row, extra] = word.split(/\s+/)
-      if (extra || (row && !VEND_ROWS.includes(row as VendRow))) return { output: [`usage: vend [row]. rows: ${VEND_ROWS.join(' ')}`], error: true }
+    if (name === 'vend') {
+      const [row] = args.map((a) => a.toLowerCase())
+      if (row && !VEND_ROWS.includes(row as VendRow)) return { output: [`there's no ${row} row. rows: ${VEND_ROWS.join(' ')}`], error: true }
       const r = vendFromTerminal((row as VendRow | undefined) ?? 'surprise')
       return { output: [r.text], error: r.error }
     }
-    if (word.startsWith('nudge')) {
-      const [, id, type, extra] = word.split(/\s+/)
-      if (!id || extra) return { output: ['usage: nudge <id> [type]'], error: true }
-      if (!findNode(board, id)) return { output: [`No node called ${id}`], error: true }
+    if (name === 'nudge') {
+      const type = args[1]?.toLowerCase()
+      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
       if (type && !NUDGE_CHOICES.includes(type as NudgeChoice))
         return { output: [`unknown nudge type "${type}". try: ${NUDGE_CHOICES.join(' ')}`], error: true }
       void requestNudge(id, type as NudgeChoice | undefined).then((r) => terminalRef.current?.print([r.text], r.error))
-      return { output: [`nudging ${id}…`] }
+      return { output: [`nudging ${shown(id)}…`] }
     }
     return runAndCommit(input)
   }
@@ -564,6 +567,7 @@ export function Workspace(props: Props) {
   return (
     <BoardActionsContext.Provider value={actions}>
       <div className="workspace">
+        {/* In the order you work: add a thought, get a note, look back at favourites, then help. */}
         <nav className="device__rail" aria-label="Device buttons">
           <button type="button" className="device__button" aria-label="Add an idea" title="Add an idea" onClick={() => addAndEdit(visibleCentre())}>
             +
@@ -587,9 +591,6 @@ export function Workspace(props: Props) {
             onClick={() => setPanel(panel === 'favourites' ? null : 'favourites')}
           >
             <HeartIcon size={14} />
-          </button>
-          <button type="button" className="device__button" aria-label="Open the terminal" title="Terminal (Ctrl+`)" onClick={() => terminalRef.current?.focus()}>
-            &gt;_
           </button>
           <button
             type="button"
@@ -645,7 +646,7 @@ export function Workspace(props: Props) {
             </div>
           </header>
           <div className="screen__main">
-            <div className="workspace__board" ref={boardRef}>
+            <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>
               <BoardCanvas
                 board={board}
                 onChange={(next) => commit(board, next)}
@@ -737,6 +738,7 @@ export function Workspace(props: Props) {
             onRun={handleCommand}
             onComplete={(input) => complete(input, board, boards.length)}
             onEscape={focusBoard}
+            onCommandMode={setShowIds}
           />
         </div>
       </div>

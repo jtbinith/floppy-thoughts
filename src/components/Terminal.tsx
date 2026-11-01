@@ -20,10 +20,12 @@ type Props = {
   onComplete?: (input: string) => Completion
   // Esc: hand the keyboard back to the board.
   onEscape?: () => void
+  // Whether you're typing a command (the line starts with "/"), so the board can show ids.
+  onCommandMode?: (on: boolean) => void
   ref?: Ref<TerminalHandle>
 }
 
-const WELCOME: Line[] = [{ text: 'type help to see commands', kind: 'output' }]
+const WELCOME: Line[] = [{ text: 'type a thought and press Enter to add it · commands start with / (try /help)', kind: 'output' }]
 
 // Terminal height is a personal preference, so it's remembered separately from boards.
 const HEIGHT_KEY = 'hunchhack:ui:terminal-height'
@@ -37,7 +39,7 @@ function savedHeight(): number {
   return Number.isFinite(saved) && saved > 0 ? clampHeight(saved) : DEFAULT_HEIGHT
 }
 
-export function Terminal({ onRun, onComplete, onEscape, ref }: Props) {
+export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Props) {
   const [lines, setLines] = useState<Line[]>(WELCOME)
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -72,11 +74,22 @@ export function Terminal({ onRun, onComplete, onEscape, ref }: Props) {
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [lines])
 
-  // Ctrl+` focuses the terminal, like VS Code.
+  const commandMode = value.trimStart().startsWith('/')
+  useEffect(() => {
+    onCommandMode?.(commandMode)
+  }, [commandMode, onCommandMode])
+
+  // Ctrl+` focuses the terminal, like VS Code. It checks the physical key, because on some
+  // keyboard layouts that key doesn't report "`" while Ctrl is held. "/" from the board (anywhere
+  // that isn't a text box) jumps here and starts a command, since commands start with "/".
   useEffect(() => {
     function onKey(e: globalThis.KeyboardEvent) {
-      if (e.ctrlKey && e.key === '`') {
+      const typing = e.target instanceof Element && !!e.target.closest('input, textarea')
+      const backtick = e.ctrlKey && (e.code === 'Backquote' || e.key === '`')
+      const slash = e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target instanceof Element && e.target.closest('.panel, .popup'))
+      if (backtick || slash) {
         e.preventDefault()
+        if (slash) setValue((v) => (v ? v : '/'))
         inputRef.current?.focus()
       }
     }
@@ -176,9 +189,9 @@ export function Terminal({ onRun, onComplete, onEscape, ref }: Props) {
             if (e.key === 'Tab' && !e.shiftKey && onComplete) {
               // Stay in the terminal and complete, like a shell.
               e.preventDefault()
-              const { value: completed, options } = onComplete(value)
+              const { value: completed, options, list } = onComplete(value)
               setValue(completed)
-              if (options.length) print([`  ${options.join('   ')}`])
+              if (options.length) print(list ? options : [`  ${options.join('   ')}`])
             } else if (e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'c') {
               // Ctrl+C cancels the line, like a shell. With text selected it copies as usual.
               const input = e.currentTarget

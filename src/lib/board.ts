@@ -111,6 +111,11 @@ export const boardSchema = z
     })
   })
 
+// Ids are saved as n1, n2… but shown and typed as plain numbers: 1, 2…
+export const shown = (id?: string) => (id ?? '').replace(/^n(\d+)$/, '$1')
+// "2" or "n2" both mean n2.
+export const toId = (typed: string) => (/^n?\d+$/i.test(typed) ? `n${typed.replace(/^n/i, '')}` : typed)
+
 export type Board = z.infer<typeof boardSchema>
 export type BoardNode = z.infer<typeof boardNodeSchema>
 export type Link = z.infer<typeof linkSchema>

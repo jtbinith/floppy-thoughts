@@ -2026,3 +2026,14 @@ textarea {
 .commands__tip {
   padding: 0.15rem 0.45rem;
 }
+
+/* Box numbers (ids) only show while you're typing a command, to keep the board calm. */
+.idea__id {
+  visibility: hidden;
+}
+
+.workspace__board--ids .idea__id {
+  visibility: visible;
+  font-weight: 700;
+  opacity: 1;
+}

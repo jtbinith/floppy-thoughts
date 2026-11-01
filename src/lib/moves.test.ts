@@ -43,6 +43,6 @@ describe('addLinkedIdea', () => {
   })
 
   it('fails cleanly for an unknown node', () => {
-    expect(addLinkedIdea(base, 'n9', 'x', { x: 0, y: 0 })).toEqual({ ok: false, error: 'No node called n9' })
+    expect(addLinkedIdea(base, 'n9', 'x', { x: 0, y: 0 })).toEqual({ ok: false, error: 'Nothing numbered 9' })
   })
 })

@@ -55,9 +55,9 @@ describe('board operations', () => {
     expect(expectOk(editUserNode(board(), 'n2', 'mixtapes', now)).node?.text).toBe('mixtapes')
     expect(editUserNode(board(), 'n1', 'hacked')).toEqual({
       ok: false,
-      error: 'n1 is a note: only your own ideas can be edited',
+      error: '1 is a note: only your own ideas can be edited',
     })
-    expect(editUserNode(board(), 'n99', 'x')).toEqual({ ok: false, error: 'No node called n99' })
+    expect(editUserNode(board(), 'n99', 'x')).toEqual({ ok: false, error: 'Nothing numbered 99' })
   })
 
   it('deletes anything, with its links', () => {
@@ -82,7 +82,7 @@ describe('board operations', () => {
     const r = expectOk(addLink(added, 'n1', 'n8', now))
     expect(r.board.links.at(-1)).toEqual({ from: 'n1', to: 'n8' })
     // The sample board already links n2 and n7, so either order is a duplicate.
-    expect(addLink(board(), 'n7', 'n2')).toEqual({ ok: false, error: 'n7 and n2 are already linked' })
+    expect(addLink(board(), 'n7', 'n2')).toEqual({ ok: false, error: '7 and 2 are already linked' })
     expect(addLink(board(), 'n1', 'n1').ok).toBe(false)
   })
 
