@@ -18,37 +18,76 @@ export type CommandResult = {
   error?: boolean
 }
 
+// Grouped so you can find what you're after, under uppercase headings like a CLI's help.
+// Ids like n4 are shown on each box.
 export const HELP = [
-  'just type a thought and press Enter to add it as an idea. commands:',
+  'just type a thought and press Enter to add it as an idea.',
+  '',
+  'IDEAS',
   '  edit <id> <text>    change one of your ideas, or the theme',
-  '  delete <id>         delete anything (and its links)',
-  '  vend [row]          get a shrimp note from the machine (or press V)',
-  '                      rows: words objects problems curiosities nature surprise',
+  '  delete <id>         delete anything, with its links',
+  '  add <text>          add a thought that starts with a command word, like "add delete spam"',
+  '',
+  'NOTES AND NUDGES',
   '  theme <text>        set the main theme, e.g. theme Time',
-  '  nudge <id> [type]   get a word or question to push that idea (or press N)',
+  '  vend [row]          get a shrimp note (rows: words objects problems curiosities nature surprise)',
+  '  nudge <id> [type]   a word or question to push an idea further',
   '                      types: related opposite described perspective scale senses push wildcard',
-  '  swap <id>           swap a note for another from the same row (or press S)',
-  '  fav <id>            favourite something, or unfavourite it (or press F)',
-  '  favs                list your favourites from every board',
+  '',
+  'LINKS',
+  '  link <id> <id>…     link two things, or one to several: link n4 n2 n5',
+  '  unlink <id> <id>…   remove links the same way',
+  '  list                everything on this board, and what it\'s linked to',
+  '',
+  'FAVOURITES AND YOUR IDEA',
+  '  fav <id>            favourite something, or unfavourite it',
+  '  favs                this board\'s favourites',
   '  favboard            copy this board\'s favourites onto a new board',
   '  pick <id>           mark the idea you\'re going with, and see how you got there',
-  '  summary             show that again',
-  '  link <id> <id>      link two nodes',
-  '  unlink <id> <id>    remove a link',
-  '  list                show everything on the board',
-  '  rename <name>       rename this board',
+  '  summary             show that summary again',
+  '',
+  'VIEW',
+  '  fit                 fit the whole board on screen',
+  '  tidy                lay the board out neatly (undo puts it back)',
+  '',
+  'BOARDS',
   '  new                 start a new board',
-  '  starting <n>        how many notes new boards start with (0 or more)',
-  '  boards / open <n>   list your boards, open one',
-  '  add <text>          add an idea that starts with a command word',
-  '  undo / redo         step back or forward (also Ctrl+Z / Ctrl+Shift+Z)',
+  '  boards              list your boards',
+  '  open <n>            open one of them',
+  '  rename <name>       rename this board',
+  '',
+  'TERMINAL',
+  '  undo / redo         step back or forward (Ctrl+Z / Ctrl+Shift+Z)',
   '  clear               clear the terminal',
-  '  help                show this',
-  'ids like n4 are shown on each node. tips: Tab completes commands and ids, ↑ ↓ for previous commands',
-  'on the board: select something, then Tab = linked idea, N = nudge, F = favourite',
+  '  help                the commands list, beside the board',
+  '',
+  'TIPS',
+  '  Tab completes commands and ids · ↑ ↓ for previous lines · Ctrl+C cancels the line',
+  '  Esc jumps to the board, on what you just added · Ctrl+` comes back here',
+  '  on the board: Tab = linked idea · N = nudge · F = favourite · V = machine',
 ]
 
 const fail = (message: string): CommandResult => ({ output: [message], error: true })
+
+// The help as groups of entries, for the commands tab: each entry is what you type and what it does.
+export type HelpEntry = { usage: string; does: string }
+export function helpGroups(): { heading: string; entries: HelpEntry[] }[] {
+  const groups: { heading: string; entries: HelpEntry[] }[] = []
+  for (const line of HELP) {
+    if (isHelpHeading(line)) groups.push({ heading: line, entries: [] })
+    else if (line.startsWith('  ') && groups.length) {
+      const entries = groups.at(-1)!.entries
+      const [usage, does] = line.trim().split(/\s{2,}/)
+      // Deeply indented lines carry on the entry above (like the list of nudge types).
+      if (/^ {6,}/.test(line) && entries.length) entries.at(-1)!.does += ` · ${line.trim()}`
+      else entries.push(does === undefined ? { usage: '', does: usage } : { usage, does })
+    }
+  }
+  return groups
+}
+
+// Group headings in the help are the uppercase lines, like "LINKS".
+export const isHelpHeading = (line: string) => /^[A-Z][A-Z ]+$/.test(line)
 
 const ID = /^n\d+$/
 const NUMBER = /^\d+$/
@@ -65,6 +104,8 @@ const SHAPES: Record<string, (args: string[]) => boolean> = {
   favs: (a) => a.length === 0,
   favboard: (a) => a.length === 0,
   summary: (a) => a.length === 0,
+  tidy: (a) => a.length === 0,
+  fit: (a) => a.length === 0,
   add: (a) => a.length > 0,
   theme: (a) => a.length > 0,
   rename: (a) => a.length > 0,
@@ -72,14 +113,12 @@ const SHAPES: Record<string, (args: string[]) => boolean> = {
   delete: (a) => a.length === 1 && ID.test(a[0]),
   rm: (a) => a.length === 1 && ID.test(a[0]),
   fav: (a) => a.length === 1 && ID.test(a[0]),
-  swap: (a) => a.length === 1 && ID.test(a[0]),
   pick: (a) => a.length === 1 && ID.test(a[0]),
   nudge: (a) => (a.length === 1 || a.length === 2) && ID.test(a[0]),
-  link: (a) => a.length === 2 && ID.test(a[0]) && ID.test(a[1]),
-  unlink: (a) => a.length === 2 && ID.test(a[0]) && ID.test(a[1]),
+  link: (a) => a.length >= 2 && a.every((x) => ID.test(x)),
+  unlink: (a) => a.length >= 2 && a.every((x) => ID.test(x)),
   vend: (a) => a.length <= 1,
   open: (a) => a.length === 1 && NUMBER.test(a[0]),
-  starting: (a) => a.length === 1 && NUMBER.test(a[0]),
 }
 
 // Is this line a command? "help" is; "help my nan with video calls" is a thought.
@@ -115,8 +154,8 @@ export function runCommand(board: Board, input: string, ctx: CommandContext): Co
               const links = board.links
                 .filter((l) => l.from === n.id || l.to === n.id)
                 .map((l) => (l.from === n.id ? l.to : l.from))
-              const kind = n.kind === 'spark' ? (n.locked ? 'theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
-              return `  ${n.id.padEnd(4)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  ↔ ${links.join(' ')}` : ''}`
+              const kind = n.kind === 'spark' ? (n.category === 'theme' ? 'main theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
+              return `  ${n.id.padEnd(4)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.join(', ')})` : ''}`
             })
           : ['  the board is empty. type a thought, or try: vend'],
       }
@@ -158,13 +197,19 @@ export function runCommand(board: Board, input: string, ctx: CommandContext): Co
       return { board: touch({ ...board, name }, ctx.now ?? new Date()), output: [`renamed this board to ${name}`] }
     }
 
+    // `link n4 n2 n5` links n4 to each of the others, as one change.
     case 'link':
     case 'unlink': {
-      const [a, b] = rest
-      if (!a || !b || rest.length > 2) return fail(`usage: ${name.toLowerCase()} <id> <id>`)
-      return name.toLowerCase() === 'link'
-        ? fromOp(addLink(board, a, b, ctx.now), () => `linked ${a} ↔ ${b}`)
-        : fromOp(removeLink(board, a, b, ctx.now), () => `unlinked ${a} ↔ ${b}`)
+      const [a, ...others] = rest
+      const linking = name.toLowerCase() === 'link'
+      let next = board
+      for (const b of others) {
+        const r = linking ? addLink(next, a, b, ctx.now) : removeLink(next, a, b, ctx.now)
+        if (!r.ok) return fail(r.error)
+        next = r.board
+      }
+      const list = others.length === 1 ? others[0] : `${others.slice(0, -1).join(', ')} and ${others.at(-1)}`
+      return { board: next, output: [`${linking ? 'linked' : 'unlinked'} ${a} ${linking ? 'to' : 'from'} ${list}`] }
     }
 
     default:

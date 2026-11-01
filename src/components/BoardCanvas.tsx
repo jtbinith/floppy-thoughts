@@ -2,8 +2,8 @@ import { useState, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
-  Panel,
   ConnectionMode,
   ReactFlow,
   applyEdgeChanges,
@@ -17,10 +17,11 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import type { Board } from '../lib/board'
-import { toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
+import { FIT_VIEW, toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { CentreEdge } from './CentreEdge'
 import { IdeaNode } from './IdeaNode'
+import { LinkPreview } from './LinkPreview'
 
 const nodeTypes = { idea: IdeaNode }
 const edgeTypes = { centre: CentreEdge }
@@ -29,24 +30,31 @@ type Props = {
   board: Board
   onChange: (board: Board) => void
   onAddAt: (position: { x: number; y: number }) => void
+  // Lay the board out tidily (the button under the zoom controls).
+  onTidy: () => void
   onLink: (a: string, b: string) => void
 }
 
-export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
+export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, swap, favourite, deleteMany } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, favourite, deleteMany } = useBoardActions()
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
   const [edges, setEdges] = useState<Edge[]>(() => toFlowEdges(board))
 
   // When the board changes (add, edit, delete, terminal), rebuild nodes but keep what's selected.
+  // If one new thing appeared (a typed idea, a note, the theme), select just that, so Tab, N and F
+  // work on it straight away. A new nudge leaves its idea selected, so N again gives another.
   // Done during render rather than in an effect, as React recommends for derived state.
   const [syncedBoard, setSyncedBoard] = useState(board)
   if (board !== syncedBoard) {
+    const before = new Set(syncedBoard.nodes.map((n) => n.id))
+    const added = board.nodes.filter((n) => !before.has(n.id))
+    const fresh = added.length === 1 && added[0].kind !== 'nudge' ? added[0].id : null
     setSyncedBoard(board)
     setNodes((current) => {
-      const selected = new Set(current.filter((n) => n.selected).map((n) => n.id))
+      const selected = fresh ? new Set([fresh]) : new Set(current.filter((n) => n.selected).map((n) => n.id))
       return toFlowNodes(board).map((n) => ({ ...n, selected: selected.has(n.id) }))
     })
     setEdges((current) => {
@@ -104,10 +112,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
     // What you wrote yourself can be edited: your ideas and the main theme.
     const selected = allSelected.filter((n) => n.data.kind === 'user' || n.data.category === 'theme')
     const plainKey = !event.ctrlKey && !event.metaKey && !event.altKey
-    if ((event.key === 's' || event.key === 'S') && plainKey && allSelected.length === 1 && allSelected[0].data.kind === 'spark') {
-      event.preventDefault()
-      swap(allSelected[0].id)
-    } else if ((event.key === 'f' || event.key === 'F') && plainKey && allSelected.length === 1) {
+    if ((event.key === 'f' || event.key === 'F') && plainKey && allSelected.length === 1) {
       event.preventDefault()
       favourite(allSelected[0].id)
     } else if ((event.key === 'n' || event.key === 'N') && plainKey && allSelected.length === 1) {
@@ -141,6 +146,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       onConnectEnd={handleConnectEnd}
       // Any handle can start or end a link; links are undirected.
       connectionMode={ConnectionMode.Loose}
+      connectionLineComponent={LinkPreview}
       connectionRadius={40}
       onNodeDragStop={handleDragStop}
       onNodeDoubleClick={(_e, node) => (node.data.kind === 'user' || node.data.category === 'theme') && startEdit(node.id)}
@@ -151,19 +157,30 @@ export function BoardCanvas({ board, onChange, onAddAt, onLink }: Props) {
       zoomOnDoubleClick={false}
       colorMode="dark"
       fitView
-      fitViewOptions={{ padding: 0.4, maxZoom: 1.2 }}
+      fitViewOptions={{ padding: FIT_VIEW.padding, maxZoom: FIT_VIEW.maxZoom }}
       minZoom={0.3}
       maxZoom={2}
       // We handle deleting ourselves, so one Delete removes everything selected as one undo step.
       deleteKeyCode={null}
     >
       <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2a2f3a" />
-      <Controls showInteractive={false} />
-      <Panel position="top-left">
-        <span className="board__hint">
-          double-click or type below to add · V = vending machine · select something: Tab = linked idea, N = nudge, F = favourite · drag a dot to link · Ctrl+Z undo
-        </span>
-      </Panel>
+      <Controls showInteractive={false} fitViewOptions={FIT_VIEW}>
+        <ControlButton onClick={onTidy} title="Tidy the board (undo puts it back)" aria-label="Tidy the board">
+          <TidyIcon />
+        </ControlButton>
+      </Controls>
     </ReactFlow>
+  )
+}
+
+// Four boxes falling into a neat arrangement.
+function TidyIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
+      <rect x="1" y="1" width="6" height="4" rx="1" />
+      <rect x="9" y="1" width="6" height="4" rx="1" />
+      <rect x="1" y="9" width="6" height="4" rx="1" />
+      <rect x="9" y="9" width="6" height="4" rx="1" />
+    </svg>
   )
 }

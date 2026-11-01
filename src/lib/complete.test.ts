@@ -35,7 +35,6 @@ describe('tab completion', () => {
 
   it('only offers ids that make sense for the command', () => {
     expect(complete('edit ', board).options).toEqual(['n3', 'n12'])
-    expect(complete('swap ', board)).toEqual({ value: 'swap n2 ', options: [] })
   })
 
   it('completes nudge types after the id', () => {

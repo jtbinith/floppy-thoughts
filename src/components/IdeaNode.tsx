@@ -8,7 +8,7 @@ import { LockIcon } from './LockIcon'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, swap, favourite, pick } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, pick, nudge } = useBoardActions()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -120,9 +120,9 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
               {data.chosen ? '✓ the one' : 'this is the one'}
             </button>
           )}
-          {data.kind === 'spark' && !isTheme && (
-            <button type="button" className="idea__tool nodrag" aria-label={`Swap ${id}`} title="Swap for another note from the same row (S)" onClick={() => swap(id)}>
-              ⇄ swap
+          {data.kind !== 'nudge' && (
+            <button type="button" className="idea__tool nodrag" aria-label={`Nudge ${id}`} title="A word or question to push this further (N)" onClick={() => nudge(id)}>
+              nudge
             </button>
           )}
         </span>

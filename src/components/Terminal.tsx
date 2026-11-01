@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react'
-import type { CommandResult } from '../lib/commands'
+import { isHelpHeading, type CommandResult } from '../lib/commands'
 import type { Completion } from '../lib/complete'
 
 type Line = { text: string; kind: 'input' | 'output' | 'error' }
@@ -10,12 +10,16 @@ export type TerminalHandle = {
   focus: () => void
   // For results that arrive later, e.g. a nudge from Datamuse.
   print: (lines: string[], error?: boolean) => void
+  // Put text in the input, ready to finish off (from the commands tab).
+  fill: (text: string) => void
 }
 
 type Props = {
   onRun: (input: string) => CommandResult
   // Tab completion: the completed input, plus choices to show when it's ambiguous.
   onComplete?: (input: string) => Completion
+  // Esc: hand the keyboard back to the board.
+  onEscape?: () => void
   ref?: Ref<TerminalHandle>
 }
 
@@ -33,7 +37,7 @@ function savedHeight(): number {
   return Number.isFinite(saved) && saved > 0 ? clampHeight(saved) : DEFAULT_HEIGHT
 }
 
-export function Terminal({ onRun, onComplete, ref }: Props) {
+export function Terminal({ onRun, onComplete, onEscape, ref }: Props) {
   const [lines, setLines] = useState<Line[]>(WELCOME)
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -101,7 +105,16 @@ export function Terminal({ onRun, onComplete, ref }: Props) {
     setLines((current) => [...current, ...text.map((t): Line => ({ text: t, kind: error ? 'error' : 'output' }))])
   }
 
-  useImperativeHandle(ref, () => ({ run: execute, focus: () => inputRef.current?.focus(), print }))
+  useImperativeHandle(ref, () => ({
+    run: execute,
+    focus: () => inputRef.current?.focus(),
+    print,
+    fill: (text: string) => {
+      setValue(text)
+      setHistoryIndex(null)
+      inputRef.current?.focus()
+    },
+  }))
 
   function browseHistory(step: -1 | 1) {
     if (history.length === 0) return
@@ -135,7 +148,8 @@ export function Terminal({ onRun, onComplete, ref }: Props) {
       </div>
       <div className="terminal__log" role="log" aria-live="polite" onClick={() => inputRef.current?.focus()}>
         {lines.map((line, i) => (
-          <div key={i} className={`terminal__line terminal__line--${line.kind}`}>
+          // Uppercase lines like "LINKS" head a group in the help, so they stand out.
+          <div key={i} className={`terminal__line terminal__line--${line.kind}${line.kind === 'output' && isHelpHeading(line.text) ? ' terminal__line--heading' : ''}`}>
             {line.text}
           </div>
         ))}
@@ -165,6 +179,17 @@ export function Terminal({ onRun, onComplete, ref }: Props) {
               const { value: completed, options } = onComplete(value)
               setValue(completed)
               if (options.length) print([`  ${options.join('   ')}`])
+            } else if (e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'c') {
+              // Ctrl+C cancels the line, like a shell. With text selected it copies as usual.
+              const input = e.currentTarget
+              if (input.selectionStart !== input.selectionEnd) return
+              e.preventDefault()
+              setLines((current) => [...current, { text: `> ${value}^C`, kind: 'input' }])
+              setValue('')
+              setHistoryIndex(null)
+            } else if (e.key === 'Escape' && onEscape) {
+              e.preventDefault()
+              onEscape()
             } else if (e.key === 'ArrowUp') {
               e.preventDefault()
               browseHistory(-1)

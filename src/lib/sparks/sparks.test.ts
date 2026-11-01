@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseBoard } from '../board'
-import { swapSpark } from '../boardOps'
 import { SPARKS } from './content'
-import { dealSparks, swapFor } from './deal'
+import { dealSparks } from './deal'
 import { createBoard } from './newBoard'
 import { rowEmpty, vendNote } from './vend'
 
@@ -64,48 +63,6 @@ describe('createBoard', () => {
     const many = createBoard({ sparks: dealSparks(9, { random: seeded(2) }), id: 'b9' })
     expect(parseBoard(many).ok).toBe(true)
     expect(new Set(many.nodes.map((n) => `${n.x},${n.y}`)).size).toBe(9)
-  })
-})
-
-describe('swapping sparks', () => {
-  const board = createBoard({
-    sparks: [
-      { text: 'Time', category: 'theme' },
-      { text: 'cassette', category: 'words' },
-      { text: 'Pocket sundial', category: 'objects' },
-    ],
-    id: 'b3',
-  })
-
-  it('replaces a note with another from the same category, as often as you like', () => {
-    const others = board.nodes.filter((n) => n.id !== 'n2').map((n) => ({ text: n.text, category: n.category! }))
-    const next = swapFor({ text: 'cassette', category: 'words' }, others, { random: seeded(7) })
-    expect(next.category).toBe('words')
-    expect(next.text).not.toBe('cassette')
-    const r = swapSpark(board, 'n2', next)
-    if (!r.ok) throw new Error(r.error)
-    expect(r.board.nodes[1]).toMatchObject({ id: 'n2', text: next.text, category: 'words' })
-    expect(parseBoard(r.board).ok).toBe(true)
-  })
-
-  it('never swaps in a note already on the board', () => {
-    for (let seed = 1; seed < 30; seed++) {
-      const next = swapFor({ text: 'cassette', category: 'words' }, [{ text: 'kettle', category: 'words' }], { random: seeded(seed) })
-      expect(['cassette', 'kettle']).not.toContain(next.text)
-    }
-  })
-
-  it('never swaps a theme or a missing node', () => {
-    const spark = { text: 'The dawn chorus', category: 'nature' as const }
-    expect(swapSpark(board, 'n1', spark)).toEqual({ ok: false, error: 'n1 is a theme: it stays as you wrote it' })
-    expect(swapSpark(board, 'n9', spark).ok).toBe(false)
-  })
-
-  it('never offers the same text back', () => {
-    for (let seed = 1; seed < 30; seed++) {
-      const next = swapFor({ text: 'cassette', category: 'words' }, [], { random: seeded(seed) })
-      expect(next.text).not.toBe('cassette')
-    }
   })
 })
 

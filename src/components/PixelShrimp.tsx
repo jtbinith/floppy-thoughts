@@ -34,22 +34,6 @@ function Pixels({ gap, cracked, part }: { gap: number; cracked?: boolean; part?:
 
 const viewBox = `0 0 ${SHRIMP_GRID.width} ${SHRIMP_GRID.height}`
 
-// One still shrimp, e.g. for an icon.
-export function PixelShrimp({ size = 24, gap = 50 }: { size?: number; gap?: number }) {
-  return (
-    <svg
-      className="pixel-shrimp"
-      width={size}
-      height={(size * SHRIMP_GRID.height) / SHRIMP_GRID.width}
-      viewBox={viewBox}
-      shapeRendering="crispEdges"
-      aria-hidden="true"
-    >
-      <Pixels gap={gap} />
-    </svg>
-  )
-}
-
 // The shrimp in two halves, drawn on top of each other so it looks whole (with a crack) until
 // the CSS pulls the halves apart.
 export function CrackedPixelShrimp() {

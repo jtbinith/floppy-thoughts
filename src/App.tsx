@@ -5,12 +5,9 @@ import { Home } from './components/Home'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
-import { cleanText, toggleFavourite, touch } from './lib/boardOps'
-import { loadSettings, saveSettings, type Settings } from './lib/settings'
-import { dealSparks } from './lib/sparks/deal'
+import { cleanText, touch } from './lib/boardOps'
 import { createBoard } from './lib/sparks/newBoard'
-import { loadSeen, rememberSeen } from './lib/sparks/seen'
-import { LocalStorageAdapter, type BoardSummary, type Favourite } from './lib/storage'
+import { LocalStorageAdapter, type BoardSummary } from './lib/storage'
 
 const storage = new LocalStorageAdapter()
 
@@ -34,11 +31,9 @@ export default function App() {
   const [route, setRoute] = useState<Route>(routeFromHash)
   const [boards, setBoards] = useState<BoardSummary[] | null>(null)
   const [board, setBoard] = useState<Board | null>(null)
-  const [favourites, setFavourites] = useState<Favourite[]>([])
   const [focusId, setFocusId] = useState<string | undefined>()
   // The board just made with "+ new board", which asks for a theme first.
   const [freshId, setFreshId] = useState<string | null>(null)
-  const [settings, setSettings] = useState<Settings>(loadSettings)
   const [error, setError] = useState<string | null>(null)
   // React's StrictMode runs effects twice in development; this stops that making two boards.
   const creating = useRef(false)
@@ -52,7 +47,6 @@ export default function App() {
   async function refreshList() {
     const list = await storage.listBoards()
     setBoards(list)
-    setFavourites(await storage.listFavourites())
     return list
   }
 
@@ -73,8 +67,7 @@ export default function App() {
       async (list) => {
         if (cancelled) return
         setBoards(list)
-        setFavourites(await storage.listFavourites())
-        const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
+            const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
         if (!last) return
         const result = await storage.loadBoard(last.id)
         if (!cancelled && result.status === 'ok') setBoard(result.board)
@@ -86,17 +79,15 @@ export default function App() {
     }
   }, [])
 
-  // A new board opens straight away: blank, unless you've asked for starting notes (`starting <n>`).
+  // A new board opens straight away, blank.
   // Boards get a number for a name, so they're easy to tell apart; rename them any time.
   async function create() {
     if (creating.current) return
     creating.current = true
-    const sparks = dealSparks(settings.startingNotes, { seen: loadSeen() })
     const list = await storage.listBoards()
-    const created = createBoard({ sparks, name: `board ${list.length + 1}` })
+    const created = createBoard({ sparks: [], name: `board ${list.length + 1}` })
     try {
       await storage.saveBoard(created)
-      rememberSeen(sparks.map((s) => s.text))
       rememberOpen(created.id)
       await refreshList()
       setFocusId(undefined)
@@ -116,23 +107,9 @@ export default function App() {
   const ready = boards !== null
   useEffect(() => {
     if (route === 'new' && ready) void create()
-    // create reads the latest settings itself; it only needs to run when the route changes.
+    // Only when the route changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [route, ready])
-
-  function changeStartingNotes(n: number) {
-    setSettings(saveSettings({ ...settings, startingNotes: n }))
-  }
-
-  // Unfavouriting something on another board, from the favourites list.
-  async function unfavouriteElsewhere(f: Favourite) {
-    const result = await storage.loadBoard(f.boardId)
-    if (result.status !== 'ok') return
-    const toggled = toggleFavourite(result.board, f.node.id)
-    if (!toggled.ok) return
-    await storage.saveBoard(toggled.board)
-    await refreshList()
-  }
 
   // Saves a board made elsewhere (like a favourites board) and opens it.
   async function openNew(made: Board) {
@@ -203,15 +180,10 @@ export default function App() {
             <Workspace
               board={board}
               boards={boards ?? []}
-              favourites={favourites}
-              startingNotes={settings.startingNotes}
-              onStartingNotes={changeStartingNotes}
               onChange={handleChange}
               onNewBoard={() => go('new')}
               onOpenBoard={open}
-              onUnfavouriteElsewhere={unfavouriteElsewhere}
               onOpenNew={openNew}
-              onRenameBoard={renameBoard}
               onDeleteBoard={deleteBoard}
               focusId={focusId}
               askTheme={freshId === board.id}

@@ -5,6 +5,10 @@ import { moveNodes } from './boardOps'
 // Converts between our saved Board and the shapes React Flow draws.
 // Kept separate from the components so it can be unit tested.
 
+// How "fit the board to the screen" frames things: the same for the button, the `fit` command,
+// the View menu and when a board first opens.
+export const FIT_VIEW = { padding: 0.3, maxZoom: 1.2, duration: 300 }
+
 export type IdeaNodeData = Pick<BoardNode, 'text' | 'kind' | 'category' | 'locked' | 'nudgeType' | 'favourite' | 'chosen'>
 export type IdeaFlowNode = Node<IdeaNodeData, 'idea'>
 

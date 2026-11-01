@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { HELP, looksLikeCommand, runCommand } from './commands'
+import { HELP, helpGroups, looksLikeCommand, runCommand } from './commands'
 
 const ctx = { addAt: { x: 5, y: 5 }, now: new Date('2026-10-28T12:00:00Z') }
 
@@ -66,14 +66,14 @@ describe('terminal commands', () => {
 
   it('lists nodes with their ids and kinds', () => {
     expect(runCommand(board, 'list', ctx).output).toEqual([
-      '  n1   theme       Time  ↔ n2',
-      '  n2   idea        plants  ↔ n1',
+      '  n1   main theme  Time  (linked to n2)',
+      '  n2   idea        plants  (linked to n1)',
     ])
   })
 
   it('links and unlinks nodes in either order', () => {
     const unlinked = runCommand(board, 'unlink n2 n1', ctx)
-    expect(unlinked.output).toEqual(['unlinked n2 ↔ n1'])
+    expect(unlinked.output).toEqual(['unlinked n2 from n1'])
     expect(unlinked.board?.links).toEqual([])
     const relinked = runCommand(unlinked.board!, 'link n1 n2', ctx)
     expect(relinked.board?.links).toEqual([{ from: 'n1', to: 'n2' }])
@@ -111,7 +111,7 @@ describe('notes, favourites and names', () => {
   it('toggles favourites and shows them in the list', () => {
     const r = runCommand(board, 'fav n2', ctx)
     expect(r.output).toEqual(['♥ favourited n2: plants'])
-    expect(runCommand(r.board!, 'list', ctx).output[1]).toBe('  n2   idea        ♥ plants  ↔ n1')
+    expect(runCommand(r.board!, 'list', ctx).output[1]).toBe('  n2   idea        ♥ plants  (linked to n1)')
     expect(runCommand(r.board!, 'fav n2', ctx).output).toEqual(['unfavourited n2: plants'])
   })
 
@@ -122,5 +122,39 @@ describe('notes, favourites and names', () => {
 
   it('says when the board is empty', () => {
     expect(runCommand({ ...board, nodes: [], links: [] }, 'list', ctx).output).toEqual(['  the board is empty. type a thought, or try: vend'])
+  })
+})
+
+describe('linking several at once', () => {
+  const three: Board = {
+    ...board,
+    nodes: [...board.nodes, { id: 'n3', text: 'a', kind: 'user', x: 0, y: 0 }, { id: 'n4', text: 'b', kind: 'user', x: 0, y: 0 }],
+    links: [],
+  }
+  it('links the first to each of the others', () => {
+    const r = runCommand(three, 'link n4 n2 n3', ctx)
+    expect(r.output).toEqual(['linked n4 to n2 and n3'])
+    expect(r.board?.links).toEqual([
+      { from: 'n4', to: 'n2' },
+      { from: 'n4', to: 'n3' },
+    ])
+  })
+
+  it('changes nothing if any of them fails', () => {
+    expect(runCommand(three, 'link n4 n2 n9', ctx).error).toBe(true)
+  })
+})
+
+describe('help groups for the commands tab', () => {
+  it('splits the help into groups of what you type and what it does', () => {
+    const groups = helpGroups()
+    expect(groups[0].heading).toBe('IDEAS')
+    const links = groups.find((g) => g.heading === 'LINKS')!
+    expect(links.entries[0]).toEqual({ usage: 'link <id> <id>…', does: 'link two things, or one to several: link n4 n2 n5' })
+    // The nudge types carry on the nudge line rather than being their own entry.
+    const nudge = groups.flatMap((g) => g.entries).find((e) => e.usage.startsWith('nudge'))!
+    expect(nudge.does).toContain('types: related')
+    // Tips have no command, just text.
+    expect(groups.find((g) => g.heading === 'TIPS')!.entries.every((e) => e.usage === '')).toBe(true)
   })
 })

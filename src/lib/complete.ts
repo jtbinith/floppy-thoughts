@@ -6,13 +6,13 @@ import { VEND_ROWS } from './sparks/vend'
 // and lists the options when there's more than one.
 
 export const COMMANDS = [
-  'add', 'edit', 'delete', 'rm', 'vend', 'theme', 'link', 'unlink', 'nudge', 'swap', 'fav', 'favs',
-  'favboard', 'pick', 'summary', 'list', 'rename', 'new', 'starting', 'boards', 'open', 'undo', 'redo',
+  'add', 'edit', 'delete', 'rm', 'vend', 'theme', 'link', 'unlink', 'nudge', 'fav', 'favs',
+  'favboard', 'pick', 'summary', 'tidy', 'fit', 'list', 'rename', 'new', 'boards', 'open', 'undo', 'redo',
   'clear', 'help',
 ] as const
 
 // What each argument of a command expects.
-type Arg = 'node' | 'own' | 'spark' | 'nudgeType' | 'row' | 'board' | 'text'
+type Arg = 'node' | 'own' | 'nudgeType' | 'row' | 'board' | 'text'
 const ARGS: Partial<Record<(typeof COMMANDS)[number], Arg[]>> = {
   edit: ['own', 'text'],
   delete: ['node'],
@@ -20,10 +20,9 @@ const ARGS: Partial<Record<(typeof COMMANDS)[number], Arg[]>> = {
   fav: ['node'],
   pick: ['node'],
   vend: ['row'],
-  link: ['node', 'node'],
-  unlink: ['node', 'node'],
+  link: ['node', 'node', 'node', 'node', 'node', 'node'],
+  unlink: ['node', 'node', 'node', 'node', 'node', 'node'],
   nudge: ['node', 'nudgeType'],
-  swap: ['spark'],
   open: ['board'],
 }
 
@@ -42,8 +41,6 @@ function candidates(arg: Arg, board: Board, boardCount: number): string[] {
       return board.nodes.map((n) => n.id)
     case 'own':
       return board.nodes.filter((n) => n.kind === 'user').map((n) => n.id)
-    case 'spark':
-      return board.nodes.filter((n) => n.kind === 'spark' && !n.locked).map((n) => n.id)
     case 'nudgeType':
       return [...NUDGE_CHOICES]
     case 'row':

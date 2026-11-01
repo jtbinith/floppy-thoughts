@@ -12,8 +12,6 @@ export type BoardActions = {
   cancelEdit: () => void
   // Ask for a nudge on this idea (N key).
   nudge: (id: string) => void
-  // Swap a note for another from the same row (S key or the swap button).
-  swap: (id: string) => void
   // Favourite or unfavourite anything (F key or the heart button).
   favourite: (id: string) => void
   // Mark the idea you're going with.

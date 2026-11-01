@@ -1,13 +1,13 @@
 import { useState, type PointerEvent } from 'react'
 import { CATEGORY_LABEL } from '../lib/board'
 import type { Spark } from '../lib/sparks/deal'
-import type { BoardSummary, Favourite } from '../lib/storage'
-import { BoardList } from './BoardList'
+import type { Favourite } from '../lib/storage'
+import { CommandsTab } from './CommandsTab'
 import { HeartIcon } from './HeartIcon'
 import { VendingMachine } from './VendingMachine'
 
-// The drawer beside the board: the vending machine, your favourites, or your boards.
-export type PanelTab = 'machine' | 'favourites' | 'boards'
+// The drawer beside the board: the vending machine, your favourites, or the commands.
+export type PanelTab = 'machine' | 'favourites' | 'commands'
 
 type Props = {
   tab: PanelTab
@@ -18,16 +18,14 @@ type Props = {
   // A note is out of the machine and showing in the popup.
   busy: boolean
   boardId: string
+  // This board's favourites.
   favourites: Favourite[]
   onOpenFavourite: (favourite: Favourite) => void
   onUnfavourite: (favourite: Favourite) => void
   // Copy this board's favourites onto a new board.
   onFavouritesBoard: () => void
-  boards: BoardSummary[]
-  onOpenBoard: (id: string) => void
-  onNewBoard: () => void
-  onRenameBoard: (id: string, name: string) => void
-  onDeleteBoard: (id: string) => void
+  // Put a command in the terminal (from the commands tab).
+  onUseCommand: (command: string) => void
 }
 
 const kindLabel = ({ node }: Favourite) =>
@@ -35,7 +33,7 @@ const kindLabel = ({ node }: Favourite) =>
 
 // The drawer's width is a personal preference, so it's remembered, like the terminal's height.
 const WIDTH_KEY = 'hunchhack:ui:panel-width'
-const DEFAULT_WIDTH = 330
+const DEFAULT_WIDTH = 360
 const MIN_WIDTH = 240
 const maxWidth = () => Math.max(MIN_WIDTH, Math.round(window.innerWidth * 0.5))
 const clampWidth = (w: number) => Math.round(Math.min(Math.max(w, MIN_WIDTH), maxWidth()))
@@ -70,7 +68,7 @@ export function SidePanel(props: Props) {
   }
 
   return (
-    <aside className="panel" style={{ width }} aria-label={{ machine: 'Vending machine', favourites: 'Favourites', boards: 'My boards' }[tab]}>
+    <aside className="panel" style={{ width }} aria-label={{ machine: 'Vending machine', favourites: 'Favourites', commands: 'Commands' }[tab]}>
       <div
         className="panel__resize"
         role="separator"
@@ -94,15 +92,21 @@ export function SidePanel(props: Props) {
         <button type="button" role="tab" aria-selected={tab === 'favourites'} className="panel__tab" onClick={() => onTab('favourites')}>
           <HeartIcon /> favourites
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'boards'} className="panel__tab" onClick={() => onTab('boards')}>
-          boards
+        <button type="button" role="tab" aria-selected={tab === 'commands'} className="panel__tab" onClick={() => onTab('commands')}>
+          commands
         </button>
         <button type="button" className="panel__close" aria-label="Close the drawer" title="Close (Esc)" onClick={onClose}>
           ×
         </button>
       </div>
       <div className="panel__body">
-        {tab === 'machine' ? <MachineTab {...props} /> : tab === 'favourites' ? <FavouritesTab {...props} /> : <BoardsTab {...props} />}
+        {tab === 'machine' ? (
+          <MachineTab {...props} />
+        ) : tab === 'favourites' ? (
+          <FavouritesTab {...props} />
+        ) : (
+          <CommandsTab onUse={props.onUseCommand} />
+        )}
       </div>
     </aside>
   )
@@ -112,65 +116,32 @@ function MachineTab({ onBoard, onVend, busy }: Props) {
   return <VendingMachine onBoard={onBoard} onVend={onVend} busy={busy} />
 }
 
-function BoardsTab({ boards, boardId, onOpenBoard, onNewBoard, onRenameBoard, onDeleteBoard }: Props) {
-  return (
-    <>
-      <div className="panel__row">
-        <button type="button" className="panel__button" onClick={onNewBoard}>
-          + new board
-        </button>
-        <a className="panel__link" href="#/boards">
-          all boards page →
-        </a>
-      </div>
-      <BoardList boards={boards} openId={boardId} onOpen={onOpenBoard} onRename={onRenameBoard} onDelete={onDeleteBoard} />
-    </>
-  )
-}
-
-function FavouritesTab({ boardId, favourites, onOpenFavourite, onUnfavourite, onFavouritesBoard }: Props) {
+function FavouritesTab({ favourites, onOpenFavourite, onUnfavourite, onFavouritesBoard }: Props) {
   if (favourites.length === 0)
     return (
       <p className="panel__empty">
-        Nothing here yet. Select anything on a board and press <kbd>F</kbd> (or the heart) to keep it here.
+        No favourites on this board yet. Select anything and press <kbd>F</kbd> (or the heart) to keep it here.
       </p>
     )
 
-  // Group by board, this board first.
-  const groups = new Map<string, Favourite[]>()
-  for (const f of [...favourites].sort((a, b) => Number(b.boardId === boardId) - Number(a.boardId === boardId))) {
-    groups.set(f.boardId, [...(groups.get(f.boardId) ?? []), f])
-  }
-
-  const onThisBoard = favourites.some((f) => f.boardId === boardId)
   return (
     <div className="favs">
-      {onThisBoard && (
-        <button type="button" className="panel__button" onClick={onFavouritesBoard} title="A new board with just this board's favourites, and the links between them">
-          put this board&apos;s favourites on a new board
-        </button>
-      )}
-      {[...groups.values()].map((items) => (
-        <section key={items[0].boardId} className="favs__board">
-          <h3>
-            {items[0].boardName}
-            {items[0].boardId === boardId && <small> · this board</small>}
-          </h3>
-          <ul>
-            {items.map((f) => (
-              <li key={f.node.id} className={`favs__item favs__item--${f.node.kind}`}>
-                <button type="button" className="favs__open" onClick={() => onOpenFavourite(f)} title={f.boardId === boardId ? 'Show it on the board' : 'Open that board'}>
-                  <small>{kindLabel(f)}</small>
-                  {f.node.text}
-                </button>
-                <button type="button" className="favs__remove" aria-label={`Unfavourite ${f.node.text}`} title="Unfavourite" onClick={() => onUnfavourite(f)}>
-                  <HeartIcon />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <button type="button" className="panel__button" onClick={onFavouritesBoard} title="A new board with just these favourites, and the links between them">
+        put these on a new board
+      </button>
+      <ul className="favs__list">
+        {favourites.map((f) => (
+          <li key={f.node.id} className={`favs__item favs__item--${f.node.kind}`}>
+            <button type="button" className="favs__open" onClick={() => onOpenFavourite(f)} title="Show it on the board">
+              <small>{kindLabel(f)}</small>
+              {f.node.text}
+            </button>
+            <button type="button" className="favs__remove" aria-label={`Unfavourite ${f.node.text}`} title="Unfavourite" onClick={() => onUnfavourite(f)}>
+              <HeartIcon />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

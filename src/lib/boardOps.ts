@@ -178,7 +178,7 @@ export function addNudge(
   return linked.ok ? { ...linked, node } : linked
 }
 
-// Adds a note from the vending machine, or a theme you typed (themes are locked: they can't be swapped).
+// Adds a note from the vending machine, or the main theme you typed (themes are marked locked).
 export function addNote(board: Board, note: { text: string; category: SparkCategory }, at: { x: number; y: number }, now = new Date()): OpResult {
   if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
   const text = cleanText(note.text)
@@ -193,20 +193,6 @@ export function addNote(board: Board, note: { text: string; category: SparkCateg
     y: Math.round(at.y),
   }
   return { ok: true, board: touch({ ...board, nodes: [...board.nodes, node] }, now), node }
-}
-
-// Replaces a note with a new one. Its links stay, so your thinking around it isn't lost.
-export function swapSpark(board: Board, id: string, spark: { text: string; category: SparkCategory }, now = new Date()): OpResult {
-  const node = findNode(board, id)
-  if (!node) return { ok: false, error: `No node called ${id}` }
-  if (node.kind !== 'spark') return { ok: false, error: `${id} isn't a note: only notes can be swapped` }
-  if (node.locked) return { ok: false, error: `${id} is a theme: it stays as you wrote it` }
-  const swapped: BoardNode = { ...node, text: spark.text, category: spark.category }
-  return {
-    ok: true,
-    board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? swapped : n)) }, now),
-    node: swapped,
-  }
 }
 
 // Marks or unmarks anything on the board as a favourite.

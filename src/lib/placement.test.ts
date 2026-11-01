@@ -30,3 +30,23 @@ describe('freeSpotNear', () => {
         if (a !== b) expect(Math.abs(a.x - b.x) >= 230 || Math.abs(a.y - b.y) >= 90).toBe(true)
   })
 })
+
+describe('placing within the visible board', () => {
+  // The middle of the view is taken, so the spot has to go somewhere else on screen.
+  const board: Board = { ...empty, nodes: [{ id: 'n1', text: 'x', kind: 'user', x: -115, y: -45 }] }
+
+  it('prefers a free spot that is on screen', () => {
+    const view = { x: -400, y: -300, width: 800, height: 600 }
+    const spot = freeSpotNear(board, { x: 0, y: 0 }, view)
+    expect(spot).not.toEqual({ x: -115, y: -45 })
+    expect(spot.x).toBeGreaterThanOrEqual(view.x)
+    expect(spot.y).toBeGreaterThanOrEqual(view.y)
+    expect(spot.x + 230).toBeLessThanOrEqual(view.x + view.width)
+    expect(spot.y + 90).toBeLessThanOrEqual(view.y + view.height)
+  })
+
+  it('looks further out when the visible area is full', () => {
+    const tiny = { x: 0, y: 0, width: 10, height: 10 }
+    expect(freeSpotNear(board, { x: 0, y: 0 }, tiny)).toBeDefined()
+  })
+})
