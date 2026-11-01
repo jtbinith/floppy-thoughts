@@ -12,7 +12,6 @@ export const NODE_KINDS = ['spark', 'nudge', 'user'] as const
 export const SPARK_CATEGORIES = [
   'theme',
   'words',
-  'headlines',
   'curiosities',
   'objects',
   'nature',
@@ -22,7 +21,6 @@ export const SPARK_CATEGORIES = [
 export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> = {
   theme: 'main-theme',
   words: 'word',
-  headlines: 'headline',
   curiosities: 'curiosity',
   objects: 'object',
   nature: 'nature',
@@ -36,7 +34,6 @@ export const NUDGE_TYPES = [
   'perspective',
   'scale',
   'senses',
-  'news',
   'wildcard',
   'push',
 ] as const

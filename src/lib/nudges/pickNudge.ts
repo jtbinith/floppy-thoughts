@@ -7,7 +7,7 @@ import { QUESTIONS, WILDCARDS, fillQuestion, type QuestionType } from './questio
 
 export type Nudge = { text: string; type: NudgeType }
 
-// The types a user can ask for. 'news' needs a headline source and comes later.
+// The types a user can ask for.
 export const NUDGE_CHOICES = ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'push', 'wildcard'] as const
 export type NudgeChoice = (typeof NUDGE_CHOICES)[number]
 
@@ -47,7 +47,6 @@ const FIT_BY_CATEGORY: Record<SparkCategory, readonly NudgeChoice[]> = {
   problems: ['perspective', 'scale', 'push', 'wildcard'],
   curiosities: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
   nature: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
-  headlines: ['perspective', 'scale', 'push', 'wildcard'],
 }
 
 // How many links a node is from the nearest spark (Infinity if it isn't connected to one).

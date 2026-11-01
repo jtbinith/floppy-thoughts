@@ -1,6 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react'
 import { isHelpHeading, type CommandResult } from '../lib/commands'
 import type { Completion } from '../lib/complete'
+import { KEYS } from '../lib/keys'
 
 type Line = { text: string; kind: 'input' | 'output' | 'error' }
 
@@ -28,7 +29,7 @@ type Props = {
 const WELCOME: Line[] = [{ text: 'type a thought and press Enter to add it · commands start with / (try /help)', kind: 'output' }]
 
 // Terminal height is a personal preference, so it's remembered separately from boards.
-const HEIGHT_KEY = 'hunchhack:ui:terminal-height'
+const HEIGHT_KEY = KEYS.terminalHeight
 const DEFAULT_HEIGHT = 200
 const MIN_HEIGHT = 90
 const maxHeight = () => Math.round(window.innerHeight * 0.7)

@@ -7,7 +7,8 @@ import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
 import { createBoard } from './lib/sparks/newBoard'
-import { LocalStorageAdapter, type BoardSummary } from './lib/storage'
+import { KEYS } from './lib/keys'
+import { LocalStorageAdapter, withSummary, type BoardSummary } from './lib/storage'
 
 const storage = new LocalStorageAdapter()
 
@@ -24,14 +25,13 @@ const go = (route: Route) => {
 }
 
 // Which board you had open last, so coming back brings you to it.
-const LAST_BOARD_KEY = 'hunchhack:ui:last-board'
+const LAST_BOARD_KEY = KEYS.lastBoard
 const rememberOpen = (id: string) => localStorage.setItem(LAST_BOARD_KEY, id)
 
 export default function App() {
   const [route, setRoute] = useState<Route>(routeFromHash)
   const [boards, setBoards] = useState<BoardSummary[] | null>(null)
   const [board, setBoard] = useState<Board | null>(null)
-  const [focusId, setFocusId] = useState<string | undefined>()
   // The board just made with "+ new board", which asks for a theme first.
   const [freshId, setFreshId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -50,11 +50,10 @@ export default function App() {
     return list
   }
 
-  async function open(id: string, focus?: string) {
+  async function open(id: string) {
     const result = await storage.loadBoard(id)
     if (result.status === 'ok') {
       rememberOpen(id)
-      setFocusId(focus)
       setBoard(result.board)
       go('board')
     } else setError(result.status === 'invalid' ? `That board couldn't be opened: ${result.errors[0]}` : 'Board not found')
@@ -90,7 +89,6 @@ export default function App() {
       await storage.saveBoard(created)
       rememberOpen(created.id)
       await refreshList()
-      setFocusId(undefined)
       setFreshId(created.id)
       setBoard(created)
       // Replace #/new so going back doesn't make another board.
@@ -145,12 +143,11 @@ export default function App() {
     }
   }
 
+  // Every change to the open board: save it, and update just its line in the board list.
   function handleChange(next: Board) {
     setBoard(next)
-    storage
-      .saveBoard(next)
-      .then(refreshList)
-      .catch((e: unknown) => setError(String(e)))
+    setBoards((list) => withSummary(list ?? [], next))
+    storage.saveBoard(next).catch((e: unknown) => setError(String(e)))
   }
 
   if (boards === null && !error) return null
@@ -185,7 +182,6 @@ export default function App() {
               onOpenBoard={open}
               onOpenNew={openNew}
               onDeleteBoard={deleteBoard}
-              focusId={focusId}
               askTheme={freshId === board.id}
               onThemeAsked={() => setFreshId(null)}
             />

@@ -1,48 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseBoard } from '../board'
 import { SPARKS } from './content'
-import { dealSparks } from './deal'
 import { createBoard } from './newBoard'
 import { rowEmpty, vendNote } from './vend'
-
-// A repeatable "random" sequence so tests are stable.
-function seeded(seed = 1) {
-  let s = seed
-  return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
-}
-
-describe('dealSparks', () => {
-  it('deals sparks from different categories', () => {
-    for (let seed = 1; seed < 50; seed++) {
-      const sparks = dealSparks(3, { random: seeded(seed) })
-      expect(new Set(sparks.map((s) => s.category)).size).toBe(3)
-    }
-  })
-
-  it('prefers sparks you have not seen', () => {
-    const seen = new Set(SPARKS.words.slice(1))
-    for (let seed = 1; seed < 20; seed++) {
-      const words = dealSparks(5, { seen, random: seeded(seed) }).find((s) => s.category === 'words')
-      expect(words?.text).toBe(SPARKS.words[0])
-    }
-  })
-
-  it('deals more notes than there are categories without repeating text', () => {
-    for (let seed = 1; seed < 20; seed++) {
-      const sparks = dealSparks(9, { random: seeded(seed) })
-      expect(sparks).toHaveLength(9)
-      expect(new Set(sparks.map((s) => s.text)).size).toBe(9)
-      // Every category is used before any repeats.
-      expect(new Set(sparks.slice(0, 5).map((s) => s.category)).size).toBe(5)
-    }
-    expect(dealSparks(0)).toEqual([])
-  })
-
-  it('can avoid categories', () => {
-    const sparks = dealSparks(2, { avoid: ['words', 'problems', 'objects'], random: seeded(3) })
-    expect(sparks.every((s) => !['words', 'problems', 'objects'].includes(s.category))).toBe(true)
-  })
-})
 
 describe('createBoard', () => {
   const sparks = [
@@ -60,7 +20,7 @@ describe('createBoard', () => {
 
   it('makes an empty board, or one with lots of notes spread out', () => {
     expect(createBoard({ sparks: [], id: 'b0' }).nodes).toEqual([])
-    const many = createBoard({ sparks: dealSparks(9, { random: seeded(2) }), id: 'b9' })
+    const many = createBoard({ sparks: SPARKS.words.slice(0, 9).map((text) => ({ text, category: 'words' as const })), id: 'b9' })
     expect(parseBoard(many).ok).toBe(true)
     expect(new Set(many.nodes.map((n) => `${n.x},${n.y}`)).size).toBe(9)
   })

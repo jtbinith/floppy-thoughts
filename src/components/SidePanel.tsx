@@ -5,6 +5,7 @@ import type { Favourite } from '../lib/storage'
 import { CommandsTab } from './CommandsTab'
 import { HeartIcon } from './HeartIcon'
 import { VendingMachine } from './VendingMachine'
+import { KEYS } from '../lib/keys'
 
 // The drawer beside the board: the vending machine, your favourites, or the commands.
 export type PanelTab = 'machine' | 'favourites' | 'commands'
@@ -32,7 +33,7 @@ const kindLabel = ({ node }: Favourite) =>
   node.kind === 'spark' ? `~/${node.category ? CATEGORY_LABEL[node.category] : 'note'}` : node.kind === 'nudge' ? `// ${node.nudgeType}` : '~/idea'
 
 // The drawer's width is a personal preference, so it's remembered, like the terminal's height.
-const WIDTH_KEY = 'hunchhack:ui:panel-width'
+const WIDTH_KEY = KEYS.panelWidth
 const DEFAULT_WIDTH = 360
 const MIN_WIDTH = 240
 const maxWidth = () => Math.max(MIN_WIDTH, Math.round(window.innerWidth * 0.5))

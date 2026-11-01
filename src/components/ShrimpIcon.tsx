@@ -1,6 +1,6 @@
 // Our shrimp icon: a solid silhouette with long feelers looping back over the top,
-// a banded curled body and a fan tail. Original artwork (a stand-in until bought or
-// hand-drawn art arrives). Uses the current text colour, so it suits any button.
+// a banded curled body and a fan tail. Original artwork. Uses the current text colour,
+// so it suits any button.
 export function ShrimpIcon({ size = 22 }: { size?: number }) {
   return (
     <svg className="shrimp-icon" width={size} height={size} viewBox="12 12 46 50" aria-hidden="true">

@@ -1,0 +1,61 @@
+/* Tokens, resets and shared bits */
+
+/*
+  Placeholder look: a retro handheld device in shrimp colours, with the board and terminal
+  inside its screen. Whimsy lives on the frame; the screen stays calm (one muted amber tone).
+  The CSS-drawn frame will be swapped for pixel art later.
+*/
+:root {
+  /* Page and device frame */
+  --page: #17110e;
+  --frame: #c4733a;
+  --frame-light: #e2955a;
+  --frame-dark: #8c4a22;
+  --frame-edge: #3b2416;
+  --button: #a85a2a;
+
+  /* Inside the screen */
+  --screen: #130e0b;
+  --screen-bar: #1c1410;
+  --line: #3a2a20;
+  --text: #f0c9a0;
+  --muted: #a8805e;
+  --spark: #ff8f5e;
+  --nudge: #d9b46a;
+  --fav: #ff8fa3;
+  --error: #ff7a6b;
+
+  --mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  /* Change these two to try other fonts. */
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-heading: 'Bricolage Grotesque', system-ui, sans-serif;
+
+  color-scheme: dark;
+  font-family: var(--mono);
+  color: var(--text);
+  background: var(--page);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+button {
+  font: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

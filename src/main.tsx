@@ -6,6 +6,7 @@ import '@fontsource/atkinson-hyperlegible/latin-700.css'
 import '@fontsource/bricolage-grotesque/latin-800.css'
 import './index.css'
 import App from './App.tsx'
+import { moveOldKeys } from './lib/keys'
 
 
 
@@ -15,6 +16,9 @@ console.info(
   'font-weight:bold;color:#e2955a',
   'color:inherit',
 )
+
+// Boards saved under the old name move to the new keys before anything reads them.
+moveOldKeys()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

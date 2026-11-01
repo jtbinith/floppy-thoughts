@@ -1,8 +1,23 @@
 import type { Board } from './board'
 
-// Rough size of a node on screen. Good enough to stop new ideas landing on top of each other.
-const NODE_W = 230
-const NODE_H = 90
+// Rough size of a box on screen, for placing things before React Flow has measured them.
+// Good enough to stop new ideas landing on top of each other.
+export const BOX = { width: 230, height: 90 }
+const NODE_W = BOX.width
+const NODE_H = BOX.height
+
+// Where new things go, relative to the box they come from (as the centre of the new box).
+export const PLACE = {
+  // A linked idea (Tab): just below.
+  branch: { x: BOX.width / 2, y: BOX.height * 2 + 10 },
+  // A nudge: off to the right.
+  nudge: { x: BOX.width + 150, y: BOX.height / 2 },
+  // A note from the machine, beside what's selected.
+  note: { x: BOX.width + 70, y: -BOX.height / 2 + 5 },
+}
+
+// The middle of a box whose top-left corner is at `at`.
+export const centreOfBox = (at: { x: number; y: number }) => ({ x: at.x + BOX.width / 2, y: at.y + BOX.height / 2 })
 
 export type Rect = { x: number; y: number; width: number; height: number }
 

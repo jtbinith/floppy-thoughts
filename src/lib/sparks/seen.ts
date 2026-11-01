@@ -1,5 +1,7 @@
-// Remembers which sparks you've already been dealt, so new boards rarely repeat them.
-const KEY = 'hunchhack:seen-sparks'
+import { KEYS } from '../keys'
+
+// Remembers which notes you've already had from the machine, so it rarely repeats them.
+const KEY = KEYS.seenNotes
 const LIMIT = 300
 
 export function loadSeen(storage: Storage = localStorage): Set<string> {

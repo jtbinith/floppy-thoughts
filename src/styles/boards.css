@@ -1,0 +1,100 @@
+/* The list of boards */
+
+.boards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boards__item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-right: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.boards__item--open {
+  border-color: var(--muted);
+}
+
+.boards__open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.boards__open strong {
+  overflow: hidden;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boards__open small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.boards__open:hover {
+  background: var(--screen);
+}
+
+.boards__actions,
+.boards__confirm {
+  display: flex;
+  flex: none;
+  gap: 0.3rem;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.boards__actions button,
+.boards__confirm button {
+  padding: 0.15rem 0.4rem;
+  font: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.boards__actions button:hover,
+.boards__confirm button:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.boards__yes {
+  color: var(--error) !important;
+  border-color: var(--error) !important;
+}
+
+.boards__rename {
+  flex: 1;
+  margin: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--muted);
+}
+
+.boards__empty {
+  color: var(--muted);
+}

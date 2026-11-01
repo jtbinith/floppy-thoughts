@@ -1,6 +1,7 @@
 import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, type SimulationLinkDatum, type SimulationNodeDatum } from 'd3-force'
 import type { Board } from './board'
 import { mainTheme } from './boardOps'
+import { BOX } from './placement'
 
 // "Tidy": groups of linked thoughts each get their own space, laid out so links are short and
 // cross as little as possible, and the groups sit side by side with room between them, the way
@@ -11,7 +12,7 @@ type Point = { x: number; y: number }
 type Body = SimulationNodeDatum & { id: string; w: number; h: number }
 
 // Rough size for boxes that haven't been measured yet.
-const FALLBACK: Size = { width: 230, height: 90 }
+const FALLBACK: Size = BOX
 const GAP = 36
 const GROUP_GAP = 140
 // How many starting arrangements to try per group; the one with the fewest crossings wins.

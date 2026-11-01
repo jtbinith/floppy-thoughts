@@ -1,7 +1,24 @@
 import { boardSchema, parseBoard, type Board, type BoardNode } from './board'
+import { KEYS } from './keys'
 
 // What a board list shows: enough to recognise a board without opening it.
 export type BoardSummary = Pick<Board, 'id' | 'name' | 'updatedAt'> & { nodeCount: number; favouriteCount: number }
+
+// What the board list shows for one board.
+export const summaryOf = ({ id, name, updatedAt, nodes }: Board): BoardSummary => ({
+  id,
+  name,
+  updatedAt,
+  nodeCount: nodes.length,
+  favouriteCount: nodes.filter((n) => n.favourite).length,
+})
+
+// Puts one board's new summary into the list, newest first, without reading every board again.
+// (With accounts and a server, this keeps each change to one small write.)
+export function withSummary(list: BoardSummary[], board: Board): BoardSummary[] {
+  const summary = summaryOf(board)
+  return [summary, ...list.filter((b) => b.id !== board.id)].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+}
 
 // A favourite, with the board it lives on.
 export type Favourite = { boardId: string; boardName: string; node: BoardNode }
@@ -17,8 +34,6 @@ export interface StorageAdapter {
   saveBoard(board: Board): Promise<void>
   loadBoard(id: string): Promise<LoadResult>
   listBoards(): Promise<BoardSummary[]>
-  // Every favourite across all boards, newest board first.
-  listFavourites(): Promise<Favourite[]>
   deleteBoard(id: string): Promise<void>
 }
 
@@ -29,7 +44,7 @@ export class StorageFullError extends Error {
   }
 }
 
-const KEY_PREFIX = 'hunchhack:board:'
+const KEY_PREFIX = KEYS.boardPrefix
 
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly storage: Storage
@@ -59,19 +74,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async listBoards(): Promise<BoardSummary[]> {
-    return this.allBoards().map(({ id, name, updatedAt, nodes }) => ({
-      id,
-      name,
-      updatedAt,
-      nodeCount: nodes.length,
-      favouriteCount: nodes.filter((n) => n.favourite).length,
-    }))
-  }
-
-  async listFavourites(): Promise<Favourite[]> {
-    return this.allBoards().flatMap((board) =>
-      board.nodes.filter((n) => n.favourite).map((node) => ({ boardId: board.id, boardName: board.name, node })),
-    )
+    return this.allBoards().map(summaryOf)
   }
 
   private allBoards(): Board[] {

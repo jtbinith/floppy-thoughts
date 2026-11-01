@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { LocalStorageAdapter, StorageFullError } from './storage'
+import { LocalStorageAdapter, StorageFullError, summaryOf, withSummary } from './storage'
 
 // Minimal in-memory stand-in for the browser's localStorage.
 class MemoryStorage implements Storage {
@@ -66,7 +66,7 @@ describe('LocalStorageAdapter', () => {
   })
 
   it('reports corrupted JSON as invalid instead of crashing', async () => {
-    storage.setItem('hunchhack:board:bad', '{not json')
+    storage.setItem('floppy:board:bad', '{not json')
     expect(await adapter.loadBoard('bad')).toEqual({
       status: 'invalid',
       errors: ['Saved board is not valid JSON'],
@@ -74,7 +74,7 @@ describe('LocalStorageAdapter', () => {
   })
 
   it('reports tampered data as invalid', async () => {
-    storage.setItem('hunchhack:board:bad', JSON.stringify({ ...board('bad'), version: 999 }))
+    storage.setItem('floppy:board:bad', JSON.stringify({ ...board('bad'), version: 999 }))
     const result = await adapter.loadBoard('bad')
     expect(result.status).toBe('invalid')
   })
@@ -87,7 +87,7 @@ describe('LocalStorageAdapter', () => {
   it('lists boards newest first, skipping broken ones and other keys', async () => {
     await adapter.saveBoard(board('old', '2026-10-01T00:00:00Z'))
     await adapter.saveBoard(board('new', '2026-10-27T00:00:00Z'))
-    storage.setItem('hunchhack:board:broken', 'oops')
+    storage.setItem('floppy:board:broken', 'oops')
     storage.setItem('some-other-app', 'hello')
 
     const list = await adapter.listBoards()
@@ -95,7 +95,7 @@ describe('LocalStorageAdapter', () => {
     expect(list[0]).toMatchObject({ id: 'new', name: 'board new', updatedAt: '2026-10-27T00:00:00Z' })
     expect(list[0].nodeCount).toBeGreaterThan(0)
     // Broken data is skipped, not deleted.
-    expect(storage.getItem('hunchhack:board:broken')).toBe('oops')
+    expect(storage.getItem('floppy:board:broken')).toBe('oops')
   })
 
   it('deletes a board', async () => {
@@ -110,15 +110,18 @@ describe('LocalStorageAdapter', () => {
   })
 })
 
-describe('favourites across boards', () => {
-  it('lists every favourite with the board it is on', async () => {
-    const storage = new MemoryStorage()
-    const adapter = new LocalStorageAdapter(storage)
-    const a = board('a', '2026-10-01T00:00:00Z')
-    const b = board('b', '2026-10-02T00:00:00Z')
-    a.nodes[0] = { ...a.nodes[0], favourite: true }
-    await adapter.saveBoard(a)
-    await adapter.saveBoard(b)
-    expect(await adapter.listFavourites()).toEqual([{ boardId: 'a', boardName: a.name, node: a.nodes[0] }])
+describe('updating the board list after a save', () => {
+  it('swaps in just the changed board, newest first', () => {
+    const list = [summaryOf(board('b', '2026-10-02T00:00:00Z')), summaryOf(board('a', '2026-10-01T00:00:00Z'))]
+    const edited = { ...board('a', '2026-10-03T00:00:00Z'), name: 'renamed' }
+    const next = withSummary(list, edited)
+    expect(next.map((b) => [b.id, b.name])).toEqual([
+      ['a', 'renamed'],
+      ['b', 'board b'],
+    ])
+  })
+
+  it('adds a board it has not seen', () => {
+    expect(withSummary([], board('c'))).toHaveLength(1)
   })
 })

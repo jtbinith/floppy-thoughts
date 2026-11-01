@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { HELP, helpGroups, looksLikeCommand, runCommand } from './commands'
+import { COMMANDS, HELP, argKinds, findCommand, helpGroups, looksLikeCommand, runCommand } from './commands'
 
 const ctx = { addAt: { x: 5, y: 5 }, now: new Date('2026-10-28T12:00:00Z') }
 
@@ -184,5 +184,30 @@ describe('unlinking everything from one thought', () => {
     const r = runCommand({ ...hub, links: [] }, '/unlink 2', ctx)
     expect(r.error).toBe(true)
     expect(r.output).toEqual(["2 isn't linked to anything"])
+  })
+})
+
+describe('the command registry', () => {
+  it('puts every visible command in the help, once', () => {
+    for (const c of COMMANDS.filter((c) => !c.hidden)) expect(HELP.filter((l) => l.trim().startsWith(c.usage)), c.name).toHaveLength(1)
+  })
+
+  it('finds commands by their aliases', () => {
+    expect(findCommand('rm')?.name).toBe('del')
+    expect(findCommand('DELETE')?.name).toBe('del')
+    expect(findCommand('?')?.name).toBe('help')
+  })
+
+  it('reports usage from the registry', () => {
+    for (const c of COMMANDS.filter((c) => c.args.some((a) => !a.optional))) {
+      expect(runCommand(board, `/${c.name}`, ctx).output[0], c.name).toBe(`usage: ${c.usage.split(', ')[0]}`)
+    }
+  })
+
+  it('knows which arguments are ids, including repeated ones', () => {
+    expect(argKinds('link', 0)).toBe('node')
+    expect(argKinds('link', 5)).toBe('node')
+    expect(argKinds('edit', 1)).toBe('text')
+    expect(argKinds('fit', 0)).toBeUndefined()
   })
 })

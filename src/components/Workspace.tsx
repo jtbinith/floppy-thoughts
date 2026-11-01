@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { MAX_BOARD_NAME, shown, type Board } from '../lib/board'
 import { addLink, addLinkedIdea, addNote, addNudge, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, mainTheme, moveNodes, setMainTheme, toggleFavourite, touch } from '../lib/boardOps'
-import { commandProblem, looksLikeCommand, parseCommand, runCommand, type CommandResult } from '../lib/commands'
+import { runCommand, type BoardUi, type CommandResult } from '../lib/commands'
 import { favouritesBoard } from '../lib/favouritesBoard'
 import { FIT_VIEW } from '../lib/flow'
 import { complete } from '../lib/complete'
-import { NUDGE_CHOICES, pickNudge, type NudgeChoice } from '../lib/nudges/pickNudge'
-import { freeSpotNear, type Rect } from '../lib/placement'
+import { pickNudge, type NudgeChoice } from '../lib/nudges/pickNudge'
+import { BOX, PLACE, centreOfBox, freeSpotNear, type Rect } from '../lib/placement'
 import { tidyPositions } from '../lib/tidy'
 import type { Spark } from '../lib/sparks/deal'
 import { loadSeen, rememberSeen } from '../lib/sparks/seen'
@@ -24,25 +24,24 @@ import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
 import { SidePanel, type PanelTab } from './SidePanel'
 import { Terminal, type TerminalHandle } from './Terminal'
+import { KEYS } from '../lib/keys'
 
 type Props = {
   board: Board
   boards: BoardSummary[]
   onChange: (board: Board) => void
   onNewBoard: () => void
-  onOpenBoard: (id: string, focusId?: string) => void
+  onOpenBoard: (id: string) => void
   // Save and open a board made here (a favourites board).
   onOpenNew: (board: Board) => void
   onDeleteBoard: (id: string) => void
   // A brand-new board asks "got a theme?" first.
   askTheme: boolean
   onThemeAsked: () => void
-  // Something to show as soon as the board opens, e.g. a favourite picked from another board.
-  focusId?: string
 }
 
 // Whether the drawer is open, and on which tab, is remembered between visits.
-const PANEL_KEY = 'hunchhack:ui:panel'
+const PANEL_KEY = KEYS.panel
 const loadPanel = (): PanelTab | null => {
   const saved = localStorage.getItem(PANEL_KEY)
   return saved === 'machine' || saved === 'favourites' || saved === 'commands' ? saved : null
@@ -62,7 +61,7 @@ const isTyping = (target: EventTarget | null) => target instanceof Element && !!
 
 // The board plus the terminal. Both edit the same board through the same operations.
 export function Workspace(props: Props) {
-  const { board, boards, onChange, onNewBoard, onOpenBoard, focusId } = props
+  const { board, boards, onChange, onNewBoard, onOpenBoard } = props
   const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked } = props
   const { screenToFlowPosition, getNodes, getEdges, setNodes, setCenter, getZoom, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
@@ -176,18 +175,20 @@ export function Workspace(props: Props) {
   function reveal(at: { x: number; y: number }) {
     const view = viewRect()
     if (!view) return
-    const inside = at.x >= view.x && at.y >= view.y && at.x + 230 <= view.x + view.width && at.y + 90 <= view.y + view.height
-    if (!inside) void setCenter(at.x + 115, at.y + 45, { zoom: getZoom(), duration: 350 })
+    const inside = at.x >= view.x && at.y >= view.y && at.x + BOX.width <= view.x + view.width && at.y + BOX.height <= view.y + view.height
+    const centre = centreOfBox(at)
+    if (!inside) void setCenter(centre.x, centre.y, { zoom: getZoom(), duration: 350 })
   }
 
   // Tidy: lay the board out organically (see lib/tidy), gliding boxes to their new places.
   // One change, so one undo puts everything back.
   function tidy(): string {
     if (board.nodes.length < 2) return 'nothing to tidy yet'
-    const sizes = new Map(getNodes().map((n) => [n.id, { width: n.measured?.width ?? 230, height: n.measured?.height ?? 90 }]))
-    const targets = tidyPositions(board, sizes)
+    const sizes = new Map(getNodes().map((n) => [n.id, { width: n.measured?.width ?? BOX.width, height: n.measured?.height ?? BOX.height }]))
+    // A Map from each box's id to where it's going, so each frame looks them up in constant time.
+    const targets = new Map(tidyPositions(board, sizes).map((p) => [p.id, p]))
     const from = new Map(board.nodes.map((n) => [n.id, { x: n.x, y: n.y }]))
-    const finished = moveNodes(board, targets)
+    const finished = moveNodes(board, [...targets.values()])
     const start = performance.now()
     const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450
     const ease = (t: number) => 1 - (1 - t) ** 3
@@ -196,7 +197,7 @@ export function Workspace(props: Props) {
       setNodes((nodes) =>
         nodes.map((n) => {
           const a = from.get(n.id)
-          const b = targets.find((p) => p.id === n.id)
+          const b = targets.get(n.id)
           if (!a || !b) return n
           return { ...n, position: { x: a.x + (b.x - a.x) * ease(t), y: a.y + (b.y - a.y) * ease(t) } }
         }),
@@ -223,7 +224,7 @@ export function Workspace(props: Props) {
   function branchFrom(from: Board, fromId: string) {
     const parent = findNode(from, fromId)
     if (!parent) return
-    const at = spotNear(from, { x: parent.x + 115, y: parent.y + 190 })
+    const at = spotNear(from, { x: parent.x + PLACE.branch.x, y: parent.y + PLACE.branch.y })
     const result = addLinkedIdea(from, fromId, NEW_IDEA, at)
     if (!result.ok) {
       setNotice(result.error)
@@ -245,7 +246,7 @@ export function Workspace(props: Props) {
       setNotice(message)
       return { text: message, error: true }
     }
-    const at = spotNear(current, { x: target.x + 380, y: target.y + 45 })
+    const at = spotNear(current, { x: target.x + PLACE.nudge.x, y: target.y + PLACE.nudge.y })
     const result = addNudge(current, targetId, nudge, at)
     if (!result.ok) {
       setNotice(result.error)
@@ -270,7 +271,8 @@ export function Workspace(props: Props) {
     const node = findNode(on, id)
     if (!node) return
     setNodes((nodes) => nodes.map((n) => ({ ...n, selected: n.id === id })))
-    void setCenter(node.x + 100, node.y + 40, { zoom: 1, duration: 400 })
+    const centre = centreOfBox(node)
+    void setCenter(centre.x, centre.y, { zoom: 1, duration: 400 })
   }
 
   // A note from the vending machine lands next to what you have selected, or in the middle of the view.
@@ -278,7 +280,7 @@ export function Workspace(props: Props) {
     const current = latest.current
     const selected = getNodes().filter((n) => n.selected)
     const anchor = selected.length === 1 ? findNode(current, selected[0].id) : undefined
-    const at = anchor ? spotNear(current, { x: anchor.x + 300, y: anchor.y - 40 }) : centreOf(current)
+    const at = anchor ? spotNear(current, { x: anchor.x + PLACE.note.x, y: anchor.y + PLACE.note.y }) : centreOf(current)
     const result = addNote(current, note, at)
     if (!result.ok) {
       setNotice(result.error)
@@ -354,16 +356,6 @@ export function Workspace(props: Props) {
     if (clean && clean !== board.name) commit(board, touch({ ...board, name: clean }, new Date()))
   }
 
-  // A favourite picked on another board is shown once this board has opened and been laid out.
-  useEffect(() => {
-    if (!focusId) return
-    // Wait for React Flow's own first fit-to-view, or it would undo the pan.
-    const timer = setTimeout(() => show(focusId), 150)
-    return () => clearTimeout(timer)
-    // Only when the board first opens.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   function saveEdit(id: string, text: string): Board {
     const node = findNode(board, id)
     if (node?.text === text.trim()) return board
@@ -398,79 +390,45 @@ export function Workspace(props: Props) {
     deleteMany: (ids, links) => void requestDelete(ids, links),
   }
 
-  function handleCommand(input: string): CommandResult {
-    // Not a command: it's a thought, so add it as an idea.
-    if (!looksLikeCommand(input)) return runAndCommit(input)
-    const problem = commandProblem(input)
-    if (problem) return { output: [problem], error: true }
-    const { name, args } = parseCommand(input)
-    const [id] = args
-    if (name === 'del' || name === 'delete' || name === 'rm') {
-      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
-      const text = findNode(board, id)?.text
-      return requestDelete([id]) ? { output: [`deleted ${shown(id)}: ${text}`] } : { output: [`${shown(id)} is in the middle of a chain: answer on the board`] }
-    }
-    if (name === 'help' || name === '?') {
-      setPanel('commands')
-      return { output: ['the commands are open on the right'] }
-    }
-    if (name === 'favboard') return { output: [makeFavouritesBoard()] }
-    if (name === 'tidy') return { output: [tidy()] }
-    if (name === 'fit') {
+  // What the board on screen does for commands that need more than the board itself.
+  const ui: BoardUi = {
+    undo: stepBack,
+    redo: stepForward,
+    tidy,
+    fit: () => {
       void fitView(FIT_VIEW)
-      return { output: [board.nodes.length ? 'fitted the board to the screen' : 'the board is empty'] }
-    }
-    if (name === 'summary') {
-      if (!board.nodes.some((n) => n.chosen)) return { output: ['no idea picked yet. try /pick <id>'], error: true }
-      setShowSummary(true)
-      return { output: ['showing your summary'] }
-    }
-    if (name === 'pick') {
-      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
-      pick(id)
-      return { output: [findNode(latest.current, id)?.chosen ? `${shown(id)} is the one` : `${shown(id)} is no longer the one`] }
-    }
-    if (name === 'undo') return { output: [stepBack()] }
-    if (name === 'redo') return { output: [stepForward()] }
-    if (name === 'new') {
-      onNewBoard()
-      return { output: ['opening a new board…'] }
-    }
-    if (name === 'boards') {
-      return { output: boards.map((b, i) => `  ${String(i + 1).padStart(2)}  ${b.name}${b.id === board.id ? '  ← open' : ''}`).concat('open one with: /open <number>') }
-    }
-    if (name === 'open') {
-      const n = Number(id)
+      return board.nodes.length ? 'fitted the board to the screen' : 'the board is empty'
+    },
+    showCommands: () => setPanel('commands'),
+    newBoard: onNewBoard,
+    boards: () => boards.map((b) => ({ name: b.id === board.id ? board.name : b.name, open: b.id === board.id })),
+    openBoard: (n) => {
       const target = boards[n - 1]
-      if (!target) return { output: ['no board with that number. see: /boards'], error: true }
+      if (!target) return null
       onOpenBoard(target.id)
-      return { output: [`opening ${target.name}…`] }
-    }
-    if (name === 'favs') {
-      const mine = board.nodes.filter((n) => n.favourite)
-      if (mine.length === 0) return { output: ['no favourites on this board yet. try /fav <id>'] }
-      return { output: mine.map((n) => `  ♥ ${shown(n.id).padEnd(3)} ${n.text}`) }
-    }
-    if (name === 'vend') {
-      const [row] = args.map((a) => a.toLowerCase())
-      if (row && !VEND_ROWS.includes(row as VendRow)) return { output: [`there's no ${row} row. rows: ${VEND_ROWS.join(' ')}`], error: true }
-      const r = vendFromTerminal((row as VendRow | undefined) ?? 'surprise')
-      return { output: [r.text], error: r.error }
-    }
-    if (name === 'nudge') {
-      const type = args[1]?.toLowerCase()
-      if (!findNode(board, id)) return { output: [`Nothing numbered ${shown(id)}`], error: true }
-      if (type && !NUDGE_CHOICES.includes(type as NudgeChoice))
-        return { output: [`unknown nudge type "${type}". try: ${NUDGE_CHOICES.join(' ')}`], error: true }
-      void requestNudge(id, type as NudgeChoice | undefined).then((r) => terminalRef.current?.print([r.text], r.error))
-      return { output: [`nudging ${shown(id)}…`] }
-    }
-    return runAndCommit(input)
+      return target.name
+    },
+    remove: (id) => {
+      const text = findNode(board, id)?.text
+      return requestDelete([id]) ? `deleted ${shown(id)}: ${text}` : `${shown(id)} is in the middle of a chain: answer on the board`
+    },
+    showSummary: () => {
+      setShowSummary(true)
+      return true
+    },
+    favouritesBoard: makeFavouritesBoard,
+    vend: (row) => {
+      if (row && !VEND_ROWS.includes(row as VendRow)) return { text: `there's no ${row} row. rows: ${VEND_ROWS.join(' ')}`, error: true }
+      return vendFromTerminal((row as VendRow | undefined) ?? 'surprise')
+    },
+    nudge: (id, type) => void requestNudge(id, type as NudgeChoice | undefined).then((r) => terminalRef.current?.print([r.text], r.error)),
   }
 
-  function runAndCommit(input: string): CommandResult {
-    const result = runCommand(board, input, { addAt: visibleCentre() })
+  // Every line from the terminal goes through the one command router.
+  function handleCommand(input: string): CommandResult {
+    const result = runCommand(board, input, { addAt: visibleCentre(), ui })
     if (result.board) commit(board, result.board)
+    result.then?.()
     return result
   }
 

@@ -1,0 +1,381 @@
+/* The drawer: vending machine, favourites and commands */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--screen-bar);
+  border-left: 1px solid var(--line);
+}
+
+.panel__resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 5;
+  width: 8px;
+  cursor: col-resize;
+}
+
+.panel__resize:hover,
+.panel__resize:focus-visible {
+  background: linear-gradient(90deg, transparent 3px, var(--muted) 3px 5px, transparent 5px);
+  outline: none;
+}
+
+.panel__tabs {
+  display: flex;
+  /* Never squashed by a long tab below it. */
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel__tab {
+  display: inline-flex;
+  flex: none;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.panel__tab[aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: var(--spark);
+}
+
+.panel__close {
+  margin-left: auto;
+  padding: 0 0.8rem;
+  font-size: 1.1rem;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.panel__tab:focus-visible,
+.panel__close:focus-visible,
+.panel button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.panel input {
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--line);
+}
+
+.panel__empty {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.panel kbd {
+  padding: 0.05rem 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--screen);
+  background: var(--text);
+  border-radius: 3px;
+}
+
+.favs {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.favs__board h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.favs__board h3 small {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.favs__board ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.favs__item {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.favs__open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.favs__open small {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.favs__item--nudge .favs__open {
+  font-style: italic;
+  color: var(--nudge);
+}
+
+.favs__open:hover {
+  background: var(--screen);
+}
+
+.favs__remove {
+  padding: 0 0.6rem;
+  color: var(--fav);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.vend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.vend__machine {
+  position: relative;
+  /* Grows with the drawer, within reason. */
+  width: clamp(180px, 70%, 340px);
+  margin: 0 auto;
+}
+
+.vend__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vend__sign {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  fill: #2f2526;
+}
+
+.vend__price {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: #2f2526;
+}
+
+.vend__mark {
+  font-family: var(--mono);
+  font-size: 8px;
+  fill: #4b454c;
+}
+
+/* Overlays positioned over the drawing's side panel (in % of the 320 × 470 drawing). */
+.vend__screen {
+  position: absolute;
+  top: calc(88 / 400 * 100%);
+  left: calc(207 / 320 * 100%);
+  width: calc(46 / 320 * 100%);
+  height: calc(20 / 400 * 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.45rem;
+  color: #9fd46a;
+}
+
+.vend__keys {
+  position: absolute;
+  top: calc(118 / 400 * 100%);
+  left: calc(206 / 320 * 100%);
+  width: calc(48 / 320 * 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.vend__key {
+  aspect-ratio: 1;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2f2526;
+  background: #ece7ee;
+  border: 2px solid #2f2526;
+  border-radius: 6px;
+  box-shadow: 0 3px 0 #2f2526;
+  cursor: pointer;
+}
+
+.vend__key:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #2f2526;
+}
+
+.vend__key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.vend__key:focus-visible {
+  outline: 3px solid var(--spark);
+  outline-offset: 2px;
+}
+
+.vend__intro {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.9;
+  color: var(--muted);
+  text-align: center;
+}
+
+.panel__row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel__button {
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.panel__button:hover {
+  border-color: var(--muted);
+}
+
+.panel__link {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.favs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.commands {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.commands__intro {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.commands__group h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--spark);
+}
+
+.commands__group ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.commands__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.commands__entry:hover,
+.commands__entry:focus-visible {
+  background: var(--screen);
+  outline: none;
+}
+
+.commands__entry code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.commands__entry span,
+.commands__tip {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.commands__tip {
+  padding: 0.15rem 0.45rem;
+}

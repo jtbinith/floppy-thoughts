@@ -1,29 +1,13 @@
 import { shown, type Board, type BoardNode } from './board'
+import { COMMANDS, argKinds, type Arg } from './commands'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
 
 // Tab completion for commands (lines starting with "/"), like a shell: completes as far as it
 // can, and lists the options when there's more than one. Thoughts are left alone.
 
-export const COMMANDS = [
-  'edit', 'del', 'vend', 'theme', 'link', 'unlink', 'nudge', 'fav', 'favs',
-  'favboard', 'pick', 'summary', 'tidy', 'fit', 'list', 'rename', 'new', 'boards', 'open', 'undo', 'redo',
-  'clear', 'help',
-] as const
-
-// What each argument of a command expects.
-type Arg = 'node' | 'own' | 'nudgeType' | 'row' | 'board' | 'text'
-const ARGS: Partial<Record<(typeof COMMANDS)[number], Arg[]>> = {
-  edit: ['own', 'text'],
-  del: ['node'],
-  fav: ['node'],
-  pick: ['node'],
-  vend: ['row'],
-  link: ['node', 'node', 'node', 'node', 'node', 'node'],
-  unlink: ['node', 'node', 'node', 'node', 'node', 'node'],
-  nudge: ['node', 'nudgeType'],
-  open: ['board'],
-}
+// Every command name (aliases left out, so Tab offers one name for each).
+const NAMES = COMMANDS.map((c) => c.name)
 
 // `list`: show the options one per line (they're longer, like "2  clocks that grow").
 export type Completion = { value: string; options: string[]; list?: boolean }
@@ -71,10 +55,9 @@ export function complete(input: string, board: Board, boardCount = 0): Completio
   const before = input.slice(0, input.length - partial.length)
 
   let pool: string[]
-  if (words.length === 0) pool = [...COMMANDS]
+  if (words.length === 0) pool = NAMES
   else {
-    const args = ARGS[words[0].toLowerCase() as keyof typeof ARGS]
-    const arg = args?.[words.length - 1]
+    const arg = argKinds(words[0], words.length - 1)
     // Ids complete from a number or from words in the thought, filling in its number.
     if (arg === 'node' || arg === 'own') {
       const nodes = arg === 'own' ? board.nodes.filter((n) => n.kind === 'user' || n.category === 'theme') : board.nodes
