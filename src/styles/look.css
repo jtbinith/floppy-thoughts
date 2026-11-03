@@ -1,0 +1,383 @@
+/* PROTOTYPE: the site in each palette version, home page built around the machine (#/look) */
+
+.look {
+  font-family: var(--font-body);
+}
+
+/* Each section takes its colours from --s-bg, --s-text, --s-muted and --s-accent. */
+.look-s {
+  position: relative;
+  padding: 4rem clamp(1.25rem, 5vw, 4rem);
+  color: var(--s-text);
+  background: var(--s-bg);
+}
+
+.look-s h2 {
+  margin: 0 0 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--s-accent);
+  text-transform: uppercase;
+}
+
+.look-score {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--s-muted);
+  opacity: 0.8;
+}
+
+/* The version switcher */
+.look-switch {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  max-width: calc(100vw - 2rem);
+  padding: 0.45rem 0.6rem;
+  background: rgba(23, 17, 14, 0.92);
+  border: 1px solid #4a3a30;
+  border-radius: 16px;
+  transform: translateX(-50%);
+}
+
+.look-switch button {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.25rem 0.75rem 0.25rem 0.3rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: #bfa086;
+  background: transparent;
+  border: 1px solid #4a3a30;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.look-switch button[aria-pressed='true'] {
+  color: #f6e3cc;
+  border-color: #f6e3cc;
+}
+
+.look-switch button span {
+  width: 1rem;
+  height: 1rem;
+  border: 3px solid;
+  border-radius: 50%;
+}
+
+.look-switch small {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: #bfa086;
+  text-align: center;
+}
+
+/* Buttons */
+.look-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--btn-text);
+  text-decoration: none;
+  background: var(--btn-bg);
+  border: 3px solid var(--btn-bg);
+  border-radius: 999px;
+  box-shadow: 0 5px 0 var(--btn-shadow);
+  cursor: pointer;
+}
+
+.look-btn:active {
+  box-shadow: 0 1px 0 var(--btn-shadow);
+  transform: translateY(4px);
+}
+
+.look-btn--quiet {
+  color: var(--s-text);
+  background: transparent;
+  border-color: var(--s-text);
+  box-shadow: none;
+}
+
+.look-btn--small {
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* The hero: words on the left, the live machine on the right */
+.look-hero {
+  min-height: 100vh;
+  padding-top: 1.4rem;
+}
+
+.look-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.look-logo {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--s-accent);
+  text-decoration: none;
+}
+
+.look-navlink {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--s-text);
+  text-decoration: none;
+  border: 1px solid var(--s-muted);
+  border-radius: 6px;
+}
+
+.look-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  align-items: center;
+  min-height: calc(100vh - 6rem);
+}
+
+.look-hero h1 {
+  margin: 0 0 1.2rem;
+  font-family: var(--font-heading);
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.look-hero h1 span {
+  display: block;
+  color: var(--s-accent);
+}
+
+.look-hero__text p {
+  max-width: 32rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.look-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.6rem;
+}
+
+.look-hero__machine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.look-machine {
+  position: relative;
+  width: 100%;
+  height: min(72vh, 640px);
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.look-try {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--s-muted);
+}
+
+.look-try kbd {
+  padding: 0.05rem 0.35rem;
+  font-family: var(--mono);
+  color: var(--s-text);
+  border: 1px solid var(--s-muted);
+  border-radius: 4px;
+}
+
+/* How it works */
+.look-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.look-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.3rem;
+  /* A card is a shade of its section: a little of the text colour mixed into the background. */
+  background: color-mix(in srgb, var(--s-text) 6%, var(--s-bg));
+  border: 1px solid color-mix(in srgb, var(--s-text) 22%, var(--s-bg));
+  border-radius: 14px;
+}
+
+.look-steps b {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--s-accent);
+}
+
+.look-steps strong {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+}
+
+.look-steps span {
+  color: var(--s-muted);
+  line-height: 1.5;
+}
+
+.look-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.look-cats li {
+  padding: 0.35rem 0.9rem;
+  font-weight: 700;
+  /* An outline in the section's text colour, so a chip still shows on a section of the same colour. */
+  border: 2px solid var(--s-text);
+  border-radius: 999px;
+}
+
+/* Example boards */
+.look-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.look-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.2rem;
+  /* A card is a shade of its section: a little of the text colour mixed into the background. */
+  background: color-mix(in srgb, var(--s-text) 6%, var(--s-bg));
+  border: 1px solid color-mix(in srgb, var(--s-text) 22%, var(--s-bg));
+  border-radius: 14px;
+}
+
+.look-card p {
+  margin: 0;
+}
+
+.look-card__note {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.look-card__trail {
+  font-size: 0.9rem;
+  color: var(--s-muted);
+}
+
+.look-card__idea {
+  margin-top: auto !important;
+  font-weight: 700;
+}
+
+.look-card__idea span {
+  margin-right: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--s-bg);
+  background: var(--s-accent);
+  border-radius: 4px;
+}
+
+/* The closing band */
+.look-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  align-items: center;
+  padding-bottom: 6rem;
+  text-align: center;
+}
+
+.look-cta h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--s-text);
+  text-transform: none;
+}
+
+/* On the closing band the button uses that section's accent, so it shows on any colour. */
+.look-cta .look-btn {
+  color: var(--s-bg);
+  background: var(--s-accent);
+  border-color: var(--s-accent);
+  box-shadow: none;
+}
+
+.look-cta footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  justify-content: center;
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--s-muted);
+}
+
+@media (max-width: 860px) {
+  .look-hero__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .look-machine {
+    height: 60vh;
+  }
+}
+
+.look-switch__machines {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #bfa086;
+}
+
+.look-switch__machines button {
+  font-size: 0.72rem;
+}
+
+/* A capsule code, coloured like its row on the machine */
+.look-code {
+  padding: 0.05rem 0.35rem;
+  font-weight: 700;
+  border-radius: 4px;
+}

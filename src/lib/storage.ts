@@ -2,15 +2,45 @@ import { boardSchema, parseBoard, type Board, type BoardNode } from './board'
 import { KEYS } from './keys'
 
 // What a board list shows: enough to recognise a board without opening it.
-export type BoardSummary = Pick<Board, 'id' | 'name' | 'updatedAt'> & { nodeCount: number; favouriteCount: number }
+export type BoardSummary = Pick<Board, 'id' | 'name' | 'createdAt' | 'updatedAt'> & {
+  // Every thought's text, for searching.
+  thoughts: string[]
+  // A tiny map of the board: boxes (0–1 across and down) and the links between them.
+  sketch: { nodes: [x: number, y: number, tone: SketchTone][]; links: [number, number][] }
+}
 
-// What the board list shows for one board.
-export const summaryOf = ({ id, name, updatedAt, nodes }: Board): BoardSummary => ({
-  id,
-  name,
-  updatedAt,
-  nodeCount: nodes.length,
-  favouriteCount: nodes.filter((n) => n.favourite).length,
+// How a box is coloured in the sketch: vending-machine notes by their category.
+export type SketchTone = NonNullable<BoardNode['category']> | 'nudge' | 'user'
+
+const SKETCH_NODES = 60
+
+function sketchOf(board: Board): BoardSummary['sketch'] {
+  const nodes = board.nodes.slice(0, SKETCH_NODES)
+  if (nodes.length === 0) return { nodes: [], links: [] }
+  const xs = nodes.map((n) => n.x)
+  const ys = nodes.map((n) => n.y)
+  const [minX, minY] = [Math.min(...xs), Math.min(...ys)]
+  const [w, h] = [Math.max(...xs) - minX, Math.max(...ys) - minY]
+  const span = Math.max(w, h, 1)
+  // Keep the board's shape, centred in the box.
+  const at = (v: number, min: number, size: number) => Math.round(((v - min + (span - size) / 2) / span) * 100) / 100
+  const index = new Map(nodes.map((n, i) => [n.id, i]))
+  return {
+    nodes: nodes.map((n) => [at(n.x, minX, w), at(n.y, minY, h), n.category ?? (n.kind === 'nudge' ? 'nudge' : 'user')]),
+    links: board.links.flatMap((l) => {
+      const [a, b] = [index.get(l.from), index.get(l.to)]
+      return a === undefined || b === undefined ? [] : [[a, b] as [number, number]]
+    }),
+  }
+}
+
+export const summaryOf = (board: Board): BoardSummary => ({
+  id: board.id,
+  name: board.name,
+  createdAt: board.createdAt,
+  updatedAt: board.updatedAt,
+  thoughts: board.nodes.map((n) => n.text),
+  sketch: sketchOf(board),
 })
 
 // Puts one board's new summary into the list, newest first, without reading every board again.
@@ -39,7 +69,7 @@ export interface StorageAdapter {
 
 export class StorageFullError extends Error {
   constructor() {
-    super('Browser storage is full. Export or delete some boards to free up space.')
+    super('Browser storage is full. Delete some boards to free up space.')
     this.name = 'StorageFullError'
   }
 }

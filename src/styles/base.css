@@ -1,39 +1,100 @@
 /* Tokens, resets and shared bits */
 
 /*
-  Placeholder look: a retro handheld device in shrimp colours, with the board and terminal
-  inside its screen. Whimsy lives on the frame; the screen stays calm (one muted amber tone).
-  The CSS-drawn frame will be swapped for pixel art later.
+  Shrimp × tech, in dark mode (the default) and light mode. Every colour on the site comes from
+  these variables, so switching data-theme on <html> recolours everything. The device frame
+  around the board is circuit teal, like the vending machine.
 */
 :root {
+  /* The machine's rows, on note boxes and sketches too. `-text` is what reads on each. */
+  --cat-words: #d2452f;
+  --cat-words-text: #f6eedd;
+  --cat-objects: #f2b84b;
+  --cat-objects-text: #2b1d18;
+  --cat-problems: #23726c;
+  --cat-problems-text: #f6eedd;
+  --cat-curiosities: #5b2a3a;
+  --cat-curiosities-text: #f6eedd;
+  --cat-nature: #7f8d3a;
+  --cat-nature-text: #2b1d18;
+  --cat-constraints: #ef8a6b;
+  --cat-constraints-text: #2b1d18;
+  --cat-theme: #f6eedd;
+  --cat-theme-text: #2b1d18;
+
   /* Page and device frame */
-  --page: #17110e;
-  --frame: #c4733a;
-  --frame-light: #e2955a;
-  --frame-dark: #8c4a22;
-  --frame-edge: #3b2416;
-  --button: #a85a2a;
+  --page: #1f1b18;
+  --frame: #23726c;
+  --frame-light: #2f8a82;
+  --frame-dark: #1b5a55;
+  --frame-edge: #0e2e2b;
+  --button: #1b5a55;
 
   /* Inside the screen */
-  --screen: #130e0b;
-  --screen-bar: #1c1410;
-  --line: #3a2a20;
-  --text: #f0c9a0;
-  --muted: #a8805e;
-  --spark: #ff8f5e;
-  --nudge: #d9b46a;
-  --fav: #ff8fa3;
+  --screen: #191512;
+  --screen-bar: #24201c;
+  --raised: #2b2622;
+  --line: #3f3731;
+  --edge: #6b5d50;
+  --text: #f6eedd;
+  --muted: #b3a58f;
+  --spark: #ef8a6b;
+  --on-spark: #2b1d18;
+  --nudge: #f2b84b;
+  --fav: #f39a8a;
   --error: #ff7a6b;
+  --dots: #34302b;
 
-  --mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  /* Home page: headings in amber like the LED sign, coral headline and buttons */
+  --heading: #f2b84b;
+  --headline: #ef8a6b;
+  --btn: #ef8a6b;
+  --btn-text: #2b1d18;
+  --btn-shadow: #9e2e1c;
+
+  /* The terminal font: a typewriter monospace, for section titles, capsule codes and hints. */
+  --mono: 'Courier Prime', ui-monospace, Menlo, Consolas, monospace;
   /* Change these two to try other fonts. */
   --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  --font-heading: 'Bricolage Grotesque', system-ui, sans-serif;
+  /* Headings and signs: Bungee, sign lettering like on the vending machine (capitals only, so keep it short). */
+  --font-heading: 'Bungee', system-ui, sans-serif;
+  --font-sign: var(--font-heading);
+
+  /* Bungee has one weight; don't let the browser fake a bold version of it. */
+  font-synthesis-weight: none;
 
   color-scheme: dark;
   font-family: var(--mono);
   color: var(--text);
   background: var(--page);
+}
+
+:root[data-theme='light'] {
+  --cat-theme: #2b1d18;
+  --cat-theme-text: #f6eedd;
+
+  --page: #d8d1c3;
+  --frame-edge: #12403c;
+
+  --screen: #efe7d6;
+  --screen-bar: #e4dccb;
+  --raised: #f6eedd;
+  --line: #b9ad99;
+  --edge: #8a7a68;
+  --text: #2b1d18;
+  --muted: #5e4d42;
+  /* Darker than dark mode's coral, so small text still reads on light paper. */
+  --spark: #b33a25;
+  --on-spark: #f6eedd;
+  --nudge: #7a5a10;
+  --fav: #b8324a;
+  --error: #b3261e;
+  --dots: #d3c9b6;
+
+  --heading: #1b5a55;
+  --headline: #d2452f;
+
+  color-scheme: light;
 }
 
 * {
@@ -58,4 +119,30 @@ button {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* The dark/light switch */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  color: var(--spark);
+  border-color: var(--spark);
+}
+
+.theme-toggle--bar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-color: transparent;
 }

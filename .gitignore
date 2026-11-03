@@ -26,3 +26,6 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Fonts being compared on #/type (not shipped until one is chosen)
+public/fonts-trial/

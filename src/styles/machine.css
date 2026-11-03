@@ -1,0 +1,135 @@
+/* PROTOTYPE: the 3D vending machine (#/machine) */
+
+.machine {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: #2a1d16;
+}
+
+.machine__stage {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.machine__stage:active {
+  cursor: grabbing;
+}
+
+/* Drawn small and scaled up without smoothing, so the 3D looks like pixel art. */
+.machine__canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: pixelated;
+}
+
+.machine__ui {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.machine__vend {
+  padding: 0.7rem 1.6rem;
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a110c;
+  background: var(--spark);
+  border: 3px solid #1a110c;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 #1a110c;
+  cursor: pointer;
+}
+
+.machine__vend:active {
+  box-shadow: 0 1px 0 #1a110c;
+  transform: translateY(4px);
+}
+
+.machine__pixels {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.machine__pixels button {
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.machine__pixels button[aria-pressed='true'] {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.machine__badge {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.machine__hint {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  font-size: 0.8rem;
+  color: var(--muted);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Colour versions to compare, down the left */
+.machine__themes {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transform: translateY(-50%);
+}
+
+.machine__themes button {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.3rem 0.8rem 0.3rem 0.35rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: rgba(23, 17, 14, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.machine__themes button[aria-pressed='true'] {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.machine__themes span {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 3px solid;
+  border-radius: 50%;
+}

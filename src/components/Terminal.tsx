@@ -48,6 +48,19 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
   const [height, setHeight] = useState(savedHeight)
   const inputRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  // Where to draw the underscore cursor (a column, less how far the input has scrolled), or null
+  // when the input isn't focused or some text is selected.
+  const [caret, setCaret] = useState<{ col: number; scroll: number } | null>(null)
+  function syncCaret() {
+    const input = inputRef.current
+    if (!input || document.activeElement !== input || input.selectionStart !== input.selectionEnd) return setCaret(null)
+    setCaret({ col: input.selectionStart ?? input.value.length, scroll: input.scrollLeft })
+  }
+  // Text set from code (history, tab completion) moves the cursor without a select event.
+  useEffect(() => {
+    const t = requestAnimationFrame(syncCaret)
+    return () => cancelAnimationFrame(t)
+  }, [value])
 
   function resizeTo(next: number) {
     const h = clampHeight(next)
@@ -177,6 +190,7 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
         }}
       >
         <span aria-hidden="true">~ %</span>
+        <span className="terminal__field">
         <input
           ref={inputRef}
           className="terminal__input"
@@ -186,6 +200,9 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
           spellCheck={false}
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onSelect={syncCaret}
+          onFocus={syncCaret}
+          onBlur={() => setCaret(null)}
           onKeyDown={(e) => {
             if (e.key === 'Tab' && !e.shiftKey && onComplete) {
               // Stay in the terminal and complete, like a shell.
@@ -213,6 +230,8 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
             }
           }}
         />
+          {caret && <i className="terminal__caret" aria-hidden="true" style={{ left: `calc(${caret.col}ch - ${caret.scroll}px)` }} />}
+        </span>
       </form>
     </section>
   )

@@ -93,7 +93,6 @@ describe('LocalStorageAdapter', () => {
     const list = await adapter.listBoards()
     expect(list.map((b) => b.id)).toEqual(['new', 'old'])
     expect(list[0]).toMatchObject({ id: 'new', name: 'board new', updatedAt: '2026-10-27T00:00:00Z' })
-    expect(list[0].nodeCount).toBeGreaterThan(0)
     // Broken data is skipped, not deleted.
     expect(storage.getItem('floppy:board:broken')).toBe('oops')
   })
@@ -123,5 +122,30 @@ describe('updating the board list after a save', () => {
 
   it('adds a board it has not seen', () => {
     expect(withSummary([], board('c'))).toHaveLength(1)
+  })
+})
+
+describe('board summaries', () => {
+  const b: Board = {
+    ...board('a'),
+    nodes: [
+      { id: 'n1', text: 'first', kind: 'user', x: 0, y: 0 },
+      { id: 'n2', text: 'Time', kind: 'spark', category: 'theme', x: 100, y: 0 },
+      { id: 'n3', text: 'second', kind: 'user', x: 100, y: 50 },
+      { id: 'n4', text: 'newest', kind: 'nudge', nudgeType: 'related', x: 200, y: 100 },
+    ],
+    links: [{ from: 'n1', to: 'n4' }],
+  }
+
+  it('sketch the boxes on a 0–1 scale, centred, with notes coloured by category', () => {
+    const { nodes, links } = summaryOf(b).sketch
+    expect(nodes[0]).toEqual([0, 0.25, 'user'])
+    expect(nodes[1][2]).toBe('theme')
+    expect(nodes[3]).toEqual([1, 0.75, 'nudge'])
+    expect(links).toEqual([[0, 3]])
+  })
+
+  it('cope with an empty board', () => {
+    expect(summaryOf({ ...board('e'), nodes: [], links: [] })).toMatchObject({ sketch: { nodes: [], links: [] } })
   })
 })

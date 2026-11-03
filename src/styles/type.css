@@ -1,0 +1,102 @@
+/* PROTOTYPE: #/type, choosing the terminal font. The trial fonts live in public/fonts-trial. */
+
+@font-face { font-family: 'Bungee'; src: url('/floppy-thoughts/fonts-trial/bungee.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Bungee Shade'; src: url('/floppy-thoughts/fonts-trial/bungeeshade.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Monoton'; src: url('/floppy-thoughts/fonts-trial/monoton.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('/floppy-thoughts/fonts-trial/fraunces.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Bagel Fat One'; src: url('/floppy-thoughts/fonts-trial/bagel.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Rampart One'; src: url('/floppy-thoughts/fonts-trial/rampart.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Shrikhand'; src: url('/floppy-thoughts/fonts-trial/shrikhand.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Rubik Mono One'; src: url('/floppy-thoughts/fonts-trial/rubikmono.woff2') format('woff2'); font-display: swap; }
+
+.ty {
+  min-height: 100vh;
+  padding: 3rem clamp(1.5rem, 8vw, 8rem) 5rem;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--page);
+}
+
+.ty-theme { position: fixed; top: 1rem; right: 1rem; }
+
+.ty__head { max-width: 46rem; margin-bottom: 3rem; }
+.ty__head h1 { margin: 0.2rem 0 0.8rem; font-family: var(--font-heading); font-size: 2.6rem; color: var(--headline); }
+.ty__head p { line-height: 1.6; color: var(--muted); }
+.ty-eyebrow { margin: 0; font-family: var(--mono); color: var(--heading); }
+
+.ty-section { margin-bottom: 4rem; }
+.ty-section h2 { margin: 0 0 1.2rem; font-family: var(--mono); font-size: 0.95rem; color: var(--heading); text-transform: uppercase; }
+
+.ty-hero { padding: 3rem 2rem; background: var(--screen-bar); border-radius: 12px; }
+.ty-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.ty-controls button {
+  padding: 0.4rem 0.8rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ty-controls button[aria-pressed='true'] { color: var(--btn-text); background: var(--btn); border-color: var(--btn); }
+.ty-note { max-width: 46rem; font-size: 0.9rem; line-height: 1.5; color: var(--muted); }
+
+.ty-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+.ty-card { padding: 1rem 1.2rem; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; }
+.ty-card header { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.ty-card h3 { margin: 0; font-family: var(--trial); font-size: 1.5rem; font-weight: 400; }
+.ty-flag { font-size: 0.75rem; color: var(--muted); }
+.ty-flag--warn { color: var(--error); }
+.ty-licence { margin: 0.3rem 0 0.8rem; font-size: 0.8rem; color: var(--muted); }
+
+.ty-term { position: relative; margin-top: 0.6rem; padding: 0.7rem 0.8rem; font-family: var(--trial); background: var(--screen); border-radius: 6px; }
+.ty-term small { position: absolute; top: 0.4rem; right: 0.6rem; font-family: var(--font-body); font-size: 0.7rem; color: var(--muted); }
+.ty-term p { margin: 0.25rem 0; line-height: 1.5; }
+.ty-heading { color: var(--heading); text-transform: uppercase; }
+.ty-muted { color: var(--muted); }
+.ty-code { padding: 0 0.3em; border-radius: 3px; }
+.ty-code--words { color: var(--cat-words-text); background: var(--cat-words); }
+.ty-code--objects { color: var(--cat-objects-text); background: var(--cat-objects); }
+.ty-code--problems { color: var(--cat-problems-text); background: var(--cat-problems); }
+
+.typed {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+/* Round two: headline cursors side by side, home-page slices, accent cards */
+.ty-carets { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ty-hero { position: relative; }
+.ty-hero small { position: absolute; top: 0.8rem; right: 1rem; color: var(--muted); }
+.ty-carets .typed { font-size: clamp(2rem, 4vw, 3.4rem); }
+
+.ty-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ty-slice { padding: 1.5rem; background: var(--screen-bar); border-radius: 12px; }
+.ty-slice header { display: flex; flex-direction: column; margin-bottom: 1.2rem; }
+.ty-slice h3 { margin: 0; font-family: var(--font-body); font-size: 1.1rem; }
+.ty-slice header small { color: var(--muted); }
+.ty-slice__title { margin: 0 0 1rem; font-family: var(--trial); font-size: 0.95rem; color: var(--heading); text-transform: uppercase; }
+.ty-slice__steps { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.ty-slice__steps div { display: flex; flex-direction: column; gap: 0.4rem; padding: 1rem; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; }
+.ty-slice__steps b { font-family: var(--font-heading); font-size: 1.6rem; color: var(--heading); }
+.ty-slice__steps strong { font-family: var(--font-heading); }
+.ty-slice__steps span { color: var(--muted); line-height: 1.5; font-size: 0.95rem; }
+.ty-slice__rows { margin: 1rem 0 0.6rem; font-family: var(--trial); font-size: 0.95rem; }
+.ty-slice__rows .ty-code { padding: 0.25rem 0.6rem; border-radius: 6px; }
+.ty-slice__hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.ty-slice__hint kbd { padding: 0.05rem 0.35rem; font-family: var(--trial); color: var(--text); border: 1px solid var(--muted); border-radius: 4px; }
+.ty-slice__small { margin: 0.6rem 0 0; font-family: var(--trial); font-size: 13px; color: var(--muted); }
+
+.ty-accents { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1rem; }
+.ty-accent { display: flex; flex-direction: column; gap: 1rem; padding: 2rem 1.5rem 1.2rem; background: var(--screen-bar); border-radius: 12px; }
+.ty-accent__big { margin: 0; font-family: var(--trial); font-size: 2.1rem; line-height: 1.1; color: var(--headline); }
+.ty-accent__tag { margin: 0; color: var(--text); }
+.ty-accent__tag span { margin-right: 0.4rem; padding: 0.1rem 0.5rem; font-family: var(--trial); font-size: 1.05rem; color: var(--btn-text); background: var(--btn); border-radius: 4px; }
+.ty-accent footer { display: flex; flex-direction: column; font-size: 0.9rem; color: var(--muted); }
+.ty-accent footer strong { color: var(--text); }
+@media (max-width: 900px) { .ty-carets, .ty-pair { grid-template-columns: 1fr; } }
+.ty-chosen { display: flex; flex-wrap: wrap; gap: 0.6rem; } .ty-chosen span { padding: 0.3rem 0.7rem; font-family: var(--mono); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; }
+.ty-accent--italic .ty-accent__big { font-style: italic; }

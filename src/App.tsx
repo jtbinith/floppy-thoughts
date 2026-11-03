@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { BoardsPage } from './components/BoardsPage'
 import { Home } from './components/Home'
+import { PalettePage } from './components/palette/PalettePage'
+import { TypePage } from './components/type/TypePage'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
@@ -12,13 +14,23 @@ import { LocalStorageAdapter, withSummary, type BoardSummary } from './lib/stora
 
 const storage = new LocalStorageAdapter()
 
+// The 3D machine prototype loads on its own, so its 3D and animation libraries only download on that page.
+const LookPage = lazy(() => import('./components/look/LookPage').then((m) => ({ default: m.LookPage })))
+const MachinePage = lazy(() => import('./components/machine/MachinePage').then((m) => ({ default: m.MachinePage })))
+const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) => ({ default: m.ShrimpPage })))
+
 // Pages, kept in the URL hash so they work on GitHub Pages:
 //   #/        home page
 //   #/new     makes a new, blank board straight away, then shows it
 //   #/board   the board you had open last
 //   #/boards  all your boards: open, rename, delete
-type Route = 'home' | 'new' | 'board' | 'boards'
-const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards' }
+//   #/machine PROTOTYPE: the vending machine as a live 3D scene
+//   #/shrimp  PROTOTYPE: the shrimp token, a chunky spinning pickup
+//   #/palette PROTOTYPE: the colour palette, contrast and colour blocking
+//   #/look    PROTOTYPE: the home page around the machine, in each palette version
+//   #/type    PROTOTYPE: choosing the terminal font, and the typing headline
+type Route = 'home' | 'new' | 'board' | 'boards' | 'machine' | 'shrimp' | 'palette' | 'look' | 'type'
+const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/machine': 'machine', '#/shrimp': 'shrimp', '#/palette': 'palette', '#/look': 'look', '#/type': 'type' }
 const routeFromHash = (): Route => ROUTES[location.hash] ?? 'home'
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
@@ -154,6 +166,26 @@ export default function App() {
   const hasBoards = (boards?.length ?? 0) > 0
 
   if (route === 'home') return <Home hasBoards={hasBoards} />
+  if (route === 'palette') return <PalettePage />
+  if (route === 'type') return <TypePage />
+  if (route === 'look')
+    return (
+      <Suspense fallback={null}>
+        <LookPage />
+      </Suspense>
+    )
+  if (route === 'machine')
+    return (
+      <Suspense fallback={null}>
+        <MachinePage />
+      </Suspense>
+    )
+  if (route === 'shrimp')
+    return (
+      <Suspense fallback={null}>
+        <ShrimpPage />
+      </Suspense>
+    )
   if (route === 'boards')
     return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} />
 

@@ -163,7 +163,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
       // We handle deleting ourselves, so one Delete removes everything selected as one undo step.
       deleteKeyCode={null}
     >
-      <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#2a2f3a" />
+      <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--dots)" />
       <Controls showInteractive={false} fitViewOptions={FIT_VIEW}>
         <ControlButton onClick={onTidy} title="Tidy the board (undo puts it back)" aria-label="Tidy the board">
           <TidyIcon />

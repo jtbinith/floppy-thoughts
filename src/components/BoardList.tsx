@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { MAX_BOARD_NAME } from '../lib/board'
 import type { BoardSummary } from '../lib/storage'
-import { HeartIcon } from './HeartIcon'
+import { BoardSketch } from './BoardSketch'
 
-// Your boards, newest first: open, rename or delete. Used in the drawer and on the boards page.
+// Your boards as cards, newest first: open, rename or delete.
 
 type Props = {
   boards: BoardSummary[]
@@ -25,66 +25,68 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete }: Props)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  if (boards.length === 0) return <p className="boards__empty">No boards yet.</p>
-
   return (
     <ul className="boards">
+      <li>
+        <a className="boards__new" href="#/new">
+          <span aria-hidden="true">+</span>
+          new board
+        </a>
+      </li>
       {boards.map((b) => (
-        <li key={b.id} className={`boards__item${b.id === openId ? ' boards__item--open' : ''}`}>
+        <li key={b.id} className={`boards__card${b.id === openId ? ' boards__card--open' : ''}`}>
           {renaming === b.id ? (
-            <input
-              className="boards__rename"
-              aria-label="Board name"
-              defaultValue={b.name}
-              maxLength={MAX_BOARD_NAME}
-              autoFocus
-              onFocus={(e) => e.currentTarget.select()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur()
-                if (e.key === 'Escape') setRenaming(null)
-              }}
-              onBlur={(e) => {
-                onRename(b.id, e.currentTarget.value)
-                setRenaming(null)
-              }}
-            />
+            <div className="boards__open">
+              <BoardSketch sketch={b.sketch} />
+              <input
+                className="boards__rename"
+                aria-label="Board name"
+                defaultValue={b.name}
+                maxLength={MAX_BOARD_NAME}
+                autoFocus
+                onFocus={(e) => e.currentTarget.select()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') setRenaming(null)
+                }}
+                onBlur={(e) => {
+                  onRename(b.id, e.currentTarget.value)
+                  setRenaming(null)
+                }}
+              />
+            </div>
           ) : (
             <button type="button" className="boards__open" onClick={() => onOpen(b.id)}>
+              <BoardSketch sketch={b.sketch} />
               <strong>{b.name}</strong>
-              <small>
-                {b.nodeCount} {b.nodeCount === 1 ? 'thing' : 'things'}
-                {b.favouriteCount > 0 && (
-                  <>
-                    {' · '}
-                    <HeartIcon size={9} /> {b.favouriteCount}
-                  </>
-                )}
-                {' · '}edited {edited(b.updatedAt)}
-                {b.id === openId && ' · open now'}
-              </small>
             </button>
           )}
 
-          {deleting === b.id ? (
-            <span className="boards__confirm" role="group" aria-label={`Delete ${b.name}?`}>
-              delete it?
-              <button type="button" className="boards__yes" onClick={() => onDelete(b.id)}>
-                yes
-              </button>
-              <button type="button" onClick={() => setDeleting(null)} autoFocus>
-                no
-              </button>
-            </span>
-          ) : (
-            <span className="boards__actions">
-              <button type="button" aria-label={`Rename ${b.name}`} onClick={() => setRenaming(b.id)}>
-                rename
-              </button>
-              <button type="button" aria-label={`Delete ${b.name}`} onClick={() => setDeleting(b.id)}>
-                delete
-              </button>
-            </span>
-          )}
+          <div className="boards__foot">
+            {deleting === b.id ? (
+              <span className="boards__confirm" role="group" aria-label={`Delete ${b.name}?`}>
+                delete it?
+                <button type="button" className="boards__yes" onClick={() => onDelete(b.id)}>
+                  yes
+                </button>
+                <button type="button" onClick={() => setDeleting(null)} autoFocus>
+                  no
+                </button>
+              </span>
+            ) : (
+              <>
+                <small>edited {edited(b.updatedAt)}</small>
+                <span className="boards__actions">
+                  <button type="button" aria-label={`Rename ${b.name}`} onClick={() => setRenaming(b.id)}>
+                    rename
+                  </button>
+                  <button type="button" aria-label={`Delete ${b.name}`} onClick={() => setDeleting(b.id)}>
+                    delete
+                  </button>
+                </span>
+              </>
+            )}
+          </div>
         </li>
       ))}
     </ul>

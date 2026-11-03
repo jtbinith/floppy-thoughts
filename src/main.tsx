@@ -3,10 +3,13 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource/atkinson-hyperlegible/latin-400.css'
 import '@fontsource/atkinson-hyperlegible/latin-400-italic.css'
 import '@fontsource/atkinson-hyperlegible/latin-700.css'
-import '@fontsource/bricolage-grotesque/latin-800.css'
+import '@fontsource/courier-prime/latin-400.css'
+import '@fontsource/courier-prime/latin-700.css'
+import '@fontsource/bungee/latin-400.css'
 import './index.css'
 import App from './App.tsx'
 import { moveOldKeys } from './lib/keys'
+import { initTheme } from './lib/theme'
 
 
 
@@ -19,6 +22,8 @@ console.info(
 
 // Boards saved under the old name move to the new keys before anything reads them.
 moveOldKeys()
+// Dark or light mode, before anything is drawn.
+initTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -9,6 +9,8 @@ export const KEYS = {
   panel: `${PREFIX}ui:panel`,
   panelWidth: `${PREFIX}ui:panel-width`,
   seenNotes: `${PREFIX}seen-sparks`,
+  theme: `${PREFIX}ui:theme`,
+  boardSort: `${PREFIX}ui:board-sort`,
 }
 
 // The site used to be called HunchHack, and its keys started "hunchhack:". This moves them

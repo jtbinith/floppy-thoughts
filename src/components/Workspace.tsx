@@ -17,6 +17,7 @@ import { emptyUndo, pushChange, redo, undo, type UndoState } from '../lib/undo'
 import { BoardActionsContext, type BoardActions } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
+import { ThemeToggle } from './ThemeToggle'
 import { MenuBar, type Menu, type MenuItem } from './MenuBar'
 import { NotePopup } from './NotePopup'
 import { Dialog } from './Dialog'
@@ -591,6 +592,7 @@ export function Workspace(props: Props) {
               )}
             </div>
             <div className="screen__end">
+              <ThemeToggle className="theme-toggle--bar" />
               {notice && (
                 <span className="screen__notice" role="status">
                   {notice}

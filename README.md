@@ -48,7 +48,7 @@ React, TypeScript and Vite. How it fits together is in the [architecture](docs/m
 - [d3-force](https://d3js.org/d3-force) (ISC) lays the board out when you tidy it.
 - [Zod](https://zod.dev) (MIT) checks saved boards.
 - [Datamuse](https://www.datamuse.com/api/) provides words for word nudges.
-- Fonts: [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) and [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque) (both OFL).
+- Fonts: [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/), [Courier Prime](https://fonts.google.com/specimen/Courier+Prime) and [Bungee](https://fonts.google.com/specimen/Bungee) (all OFL).
 
 ## Licence
 

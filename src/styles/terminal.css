@@ -74,7 +74,30 @@ textarea {
   background: transparent;
   border: none;
   outline: none;
-  caret-color: var(--spark);
+  /* The real cursor is hidden; an underscore is drawn instead, like the home page headline. */
+  caret-color: transparent;
+}
+
+.terminal__field {
+  position: relative;
+  display: flex;
+  flex: 1;
+}
+
+.terminal__caret {
+  position: absolute;
+  bottom: 0.1em;
+  width: 1ch;
+  height: 0.14em;
+  background: var(--spark);
+  pointer-events: none;
+  animation: typed-blink 1.06s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal__caret {
+    animation: none;
+  }
 }
 
 /* Group headings in the help. */

@@ -145,7 +145,7 @@
 
 .popup__stick {
   font-weight: 700;
-  color: #2b1a12;
+  color: var(--on-spark);
   background: var(--spark);
   box-shadow:
     inset 2px 2px 0 #ffb48f,

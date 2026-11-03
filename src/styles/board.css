@@ -10,7 +10,7 @@
 
 .react-flow {
   --xy-background-color: var(--screen);
-  --xy-edge-stroke: #6b4a36;
+  --xy-edge-stroke: var(--edge);
   --xy-edge-stroke-width: 1.5;
   --xy-edge-stroke-selected: var(--text);
   --xy-controls-button-background-color: var(--screen-bar);
@@ -174,22 +174,23 @@
   }
 }
 
-.idea--cat-words { --cat: #ff7a52; }
+/* Notes are orange unless their category says otherwise (these must come after this default). */
+.idea--spark { --cat: var(--spark); }
 
-.idea--cat-objects { --cat: #f2b544; }
+.idea--cat-words { --cat: var(--cat-words); --cat-text: var(--cat-words-text); }
 
-.idea--cat-problems { --cat: #7fb7c9; }
+.idea--cat-objects { --cat: var(--cat-objects); --cat-text: var(--cat-objects-text); }
 
-.idea--cat-curiosities { --cat: #c69ae0; }
+.idea--cat-problems { --cat: var(--cat-problems); --cat-text: var(--cat-problems-text); }
 
-.idea--cat-nature { --cat: #9fd46a; }
+.idea--cat-curiosities { --cat: var(--cat-curiosities); --cat-text: var(--cat-curiosities-text); }
+
+.idea--cat-nature { --cat: var(--cat-nature); --cat-text: var(--cat-nature-text); }
 
 .idea--cat-headlines { --cat: #ff7a52; }
 
 /* Each note uses its category colour, matching the vending machine and popup. */
 .idea--spark {
-  border-color: var(--cat, var(--spark));
-  --cat: var(--spark);
   padding: 0 0 0.6rem;
   border: 1px solid var(--cat);
   border-radius: 3px;
@@ -197,7 +198,7 @@
 
 .idea--spark .idea__meta {
   padding: 0.2rem 0.6rem;
-  color: var(--screen);
+  color: var(--cat-text, var(--screen));
   background: var(--cat);
 }
 
@@ -252,12 +253,12 @@
 
 /* Your ideas: solid but quiet, with a dim ~/idea title bar. */
 .idea--user {
-  border: 1px solid #5a4232;
+  border: 1px solid var(--edge);
 }
 
 .idea--user .idea__meta {
   color: var(--text);
-  background: #3a2a20;
+  background: var(--raised);
 }
 
 .idea--user .idea__label::before {
@@ -282,7 +283,8 @@
 }
 
 .idea--cat-theme {
-  --cat: #f6e3cc;
+  --cat: var(--cat-theme);
+  --cat-text: var(--cat-theme-text);
   max-width: 280px;
   font-size: 1rem;
   border-width: 2px;

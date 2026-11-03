@@ -14,16 +14,15 @@
 .device__label {
   margin-bottom: 0.6rem;
   text-decoration: none;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
-  color: var(--frame-light);
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--spark);
 }
 
 .device__label small {
-  margin-left: 0.6rem;
-  font-weight: 400;
-  font-size: 0.75rem;
+  margin-left: 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
   color: var(--muted);
 }
 

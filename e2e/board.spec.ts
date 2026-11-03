@@ -221,6 +221,48 @@ test.describe('switching boards', () => {
     await expect(page.getByRole('heading', { name: 'my boards' })).toBeVisible()
   })
 
+  test('the boards page finds boards by their thoughts, and sorts them', async ({ page }) => {
+    await type(page, '/rename zebra')
+    await type(page, 'a kettle that sings')
+    await type(page, '/new')
+    await page.getByRole('button', { name: 'skip' }).click()
+    await type(page, '/rename apple')
+    await page.goto('#/boards')
+    const cards = page.locator('.boards__card strong')
+    await expect(cards).toHaveText(['apple', 'zebra'])
+
+    await page.getByLabel('Search boards').fill('KETTLE')
+    await expect(cards).toHaveText(['zebra'])
+    await page.getByLabel('Search boards').fill('nothing like this')
+    await expect(page.getByText('No boards match')).toBeVisible()
+
+    await page.getByLabel('Search boards').fill('')
+    await page.getByLabel('sort by').selectOption('name')
+    await expect(cards).toHaveText(['apple', 'zebra'])
+    await page.getByLabel('sort by').selectOption('oldest')
+    await expect(cards).toHaveText(['zebra', 'apple'])
+  })
+
+  test('the nav bar links to my boards, and the logo goes home', async ({ page }) => {
+    await page.goto('#/')
+    const nav = page.getByRole('navigation', { name: 'Pages' })
+    await nav.getByRole('link', { name: 'my boards' }).click()
+    await expect(nav.getByRole('link', { name: 'my boards' })).toHaveAttribute('aria-current', 'page')
+    await page.getByRole('link', { name: 'Floppy Thoughts' }).click()
+    await expect(page.getByRole('heading', { name: /ideas worth/ })).toBeVisible()
+  })
+
+  test('the sun/moon button switches dark and light mode, and remembers it', async ({ page }) => {
+    await page.goto('#/')
+    const html = page.locator('html')
+    const before = await html.getAttribute('data-theme')
+    const after = before === 'light' ? 'dark' : 'light'
+    await page.getByRole('button', { name: `Switch to ${after} mode` }).click()
+    await expect(html).toHaveAttribute('data-theme', after)
+    await page.reload()
+    await expect(html).toHaveAttribute('data-theme', after)
+  })
+
   test('the drawer has no boards tab', async ({ page }) => {
     await type(page, '/help')
     await expect(page.getByRole('tab', { name: 'boards' })).toHaveCount(0)
