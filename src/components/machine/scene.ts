@@ -6,6 +6,7 @@ import { createKit, INK } from './kit'
 import { createLedSign, LED } from './led'
 import { bestText } from '../../lib/contrast'
 import type { MachineTheme } from './themes'
+import { buildToken } from '../shrimp/token'
 
 // PROTOTYPE: the vending machine as a live 3D scene. Toon shading with ink outlines makes it look
 // drawn, and rendering at a fraction of the screen's resolution (scaled up without smoothing)
@@ -302,6 +303,52 @@ export function createMachineScene(container: HTMLElement, opts: {
   scene.add(vended)
   const vendedTop = vended.children[0] as THREE.Mesh
 
+  // What's inside: the shrimp token, which pops out of the capsule once it stops rolling. Its thin
+  // parts (antennae, legs) are tubes, each with a fatter ink tube behind it as an outline.
+  const inkMat = keep(new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide }))
+  const tube = (points: [number, number, number][], radius: number, color: string, parent: THREE.Object3D) => {
+    const path = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)))
+    const m = new THREE.Mesh(keep(new THREE.TubeGeometry(path, 32, radius, 6)), toon(color))
+    m.add(new THREE.Mesh(keep(new THREE.TubeGeometry(path, 32, radius + 0.02, 6)), inkMat))
+    parent.add(m)
+    return m
+  }
+  const token = buildToken({ inked, toon, keep, tube })
+  // The token floats a little above its holder's origin; the holder sits on the opened capsule.
+  const TOKEN_SIZE = 0.42
+  const tokenHolder = new THREE.Group()
+  tokenHolder.add(token.group)
+  // A glow behind the token in the row's colour, so the reward matches the kind of note. Normal
+  // blending (not added light), so it shows on the light page too.
+  const rowGlowCanvas = document.createElement('canvas')
+  rowGlowCanvas.width = rowGlowCanvas.height = 64
+  const rg = rowGlowCanvas.getContext('2d')!
+  const grad = rg.createRadialGradient(32, 32, 0, 32, 32, 32)
+  grad.addColorStop(0, 'rgba(255,255,255,0.7)')
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.3)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  rg.fillStyle = grad
+  rg.fillRect(0, 0, 64, 64)
+  const rowGlowTex = keep(new THREE.CanvasTexture(rowGlowCanvas))
+  const rowGlowMat = keep(new THREE.SpriteMaterial({ map: rowGlowTex, transparent: true, depthWrite: false }))
+  const rowGlow = new THREE.Sprite(rowGlowMat)
+  rowGlow.scale.setScalar(2.6)
+  rowGlow.position.y = 1.15
+  rowGlow.renderOrder = -2
+  tokenHolder.add(rowGlow)
+  // The token's own soft glow (added light) gets tinted to the row's colour too. Its sparkles keep
+  // their own pale colour: tinted, they got lost against the glow.
+  const tokenGlows: THREE.SpriteMaterial[] = []
+  token.group.traverse((o) => {
+    if (o instanceof THREE.Sprite && o.material.blending === THREE.AdditiveBlending && !tokenGlows.includes(o.material)) tokenGlows.push(o.material)
+  })
+  function tintToken(colour: string) {
+    rowGlowMat.color.set(colour)
+    tokenGlows.forEach((m) => m.color.set(colour))
+  }
+  tokenHolder.visible = false
+  scene.add(tokenHolder)
+
   // --- Sizing: draw at a fraction of the screen's pixels, so it looks like pixel art ---
   let pixelSize = 2
   // Zoomed in, draw finer, so the pixels stay about the same size on the machine (and small text
@@ -353,6 +400,10 @@ export function createMachineScene(container: HTMLElement, opts: {
   type Shot = (typeof SHOTS)['home']
   let shot: keyof typeof SHOTS | 'free' = 'home'
   let move: gsap.core.Tween | null = null
+  let zooming = false
+  // Pinch-zooming changes the zoom without a tween, so also wait until it's been still a moment.
+  let lastZoom = camera.zoom
+  let zoomSettledAt = 0
   function fly(to: keyof typeof SHOTS | Shot, duration = 0.8) {
     if (shot === to) return
     shot = typeof to === 'string' ? to : 'free'
@@ -470,10 +521,17 @@ export function createMachineScene(container: HTMLElement, opts: {
       led.setMessage(SIGN.idle)
     }
     led.update(t)
+    if (tokenHolder.visible) token.update(t, opts.reducedMotion)
     // The light blinks slowly while waiting.
     ;(light.material as THREE.MeshToonMaterial).emissive.set(Math.sin(t * 3) > 0.6 ? '#3f7a22' : '#000000')
     controls.update()
-    if (Math.abs(scaleForZoom() - drawnAt) > 0.25) resize()
+    // Change the drawing resolution only once the camera has settled: changing it mid-move makes
+    // the picture jump in steps, which looks like blinking.
+    if (camera.zoom !== lastZoom) {
+      lastZoom = camera.zoom
+      zoomSettledAt = t + 0.15
+    }
+    if (!move && !zooming && t > zoomSettledAt && Math.abs(scaleForZoom() - drawnAt) > 0.25) resize()
     renderer.render(scene, camera)
     if (opts.onKeypad) {
       const p = keypadCorner.clone().project(camera)
@@ -486,6 +544,23 @@ export function createMachineScene(container: HTMLElement, opts: {
 
   // --- The vend: the slot's capsule drops, the machine shudders, and it rolls out to you ---
   let tl: gsap.core.Timeline | null = null
+  let away: gsap.core.Tween | gsap.core.Timeline | null = null
+  const AWAY_AFTER = 5 // seconds the token stays out
+  function putAway(slot: THREE.Group) {
+    away = gsap
+      .timeline()
+      .to(tokenHolder.scale, { x: 0.01, y: 0.01, z: 0.01, duration: 0.4, ease: 'back.in(2)' })
+      .set(tokenHolder, { visible: false })
+      .to(vendedTop.position, { x: 0, y: 0, z: 0, duration: 0.35, ease: 'power2.out' })
+      .to(vendedTop.rotation, { x: 0, duration: 0.35, ease: 'power2.out' }, '<')
+      .to(vended.scale, { x: 0.01, y: 0.01, z: 0.01, duration: 0.3, ease: 'back.in(2)' }, '+=0.15')
+      .set(vended, { visible: false })
+      .add(() => {
+        slot.visible = true
+        emptied = null
+      })
+      .fromTo(slot.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 0.72, y: 0.72, z: 0.72, duration: 0.35, ease: 'back.out(2)' })
+  }
   let emptied: THREE.Group | null = null
   function vend(code?: string) {
     let row: number
@@ -506,9 +581,14 @@ export function createMachineScene(container: HTMLElement, opts: {
       }
     }
     tl?.kill()
+    away?.kill()
     frameVend()
-    if (emptied) emptied.visible = true
+    if (emptied) {
+      emptied.visible = true
+      emptied.scale.setScalar(0.72)
+    }
     const cat = cats[row]
+    tintToken(cat.colour)
     ;(vendedTop.material as THREE.MeshToonMaterial).color.set(cat.colour)
     showOnScreen(`${LETTERS[row]}${col + 1}`)
     typed = ''
@@ -517,6 +597,10 @@ export function createMachineScene(container: HTMLElement, opts: {
     vended.visible = false
     vended.position.set(-0.2, 0.55, front - 0.1)
     vended.rotation.set(0, 0, 0)
+    vendedTop.position.set(0, 0, 0)
+    vendedTop.rotation.set(0, 0, 0)
+    vended.scale.setScalar(1.6)
+    tokenHolder.visible = false
     machine.rotation.set(0, 0, 0)
     machine.position.set(0, 0, 0)
     flapPivot.rotation.set(0, 0, 0)
@@ -524,7 +608,14 @@ export function createMachineScene(container: HTMLElement, opts: {
     const slot = slots[row][col]
     // Where it stops: out in front, a little to the left, so it stays in view with the machine.
     const rest = { x: -0.75, z: 2.5 }
-    tl = gsap.timeline({ onComplete: () => gsap.delayedCall(1.2, showTyped) })
+    tl = gsap.timeline({
+      onComplete: () => {
+        gsap.delayedCall(1.2, showTyped)
+        // A while later the token sinks back in, the capsule closes and goes, and the slot refills,
+        // so the machine looks ready again. (With less motion it all just stays put.)
+        if (!opts.reducedMotion) away = gsap.delayedCall(AWAY_AFTER, () => putAway(slot))
+      },
+    })
     // The capsule in that slot drops off its shelf, out of sight.
     tl.to(slot.position, { y: '-=0.3', duration: 0.25, ease: 'power2.in' })
       .set(slot, { visible: false })
@@ -547,6 +638,18 @@ export function createMachineScene(container: HTMLElement, opts: {
         showOnScreen(cat.name.slice(0, 7).toUpperCase(), cat.colour)
         led.flash(cat.sign)
       })
+      // Then it pops open: the top flips back and drops behind, and the shrimp token rises out,
+      // spinning and sparkling.
+      .to(vendedTop.position, { y: 0.32, duration: 0.22, ease: 'back.out(2)' }, '+=0.35')
+      .to(vendedTop.rotation, { x: -1.5, duration: 0.3, ease: 'power1.out' }, '<')
+      .to(vendedTop.position, { z: -0.3, y: -0.07, duration: 0.45, ease: 'bounce.out' })
+      .to(vendedTop.rotation, { x: -2.6, duration: 0.45, ease: 'power1.in' }, '<')
+      .add(() => {
+        tokenHolder.position.set(vended.position.x, vended.position.y + 0.12, vended.position.z)
+        tokenHolder.scale.setScalar(0.01)
+        tokenHolder.visible = true
+      }, '<')
+      .to(tokenHolder.scale, { x: TOKEN_SIZE, y: TOKEN_SIZE, z: TOKEN_SIZE, duration: 0.5, ease: 'back.out(2.5)' }, '<')
     // Less motion: just show the capsule where it lands.
     if (opts.reducedMotion) tl.progress(1)
   }
@@ -559,7 +662,10 @@ export function createMachineScene(container: HTMLElement, opts: {
       if (opts.reducedMotion) {
         camera.zoom = zoom
         camera.updateProjectionMatrix()
-      } else gsap.to(camera, { zoom, duration: 0.25, ease: 'power2.out', onUpdate: () => camera.updateProjectionMatrix() })
+      } else {
+        zooming = true
+        gsap.to(camera, { zoom, duration: 0.25, ease: 'power2.out', onUpdate: () => camera.updateProjectionMatrix(), onComplete: () => void (zooming = false) })
+      }
     },
     showKeypad() {
       shot = 'free'
@@ -575,6 +681,7 @@ export function createMachineScene(container: HTMLElement, opts: {
     },
     dispose() {
       tl?.kill()
+      away?.kill()
       ro.disconnect()
       move?.kill()
       controls.removeEventListener('start', onControlStart)
