@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_NODES, MAX_NODE_TEXT, parseBoard, type Board } from './board'
-import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, chooseIdea, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNumber, removeLink, themes, toggleFavourite } from './boardOps'
+import { MAX_NODES, MAX_NODE_TEXT, ME, parseBoard, type Board } from './board'
+import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNumber, removeLink, themes, toggleFavourite } from './boardOps'
 
 const now = new Date('2026-10-28T12:00:00Z')
 
 function board(): Board {
   return {
-    version: 3,
+    version: 4,
     id: 'b1',
     name: 'test',
     nodes: [
@@ -113,11 +113,15 @@ describe('board operations', () => {
     expect(expectOk(addNote(board(), { text: 'kite', category: 'words' }, { x: 0, y: 0 })).node).not.toHaveProperty('locked')
   })
 
-  it('toggles favourites on any kind of node', () => {
-    const on = expectOk(toggleFavourite(board(), 'n1', now))
-    expect(on.node?.favourite).toBe(true)
-    const off = expectOk(toggleFavourite(on.board, 'n1', now))
-    expect(off.node).not.toHaveProperty('favourite')
+  it('toggles favourites on any kind of node, one per person', () => {
+    const on = expectOk(toggleFavourite(board(), 'n1', ME, now))
+    expect(on.node?.favouritedBy).toEqual([ME])
+    const both = expectOk(toggleFavourite(on.board, 'n1', 'someone-else', now))
+    expect(both.node?.favouritedBy).toEqual([ME, 'someone-else'])
+    const theirs = expectOk(toggleFavourite(both.board, 'n1', ME, now))
+    expect(theirs.node?.favouritedBy).toEqual(['someone-else'])
+    const off = expectOk(toggleFavourite(theirs.board, 'n1', 'someone-else', now))
+    expect(off.node).not.toHaveProperty('favourites')
     expect(toggleFavourite(board(), 'n99').ok).toBe(false)
   })
 })
@@ -170,10 +174,4 @@ describe('themes and the chosen idea', () => {
     expect(themes(edited).map((n) => n.text)).toEqual(['Time travel'])
   })
 
-  it('chooses one idea at a time', () => {
-    const a = expectOk(chooseIdea(board(), 'n2')).board
-    const b = expectOk(chooseIdea(a, 'n1')).board
-    expect(b.nodes.filter((n) => n.chosen).map((n) => n.id)).toEqual(['n1'])
-    expect(parseBoard(b).ok).toBe(true)
-  })
 })

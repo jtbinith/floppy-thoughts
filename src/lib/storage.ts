@@ -50,7 +50,7 @@ export function withSummary(list: BoardSummary[], board: Board): BoardSummary[] 
   return [summary, ...list.filter((b) => b.id !== board.id)].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
-// A favourite, with the board it lives on.
+// Something favourited, with the board it lives on.
 export type Favourite = { boardId: string; boardName: string; node: BoardNode }
 
 export type LoadResult =

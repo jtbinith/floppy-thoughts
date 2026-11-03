@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_NODE_TEXT, idOf, numberOf, parseBoard, type Board } from './board'
+import { BOARD_VERSION, MAX_NODE_TEXT, ME, idOf, numberOf, parseBoard, type Board } from './board'
 
 function validBoard(): Board {
   return {
-    version: 3,
+    version: 4,
     id: 'b1',
     name: 'time',
     nodes: [
@@ -34,7 +34,7 @@ describe('parseBoard', () => {
   it('accepts any number of notes and themes, and favourites on any node', () => {
     const board = validBoard()
     for (let i = 5; i < 15; i++) board.nodes.push({ id: `n${i}`, number: i, text: `note ${i}`, kind: 'spark', category: i % 2 ? 'theme' : 'words', x: 0, y: 0 })
-    board.nodes[2].favourite = true
+    board.nodes[2].favouritedBy = [ME]
     expect(parseBoard(board).ok).toBe(true)
   })
 
@@ -139,7 +139,7 @@ describe('version 3: box numbers', () => {
     const result = parseBoard(v2())
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.board.version).toBe(3)
+    expect(result.board.version).toBe(BOARD_VERSION)
     expect(result.board.nodes.map((n) => [n.id, n.number])).toEqual([
       ['n1', 1],
       ['n4', 4],
@@ -147,6 +147,22 @@ describe('version 3: box numbers', () => {
       ['imported', 5],
     ])
     expect(result.board.links).toEqual([{ from: 'n1', to: 'n4' }])
+  })
+
+  it('upgrades version 3 boards: favourites and the chosen idea become your favourites', () => {
+    const v3 = { ...validBoard(), version: 3 }
+    v3.nodes = v3.nodes.map((n, i) => ({ ...n, ...(i === 1 ? { favourite: true } : i === 2 ? { chosen: true, favourite: true } : {}) }))
+    const result = parseBoard(v3)
+    if (!result.ok) throw new Error(result.errors.join())
+    expect(result.board.version).toBe(4)
+    expect(result.board.nodes.map((n) => n.favouritedBy)).toEqual([undefined, [ME], [ME], undefined])
+    expect(result.board.nodes.some((n) => 'favourite' in n || 'chosen' in n)).toBe(false)
+  })
+
+  it('refuses someone favouriting the same box twice', () => {
+    const board = validBoard()
+    board.nodes[0].favouritedBy = [ME, ME]
+    expect(errorsFor(board).some((e) => e.startsWith('nodes.0.favouritedBy'))).toBe(true)
   })
 
   it('refuses two boxes with the same number', () => {

@@ -29,9 +29,8 @@ const BOARD_KEYS: { group: string; keys: [string, string][] }[] = [
   {
     group: 'notes and ideas',
     keys: [
-      ['f', 'favourite'],
+      ['f', 'favourite (or unfavourite)'],
       ['n', 'nudge: a word or question to push it further'],
-      ['p', 'this is the one'],
       ['v', 'the vending machine'],
     ],
   },

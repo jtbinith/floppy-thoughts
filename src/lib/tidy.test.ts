@@ -4,7 +4,7 @@ import { tidyPositions } from './tidy'
 
 // Everything piled on top of everything else, the worst case.
 const pile: Board = {
-  version: 3,
+  version: 4,
   id: 'b',
   name: 'pile',
   nodes: [

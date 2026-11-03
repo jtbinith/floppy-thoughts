@@ -16,7 +16,7 @@ You're a coder at night, hunched over an old computer like a shrimp. You're stuc
 | Terminal / IDE | How you work: `~/idea` files, `/commands`, Tab completion |
 | `// nudges` | Comments someone left in your code: take them or leave them |
 | The shrimp | You, the coder, hunched and deep in thought, and the messenger in every capsule. A desk buddy, never a timer |
-| Hearts | Favourites you pick yourself. Never counted or scored |
+| Hearts | Favourites you pick yourself. On a shared board you see who picked them, never a score |
 
 ## Vocabulary
 | Say | Not |
@@ -25,7 +25,7 @@ You're a coder at night, hunched over an old computer like a shrimp. You're stuc
 | nudge | hint, suggestion |
 | idea, thought | node, card |
 | board | map, canvas |
-| favourite | like, star |
+| favourite (shown as a heart) | like, star |
 
 ## Colour (deep sea)
 | Token | Hex | Use |
@@ -57,6 +57,6 @@ Short, warm, a little nerdy. Never pushy, never salesy, never rushed.
 - *"No favourites on this board yet. Select anything and press F to keep it here."*
 
 ## Don'ts
-- No scores, ratings, timers or limits. No counting favourites.
+- No scores, ratings, timers or limits. On your own, favourites aren't counted. On a shared board each box shows who favourited it and how many, so a team can see what it likes; it's never a leaderboard or a score.
 - No stars (use hearts).
 - No generic hackathon look (black and teal, all caps, pill buttons).

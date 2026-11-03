@@ -19,6 +19,6 @@ A brainstorming board that gets the ball rolling. Type your thoughts, link them,
 ## Phases
 | Phase | Scope |
 |---|---|
-| Now | Solo boards in the browser: typing and linking thoughts, the vending machine, nudges, tidy, favourites, "this is the one" summaries, a terminal with commands |
+| Now | Solo boards in the browser: typing and linking thoughts, the vending machine, nudges, tidy, favourites and summaries, a terminal with commands |
 | Next | Accounts, profiles and settings, sharing boards with view or edit access |
 | Later | Live group boards, pixel-art mascot and easter eggs, phone layout |

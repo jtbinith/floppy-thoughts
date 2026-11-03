@@ -30,7 +30,7 @@ class MemoryStorage implements Storage {
 
 function board(id: string, updatedAt = '2026-10-27T10:00:00Z'): Board {
   return {
-    version: 3,
+    version: 4,
     id,
     name: `board ${id}`,
     nodes: [{ id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],

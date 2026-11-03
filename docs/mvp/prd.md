@@ -28,7 +28,7 @@ Help people come up with their own unique, fun coding project ideas (especially 
 - Nudges: words and questions that fit what's selected; works offline with question fallbacks.
 - Terminal: commands start with `/`; Tab completion by name, number or words; grouped help.
 - Tidy, fit to screen, undo/redo.
-- Favourites, a favourites board, "this is the one" with a copyable summary.
+- Favourites, a favourites board, and a copyable summary of each favourite idea.
 
 ## Non-functional requirements
 - **Accessibility:** keyboard-only use, visible focus, readable fonts, WCAG AA contrast, reduced-motion support.

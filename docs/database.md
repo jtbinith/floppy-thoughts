@@ -9,10 +9,10 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | Accounts | Optional. Everything works without one, with boards saved in the browser as today. Signing in is always there (a "sign in" button in the nav bar) and is asked for when you share a board. With an account, your boards are on every device you sign in on, and backed up. |
 | Sign-in | GitHub or Google, through Supabase Auth. No passwords are stored by Floppy Thoughts at all. |
 | Sharing | By invite link. Anyone signed in who opens the link joins the board. The owner can turn the link off or make a new one. |
-| Hearts | Each person hearts what they like; everyone on the board sees who hearted what. The box with the most hearts is the board's top pick. There is no separate "chosen idea". |
-| How we got there | The trail from the notes to an idea can be opened from any hearted box. |
+| Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
+| How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
 | Signing in later | The boards in your browser are uploaded to your account the first time you sign in, so nothing made before is lost. |
-| Collaboration | The heart of the tool: a board can be worked on by a team at the same time. You see who's on the board right now, their changes appear live, every box shows who added it, and hearts show who liked what. |
+| Collaboration | The heart of the tool: a board can be worked on by a team at the same time. You see who's on the board right now, their changes appear live, every box shows who added it, and favourites show who liked what. |
 | Projects and the gallery (later) | Link an idea to the repo you built, and publish it to a community gallery. GitHub asks for permission to read repos only then, not at sign-in. |
 | Age | Accounts are for 13 and over. |
 
@@ -26,8 +26,8 @@ erDiagram
   boards ||--o{ nodes : contains
   boards ||--o{ links : contains
   nodes ||--o{ links : "from / to"
-  nodes ||--o{ hearts : gets
-  users ||--o{ hearts : gives
+  nodes ||--o{ favourites : gets
+  users ||--o{ favourites : gives
   boards ||--o| board_invites : "shared by"
   users ||--o{ nodes : "created"
   boards ||--o{ gallery_entries : "published as"
@@ -70,7 +70,7 @@ erDiagram
     uuid node_b PK, FK
     uuid created_by FK
   }
-  hearts {
+  favourites {
     uuid node_id PK, FK
     uuid user_id PK, FK
     timestamptz created_at
@@ -93,7 +93,7 @@ erDiagram
   }
 ```
 
-`users` is Supabase Auth's own table (`auth.users`), with a small `profiles` table beside it for the name and picture shown on hearts.
+`users` is Supabase Auth's own table (`auth.users`), with a small `profiles` table beside it for the name and picture shown on favourites.
 
 ## Tables
 
@@ -146,14 +146,14 @@ Links have no direction, so each pair is stored once, with the smaller id first.
 
 Primary key `(node_a, node_b)`; both boxes must be on `board_id`.
 
-### hearts
+### favourites
 | Column | Type | Notes |
 |---|---|---|
 | `node_id` | `uuid` | → `nodes`, deleted with the box |
 | `user_id` | `uuid` | → `auth.users` |
 | `created_at` | `timestamptz` | |
 
-Primary key `(node_id, user_id)`: one heart per person per box. The board's top pick is the box with the most rows here (ties: the earliest to reach that count).
+Primary key `(node_id, user_id)`: one favourite per person per box. The summary puts the box with the most rows here first (ties: the earliest on the board).
 
 ### board_invites
 One live invite link per board.
@@ -189,7 +189,7 @@ Beyond the primary keys:
 - `nodes (board_id)`, `links (board_id)`: loading a board.
 - `nodes (board_id, number)`, unique: finding a box by its number, and keeping numbers unique.
 - `board_members (user_id)`: "my boards".
-- `hearts (node_id)`: counting hearts on a board's boxes.
+- `favourites (node_id)`: counting favourites on a board's boxes.
 
 Boards are small (at most 1,000 boxes), so these are enough.
 
@@ -199,8 +199,8 @@ Every table has row-level security on, so the database itself refuses anything n
 
 | | Viewer | Editor | Owner |
 |---|---|---|---|
-| See the board, its boxes, links and hearts | ✓ | ✓ | ✓ |
-| Heart and unheart (their own hearts only) | ✓ | ✓ | ✓ |
+| See the board, its boxes, links and favourites | ✓ | ✓ | ✓ |
+| Favourite and unfavourite (their own favourites only) | ✓ | ✓ | ✓ |
 | Add, edit, move, link and delete boxes | | ✓ | ✓ |
 | Rename the board | | ✓ | ✓ |
 | Make or turn off the invite link, change roles, remove people | | | ✓ |
@@ -214,10 +214,10 @@ Each policy gets a test: as an owner, an editor, a viewer, a stranger and someon
 ## Collaboration
 
 - **Who's here now:** each open board shows who else has it open (their picture), using Supabase's live presence. This isn't stored; it disappears when they close the board.
-- **Live changes:** boxes, links, moves and hearts from others appear as they happen, merged box by box.
-- **Who did what:** every box and link records who made it; hearts show who gave them.
+- **Live changes:** boxes, links, moves and favourites from others appear as they happen, merged box by box.
+- **Who did what:** every box and link records who made it; favourites show who gave them.
 - **Joining:** an invite link takes a teammate straight onto the board (after signing in, if they haven't).
-- **Roles:** owners can make someone a viewer (see and heart only) or remove them.
+- **Roles:** owners can make someone a viewer (see and favourite only) or remove them.
 
 ## On the device
 
@@ -233,7 +233,7 @@ No server-side cache is needed at this size. The app's files are cached by the h
 
 ## Signing in for the first time
 
-Boards saved in the browser use box ids `n1, n2, …`. On first sign-in each one is uploaded with new random ids, keeping the short numbers and the links, and you become its owner. Favourites become your hearts. The browser copy is kept until the upload is confirmed.
+Boards saved in the browser use box ids `n1, n2, …`. On first sign-in each one is uploaded with new random ids, keeping the short numbers and the links, and you become its owner. Favourites become yours, under your account. The browser copy is kept until the upload is confirmed.
 
 From then on, signed in, new boards go to your account. Signing out removes your account's boards from that browser (so a shared computer doesn't keep them), and the app goes back to browser-only boards.
 
@@ -247,8 +247,8 @@ Signed out, nothing leaves the browser. Everything below applies once someone ha
 
 | Data | Where from | Why |
 |---|---|---|
-| Name, email, profile picture | GitHub or Google, at sign-in | To show who added a box or hearted it, and to sign you in |
-| Boards, boxes, links, hearts | You | They're your boards |
+| Name, email, profile picture | GitHub or Google, at sign-in | To show who added a box or favourited it, and to sign you in |
+| Boards, boxes, links, favourites | You | They're your boards |
 | Board members and roles, invite links (hashed) | You, when sharing | So the right people can open a board |
 
 The only reason data is held is to provide the service people signed up for. No analytics, no tracking, no ads, nothing sold or shared beyond the services that run the site.
@@ -276,7 +276,7 @@ The only reason data is held is to provide the service people signed up for. No 
 | Data | Kept for |
 |---|---|
 | Your account and boards | Until you delete them, or 24 months with no sign-in (see below) |
-| Hearts | As long as the box and your account |
+| Favourites | As long as the box and your account |
 | Invite links | Until turned off or replaced |
 | A deleted account's gallery entries | Kept, as "a past member", until removed |
 | A deleted account's claim hash | As long as the gallery entry it belongs to |
@@ -298,8 +298,8 @@ No cookies are set (Google sets its own during Google sign-in). The browser keep
 
 ### People's rights, as features
 
-- **Download my data:** a file of all your boards (and your hearts), from your account page.
-- **Delete my account:** removes your account, your profile, your hearts, and the boards you own (with everything on them). On boards someone else owns, the boxes you added stay, so the team doesn't lose its work, but your name is removed from them. Your gallery entries: you choose to remove them, or leave them up as "a past member" (with the claim hash, so you can take them back if you return).
+- **Download my data:** a file of all your boards (and your favourites), from your account page.
+- **Delete my account:** removes your account, your profile, your favourites, and the boards you own (with everything on them). On boards someone else owns, the boxes you added stay, so the team doesn't lose its work, but your name is removed from them. Your gallery entries: you choose to remove them, or leave them up as "a past member" (with the claim hash, so you can take them back if you return).
 - **Leave a board:** removes you from it; your boxes stay, without your name.
 - Correcting your name or picture happens on GitHub or Google and updates at the next sign-in.
 

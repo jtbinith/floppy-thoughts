@@ -1,15 +1,21 @@
-import { CATEGORY_LABEL, type Board, type BoardNode } from './board'
+import { CATEGORY_LABEL, isFavourite, type Board, type BoardNode } from './board'
 import { findNode, neighbours, themes } from './boardOps'
 
-// The "found my idea" summary: the idea you chose, and the trails of links that led to it
-// from your starting notes. Plain text so it can be copied anywhere.
+// The summary of a board: the ideas you favourited, and the trails of links that led to each from
+// your starting notes. On a shared board the most favourited comes first. Plain text so it can be
+// copied anywhere.
 
-export type Summary = {
+export type FavouriteIdea = {
   idea: BoardNode
-  themes: BoardNode[]
   // Each trail runs from a starting note to the idea, shortest way round.
   trails: BoardNode[][]
-  favourites: BoardNode[]
+}
+
+export type Summary = {
+  ideas: FavouriteIdea[]
+  themes: BoardNode[]
+  // Favourite notes and nudges: things you liked along the way.
+  liked: BoardNode[]
 }
 
 // Shortest path from `from` to every node it can reach, as parent pointers.
@@ -27,37 +33,46 @@ function paths(board: Board, from: string): Map<string, string | null> {
   return parent
 }
 
-export function summarise(board: Board): Summary | null {
-  const idea = board.nodes.find((n) => n.chosen)
-  if (!idea) return null
+function trailsTo(board: Board, idea: BoardNode): BoardNode[][] {
   const parent = paths(board, idea.id)
-  const trails = board.nodes
-    .filter((n) => n.kind === 'spark' && n.id !== idea.id && parent.has(n.id))
+  return board.nodes
+    .filter((n) => n.kind === 'spark' && parent.has(n.id) && n.id !== idea.id)
     .map((start) => {
       const trail: BoardNode[] = []
       for (let id: string | null = start.id; id; id = parent.get(id) ?? null) trail.push(findNode(board, id)!)
       return trail
     })
+}
+
+// Favourite ideas, most favourited first (ties keep board order, so the earliest stays ahead).
+export const favouriteIdeas = (board: Board) =>
+  board.nodes.filter((n) => n.kind === 'user' && isFavourite(n)).sort((a, b) => (b.favouritedBy?.length ?? 0) - (a.favouritedBy?.length ?? 0))
+
+export function summarise(board: Board): Summary | null {
+  const ideas = favouriteIdeas(board)
+  if (!ideas.length) return null
   return {
-    idea,
-    themes: themes(board).filter((t) => t.id !== idea.id),
-    trails,
-    favourites: board.nodes.filter((n) => n.favourite && n.id !== idea.id),
+    ideas: ideas.map((idea) => ({ idea, trails: trailsTo(board, idea) })),
+    themes: themes(board),
+    liked: board.nodes.filter((n) => n.kind !== 'user' && n.category !== 'theme' && isFavourite(n)),
   }
 }
 
 const label = (n: BoardNode) => (n.kind === 'spark' && n.category ? `${n.text} (${CATEGORY_LABEL[n.category]})` : n.text)
 
 export function summaryText(board: Board, summary: Summary): string {
-  const lines = [`${board.name}`, '', `The idea: ${summary.idea.text}`]
+  const lines = [`${board.name}`]
   if (summary.themes.length) lines.push(`${summary.themes.length > 1 ? 'Themes' : 'Theme'}: ${summary.themes.map((t) => t.text).join(', ')}`)
-  if (summary.trails.length) {
-    lines.push('', 'How I got there:')
-    for (const trail of summary.trails) lines.push(`  ${trail.map(label).join(' → ')}`)
+  for (const { idea, trails } of summary.ideas) {
+    lines.push('', `♥ ${idea.text}`)
+    if (trails.length) {
+      lines.push('  How I got there:')
+      for (const trail of trails) lines.push(`    ${trail.map(label).join(' → ')}`)
+    }
   }
-  if (summary.favourites.length) {
+  if (summary.liked.length) {
     lines.push('', 'Other thoughts I liked:')
-    for (const f of summary.favourites) lines.push(`  ♥ ${f.text}`)
+    for (const f of summary.liked) lines.push(`  ♥ ${f.text}`)
   }
   lines.push('', 'Made with Floppy Thoughts')
   return lines.join('\n')

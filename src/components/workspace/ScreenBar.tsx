@@ -1,4 +1,5 @@
 import { MAX_BOARD_NAME, type Board } from '../../lib/board'
+import { favouriteIdeas } from '../../lib/summary'
 import { MenuBar, type Menu } from '../MenuBar'
 import { ThemeToggle } from '../ThemeToggle'
 
@@ -22,6 +23,7 @@ export function ScreenBar({
   notice: string | null
   onShowIdea: () => void
 }) {
+  const favCount = favouriteIdeas(board).length
   return (
     <header className="screen__bar">
       <MenuBar menus={menus} />
@@ -56,9 +58,9 @@ export function ScreenBar({
             {notice}
           </span>
         )}
-        {board.nodes.some((n) => n.chosen) && (
-          <button type="button" className="screen__new screen__summary" onClick={onShowIdea}>
-            my idea ✓
+        {favCount > 0 && (
+          <button type="button" className="screen__new screen__summary" onClick={onShowIdea} title="Your favourite ideas, and how you got to each">
+            ♥ {favCount > 1 ? 'my ideas' : 'my idea'}
           </button>
         )}
       </div>

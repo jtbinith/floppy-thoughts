@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 // Bump when the saved JSON shape changes, and add a migration for older boards (see migrate below).
-export const BOARD_VERSION = 3
+export const BOARD_VERSION = 4
 
 export const MAX_NODE_TEXT = 200
 export const MAX_BOARD_NAME = 80
@@ -57,10 +57,8 @@ export const boardNodeSchema = z.object({
   locked: z.boolean().optional(),
   // Nudges only
   nudgeType: z.enum(NUDGE_TYPES).optional(),
-  // Any node can be a favourite.
-  favourite: z.boolean().optional(),
-  // The idea you've decided to go with. At most one per board.
-  chosen: z.boolean().optional(),
+  // Who favourited it. Signed out it's only ever you (ME); on a shared board, everyone's account id.
+  favouritedBy: z.array(id).optional(),
 })
 
 export const linkSchema = z.object({
@@ -102,7 +100,9 @@ export const boardSchema = z
         issue('Only nudges have a nudgeType', ['nodes', i, 'nudgeType'])
     })
 
-    if (board.nodes.filter((n) => n.chosen).length > 1) issue('Only one idea can be the chosen one', ['nodes'])
+    board.nodes.forEach((node, i) => {
+      if (node.favouritedBy && new Set(node.favouritedBy).size !== node.favouritedBy.length) issue('Someone favourited this twice', ['nodes', i, 'favouritedBy'])
+    })
 
     // Links are undirected: a→b and b→a count as the same link.
     const seen = new Set<string>()
@@ -115,6 +115,11 @@ export const boardSchema = z
       seen.add(key)
     })
   })
+
+// Signed out, the only person on a board.
+export const ME = 'me'
+export const isFavourite = (node: Pick<BoardNode, 'favouritedBy'>) => (node.favouritedBy?.length ?? 0) > 0
+export const isMine = (node: Pick<BoardNode, 'favouritedBy'>, who = ME) => node.favouritedBy?.includes(who) ?? false
 
 // Boxes are shown and typed as their number (1, 2…), never their id.
 export const numberOf = (board: Board, id?: string) => {
@@ -143,6 +148,8 @@ export type ParseResult = { ok: true; board: Board } | { ok: false; errors: stri
 // Version 1 boards had a 3-swap budget and a blank/theme mode. Both went when the limits did.
 // Version 2 boards numbered boxes through their ids (n1, n2…). Version 3 keeps those ids (they're
 // unique on the board) and adds the number separately; new boxes get random ids.
+// Version 3 boards had a yes/no favourite and one "chosen" idea. Version 4 records who favourited
+// each box (for shared boards): both become your favourite, so nothing you marked is lost.
 function migrate(data: unknown): unknown {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return data
   let board = data as Record<string, unknown>
@@ -162,6 +169,10 @@ function migrate(data: unknown): unknown {
       return { ...n, number }
     })
     board = { ...board, nodes: numbered, version: 3 }
+  }
+  if (board.version === 3 && Array.isArray(board.nodes)) {
+    const nodes = (board.nodes as Record<string, unknown>[]).map(({ favourite, chosen, ...n }) => (favourite || chosen ? { ...n, favouritedBy: [ME] } : n))
+    board = { ...board, nodes, version: 4 }
   }
   return board
 }

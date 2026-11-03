@@ -3,7 +3,7 @@ import type { Board } from './board'
 import { BOX, freeSpotNear } from './placement'
 
 const empty: Board = {
-  version: 3,
+  version: 4,
   id: 'b',
   name: 'b',
   nodes: [],

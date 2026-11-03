@@ -127,6 +127,11 @@
   color: inherit;
 }
 
+/* Selected, the heart button shows instead, so there's only one heart on the box. */
+.react-flow__node.selected .idea__fav-mark {
+  visibility: hidden;
+}
+
 .idea__fav-mark + .idea__id {
   margin-left: 0;
 }
@@ -296,32 +301,6 @@
 
 .idea--cat-theme .idea__text {
   font-weight: 700;
-}
-
-.idea--chosen {
-  outline: 2px solid var(--nudge);
-  outline-offset: 3px;
-}
-
-.idea__chosen-mark {
-  margin-left: auto;
-  font-weight: 700;
-  color: var(--nudge);
-}
-
-.idea--spark .idea__chosen-mark {
-  color: inherit;
-}
-
-.idea__chosen-mark + .idea__fav-mark,
-.idea__chosen-mark + .idea__id,
-.idea__chosen-mark ~ .idea__id {
-  margin-left: 0;
-}
-
-.idea__chosen--on {
-  color: var(--nudge);
-  border-color: var(--nudge);
 }
 
 .workspace__board {

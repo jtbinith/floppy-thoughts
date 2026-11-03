@@ -40,7 +40,7 @@ type Props = {
 
 export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, favourite, pick, deleteMany, undo, redo, addIdea, say, showKeys } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys } = useBoardActions()
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
@@ -258,9 +258,6 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
     } else if (key === 'n' && one) {
       handled()
       nudge(one.id)
-    } else if (key === 'p' && one) {
-      handled()
-      pick(one.id)
     } else if (key === 'u') {
       handled()
       undo()

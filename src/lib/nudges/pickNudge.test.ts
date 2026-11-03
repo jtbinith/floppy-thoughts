@@ -6,7 +6,7 @@ import { chooseType, distanceFromSpark, fittingTypes, keywordOf, pickNudge } fro
 import { fillQuestion } from './questions'
 
 const board: Board = {
-  version: 3,
+  version: 4,
   id: 'b',
   name: 'b',
   nodes: [

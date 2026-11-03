@@ -5,7 +5,7 @@ import { COMMANDS, HELP, argKinds, findCommand, helpGroups, looksLikeCommand, ru
 const ctx = { addAt: { x: 5, y: 5 }, now: new Date('2026-10-28T12:00:00Z') }
 
 const board: Board = {
-  version: 3,
+  version: 4,
   id: 'b1',
   name: 'test',
   nodes: [
@@ -104,16 +104,11 @@ describe('notes, favourites and names', () => {
     expect(again.board?.nodes.filter((n) => n.category === 'theme').map((n) => n.text)).toEqual(['Time travel', 'Space'])
   })
 
-  it('picks the idea you are going with', () => {
-    const r = runCommand(board, '/pick 2', ctx)
-    expect(r.output).toEqual(['2 is the one: plants'])
-    expect(runCommand(r.board!, '/pick 2', ctx).output).toEqual(['2 is no longer the one'])
-  })
-
   it('toggles favourites and shows them in the list', () => {
     const r = runCommand(board, '/fav 2', ctx)
     expect(r.output).toEqual(['♥ favourited 2: plants'])
     expect(runCommand(r.board!, '/list', ctx).output[1]).toBe('  2   idea        ♥ plants  (linked to 1)')
+    // and again to unfavourite.
     expect(runCommand(r.board!, '/fav 2', ctx).output).toEqual(['unfavourited 2: plants'])
   })
 

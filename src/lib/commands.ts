@@ -1,7 +1,8 @@
-import { MAX_BOARD_NAME, idOf, numberOf, type Board } from './board'
+import { MAX_BOARD_NAME, ME, isMine, idOf, isFavourite, numberOf, type Board } from './board'
+import { favouriteIdeas } from './summary'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
-import { addLink, addUserNode, chooseIdea, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleFavourite, touch, type OpResult } from './boardOps'
+import { addLink, addUserNode, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleFavourite, touch, type OpResult } from './boardOps'
 
 // The terminal's command language. Anything you type is a thought; commands start with "/",
 // like Slack or Discord, so a thought is never mistaken for one.
@@ -70,7 +71,7 @@ type Command = {
   run: (call: Call) => CommandResult
 }
 
-const GROUPS = ['IDEAS', 'NOTES AND NUDGES', 'LINKS', 'FAVOURITES AND YOUR IDEA', 'VIEW', 'BOARDS', 'TERMINAL'] as const
+const GROUPS = ['IDEAS', 'NOTES AND NUDGES', 'LINKS', 'FAVOURITES AND YOUR IDEAS', 'VIEW', 'BOARDS', 'TERMINAL'] as const
 type Group = (typeof GROUPS)[number]
 
 const NUDGE_TYPES_HELP = NUDGE_CHOICES.join(' ')
@@ -216,66 +217,49 @@ export const COMMANDS: Command[] = [
         ? board.nodes.map((n) => {
             const links = neighbours(board, n.id)
             const kind = n.kind === 'spark' ? (n.category === 'theme' ? 'theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
-            return `  ${String(n.number).padEnd(3)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.map((id) => numberOf(board, id)).join(', ')})` : ''}`
+            return `  ${String(n.number).padEnd(3)} ${kind?.padEnd(11)} ${isFavourite(n) ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.map((id) => numberOf(board, id)).join(', ')})` : ''}`
           })
         : ['  the board is empty. type a thought, or try /vend'],
     }),
   },
 
-  // FAVOURITES AND YOUR IDEA
+  // FAVOURITES AND YOUR IDEAS
   {
     name: 'fav',
-    group: 'FAVOURITES AND YOUR IDEA',
+    group: 'FAVOURITES AND YOUR IDEAS',
     usage: '/fav <id>',
     does: 'favourite something, or unfavourite it',
     args: [node],
     run: ({ board, args, ctx }) =>
-      fromOp(toggleFavourite(board, args[0], ctx.now), (r) => `${r.node?.favourite ? '♥ favourited' : 'unfavourited'} ${r.node?.number}: ${r.node?.text}`),
+      fromOp(toggleFavourite(board, args[0], ME, ctx.now), (r) => `${isMine(r.node!) ? '♥ favourited' : 'unfavourited'} ${r.node?.number}: ${r.node?.text}`),
   },
   {
     name: 'favs',
-    group: 'FAVOURITES AND YOUR IDEA',
+    group: 'FAVOURITES AND YOUR IDEAS',
     usage: '/favs',
     does: "this board's favourites",
     args: [],
     run: ({ board }) => {
-      const mine = board.nodes.filter((n) => n.favourite)
-      return { output: mine.length ? mine.map((n) => `  ♥ ${String(n.number).padEnd(3)} ${n.text}`) : ['no favourites on this board yet. try /fav <id>'] }
+      const favourites = board.nodes.filter(isFavourite)
+      return { output: favourites.length ? favourites.map((n) => `  ♥ ${String(n.number).padEnd(3)} ${n.text}`) : ['no favourites on this board yet. try /fav <id>'] }
     },
   },
   {
     name: 'favboard',
-    group: 'FAVOURITES AND YOUR IDEA',
+    group: 'FAVOURITES AND YOUR IDEAS',
     usage: '/favboard',
-    does: "copy this board's favourites onto a new board",
+    does: 'copy what you favourited onto a new board',
     args: [],
     run: ({ ctx }) => (ctx.ui ? { output: [ctx.ui.favouritesBoard()] } : needsBoard('favboard')),
   },
   {
-    name: 'pick',
-    group: 'FAVOURITES AND YOUR IDEA',
-    usage: '/pick <id>',
-    does: "mark the idea you're going with, and see how you got there",
-    args: [node],
-    run: ({ board, args, ctx }) => {
-      const result = chooseIdea(board, args[0], ctx.now)
-      if (!result.ok) return fail(result.error)
-      const chosen = !!result.node?.chosen
-      return {
-        board: result.board,
-        output: [chosen ? `${numberOf(board, args[0])} is the one: ${result.node?.text}` : `${numberOf(board, args[0])} is no longer the one`],
-        then: chosen ? () => void ctx.ui?.showSummary() : undefined,
-      }
-    },
-  },
-  {
     name: 'summary',
-    group: 'FAVOURITES AND YOUR IDEA',
+    group: 'FAVOURITES AND YOUR IDEAS',
     usage: '/summary',
-    does: 'show that summary again',
+    does: 'your favourite ideas, and how you got to each',
     args: [],
     run: ({ board, ctx }) => {
-      if (!board.nodes.some((n) => n.chosen)) return fail('no idea picked yet. try /pick <id>')
+      if (!favouriteIdeas(board).length) return fail('no favourite ideas yet. try /fav <id> on one of your ideas')
       if (!ctx.ui) return needsBoard('summary')
       ctx.ui.showSummary()
       return { output: ['showing your summary'] }

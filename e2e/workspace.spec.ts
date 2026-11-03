@@ -68,12 +68,20 @@ test('favourites show in the drawer, and can go on a new board', async ({ page }
   await expect(boxes(page)).toHaveCount(2)
 })
 
-test('"this is the one" opens the summary of how you got there', async ({ page }) => {
+test('favouriting ideas puts them in the summary, with how you got there', async ({ page }) => {
+  await type(page, '/theme Plants')
   await type(page, 'a plant that texts you')
-  await type(page, '/pick 1')
-  const summary = page.getByRole('dialog', { name: 'Your idea' })
-  await expect(summary).toBeVisible()
-  await expect(summary).toContainText('a plant that texts you')
+  await type(page, 'a moss clock')
+  await type(page, '/link 1 2')
+  // F on a selected box favourites it.
+  await box(page, 'n2').click()
+  await page.keyboard.press('f')
+  await expect(page.locator('.screen__summary')).toHaveText('♥ my idea')
+  await type(page, '/fav 3')
+  await page.locator('.screen__summary').click()
+  const summary = page.getByRole('dialog', { name: 'Your favourite ideas' })
+  await expect(summary.locator('.summary__idea')).toHaveText(['♥ a plant that texts you', '♥ a moss clock'])
+  await expect(summary).toContainText('Plants')
 })
 
 test('a theme added later sits beside the first, and one undo takes it back', async ({ page }) => {

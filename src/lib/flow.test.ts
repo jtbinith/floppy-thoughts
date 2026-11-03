@@ -3,7 +3,7 @@ import type { Board } from './board'
 import { toFlowEdges, toFlowNodes, withPositions } from './flow'
 
 const board: Board = {
-  version: 3,
+  version: 4,
   id: 'b1',
   name: 'test',
   nodes: [

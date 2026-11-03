@@ -49,8 +49,7 @@ classDiagram
     category? (notes)
     locked? (themes)
     nudgeType? (nudges)
-    favourite?
-    chosen? (the idea you're going with)
+    favouritedBy? (who favourited it; signed out, just you)
   }
   class Link {
     from: node id
@@ -64,7 +63,7 @@ classDiagram
 **Checked on every load:**
 - Node ids and numbers are unique; links point to real nodes, with no self-links and no duplicates in either direction.
 - `category` and `locked` belong only to notes, `nudgeType` only to nudges.
-- At most one idea is `chosen`.
+- Nobody favourites the same box twice.
 - At most 1,000 nodes. There's no limit on brainstorming; this only stops a runaway board filling browser storage.
 - Older board versions are upgraded on load.
 
@@ -107,7 +106,7 @@ flowchart TB
 ```
 
 - **Board:** React Flow handles pan, zoom, touch and dragging. Its attribution link stays visible. Boxes are styled as files in an IDE (`~/idea`, `~/word`…), nudges as `// comments`.
-- **Title strip:** VS Code-style menus. Board (new, recent boards, all boards, rename, favourites on a new board, my idea, delete), Edit (undo, redo, add, theme, nudge, delete, tidy), View (drawer tabs, terminal, fit to screen), Help.
+- **Title strip:** VS Code-style menus. Board (new, recent boards, all boards, rename, favourites on a new board, my favourite ideas, delete), Edit (undo, redo, add, theme, nudge, delete, tidy), View (drawer tabs, terminal, fit to screen), Help.
 - **Drawer:** resizable and closable. Its width is remembered.
 - **Terminal:** resizable; its height is remembered.
 
@@ -191,11 +190,11 @@ The four-squares button under the zoom controls, Edit → Tidy, or `/tidy`. It o
 3. Place the groups side by side with space between them, biggest first; single unlinked boxes go last.
 4. Keep the main theme where it is; boxes glide to their new places.
 
-## Favourites, the one, and the summary
+## Favourites and the summary
 
-- **Favourite** anything (the heart, **F**, `/fav 4`). The favourites tab and `/favs` show this board's favourites; they're never counted or scored.
+- **Favourite** anything (the heart, **F**, `/fav 4`). The favourites tab and `/favs` show this board's favourites.
 - **Favourites on a new board** copies them, with the links between them, onto a fresh board.
-- **This is the one** (`/pick 4`) marks the idea you're going with. The summary shows the shortest trail from each note or theme to it, and can be copied.
+- **The summary** (`/summary`, or "my idea" at the top) lists every favourite idea with the shortest trail from each note or theme to it, and can be copied. On a shared board the most favourited comes first, and each box shows who favourited it and how many.
 
 ## Boards and routes
 

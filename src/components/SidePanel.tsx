@@ -13,7 +13,7 @@ const Machine = lazy(() => import('./machine/HomeMachine'))
 type MachineControl = import('./machine/HomeMachine').MachineControl
 type NoteLanding = import('./machine/HomeMachine').NoteLanding
 
-// The drawer beside the board: the vending machine, your favourites, or the commands.
+// The drawer beside the board: the vending machine, what you favourited, or the commands.
 export type PanelTab = 'machine' | 'favourites' | 'commands'
 
 type Props = {
@@ -28,11 +28,11 @@ type Props = {
   // The machine hands over its controls, so the terminal can run it.
   onMachineControl: (control: MachineControl | null) => void
   boardId: string
-  // This board's favourites.
+  // What's favourited on this board.
   favourites: Favourite[]
-  onOpenFavourite: (favourite: Favourite) => void
-  onUnfavourite: (favourite: Favourite) => void
-  // Copy this board's favourites onto a new board.
+  onOpenFavourite: (favourites: Favourite) => void
+  onUnfavourite: (favourites: Favourite) => void
+  // Copy what's favourited onto a new board.
   onFavouritesBoard: () => void
   // Put a command in the terminal (from the commands tab).
   onUseCommand: (command: string) => void
@@ -156,7 +156,7 @@ function FavouritesTab({ favourites, onOpenFavourite, onUnfavourite, onFavourite
 
   return (
     <div className="favs">
-      <button type="button" className="panel__button" onClick={onFavouritesBoard} title="A new board with just these favourites, and the links between them">
+      <button type="button" className="panel__button" onClick={onFavouritesBoard} title="A new board with just these, and the links between them">
         put these on a new board
       </button>
       <ul className="favs__list">

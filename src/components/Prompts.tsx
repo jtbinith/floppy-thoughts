@@ -114,29 +114,46 @@ export function SummaryPopup({ board, onClose }: { board: Board; onClose: () => 
   const summary = summarise(board)
   if (!summary) return null
   const text = summaryText(board, summary)
+  const one = summary.ideas.length === 1
   return (
-    <Dialog label="Your idea" onCancel={onClose} wide>
-      <h2 className="dialog__title">you found your idea</h2>
-      <p className="summary__idea">{summary.idea.text}</p>
-      {summary.trails.length > 0 ? (
-        <div className="summary__trails">
-          <h3>how you got there</h3>
-          <ol>
-            {summary.trails.map((trail) => (
-              <li key={trail[0].id}>
-                {trail.map((n, i) => (
-                  <span key={n.id}>
-                    {i > 0 && <span className="summary__arrow"> → </span>}
-                    <span className={`summary__step summary__step--${n.kind}`}>{n.text}</span>
-                  </span>
-                ))}
-              </li>
-            ))}
-          </ol>
-        </div>
-      ) : (
-        <p className="dialog__text">Link it to the notes that led you here to see the trail.</p>
-      )}
+    <Dialog label={one ? 'Your idea' : 'Your favourite ideas'} onCancel={onClose} wide>
+      <h2 className="dialog__title">{one ? 'you found your idea' : 'your favourite ideas'}</h2>
+      <div className="summary__body">
+        {summary.ideas.map(({ idea, trails }) => (
+          <section key={idea.id} className="summary__entry">
+            <p className="summary__idea">♥ {idea.text}</p>
+            {trails.length > 0 ? (
+              <div className="summary__trails">
+                <h3>how you got there</h3>
+                <ol>
+                  {trails.map((trail) => (
+                    <li key={trail[0].id}>
+                      {trail.map((n, i) => (
+                        <span key={n.id}>
+                          {i > 0 && <span className="summary__arrow"> → </span>}
+                          <span className={`summary__step summary__step--${n.kind}`}>{n.text}</span>
+                        </span>
+                      ))}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="dialog__text">Link it to the notes that led you here to see the trail.</p>
+            )}
+          </section>
+        ))}
+        {summary.liked.length > 0 && (
+          <section className="summary__liked">
+            <h3>other thoughts you liked</h3>
+            <ul>
+              {summary.liked.map((n) => (
+                <li key={n.id}>♥ {n.text}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
       <div className="popup__actions">
         <button
           type="button"

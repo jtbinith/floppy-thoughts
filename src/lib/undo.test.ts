@@ -3,7 +3,7 @@ import type { Board } from './board'
 import { UNDO_LIMIT, emptyUndo, pushChange, redo, undo } from './undo'
 
 const b = (name: string): Board => ({
-  version: 3,
+  version: 4,
   id: 'b',
   name,
   nodes: [],

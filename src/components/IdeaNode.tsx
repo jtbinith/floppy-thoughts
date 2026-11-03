@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { CATEGORY_LABEL, MAX_NODE_TEXT } from '../lib/board'
+import { CATEGORY_LABEL, MAX_NODE_TEXT, isMine, isFavourite } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { HeartIcon } from './HeartIcon'
@@ -8,7 +8,7 @@ import { LockIcon } from './LockIcon'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, pick, nudge } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge } = useBoardActions()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -31,12 +31,14 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     return () => cancelAnimationFrame(frame)
   }, [editing])
   const isTheme = data.category === 'theme'
+  const isFav = isFavourite(data)
+  const mine = isMine(data)
   const label = data.kind === 'spark' ? (isTheme ? 'theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
     <div
       data-number={data.number}
-      className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${data.favourite ? ' idea--favourite' : ''}${data.chosen ? ' idea--chosen' : ''}`}
+      className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${isFav ? ' idea--favourite' : ''}`}
     >
       {/* Drag from either dot to another node to link them. */}
       <Handle type="target" position={Position.Top} className="idea__handle" />
@@ -55,9 +57,8 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             <span className="idea__category">{CATEGORY_LABEL[data.category]}</span>
           </>
         )}
-        {data.chosen && <span className="idea__chosen-mark">✓ the one</span>}
-        {data.favourite && (
-          <span className="idea__fav-mark" title="A favourite">
+        {isFav && (
+          <span className="idea__fav-mark" title="Favourite">
             <HeartIcon size={9} />
           </span>
         )}
@@ -102,25 +103,14 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
         <span className="idea__tools">
           <button
             type="button"
-            className={`idea__tool idea__fav nodrag${data.favourite ? ' idea__fav--on' : ''}`}
-            aria-label={data.favourite ? `Unfavourite ${data.number}` : `Favourite ${data.number}`}
-            aria-pressed={!!data.favourite}
+            className={`idea__tool idea__fav nodrag${mine ? ' idea__fav--on' : ''}`}
+            aria-label={mine ? `Unfavourite ${data.number}` : `Favourite ${data.number}`}
+            aria-pressed={mine}
             title="Favourite (F)"
             onClick={() => favourite(id)}
           >
-            <HeartIcon filled={!!data.favourite} />
+            <HeartIcon filled={mine} />
           </button>
-          {!isTheme && data.kind !== 'nudge' && (
-            <button
-              type="button"
-              className={`idea__tool nodrag${data.chosen ? ' idea__chosen--on' : ''}`}
-              aria-pressed={!!data.chosen}
-              title="The idea you're going with: see how you got there"
-              onClick={() => pick(id)}
-            >
-              {data.chosen ? '✓ the one' : 'this is the one'}
-            </button>
-          )}
           {data.kind !== 'nudge' && (
             <button type="button" className="idea__tool nodrag" aria-label={`Nudge ${data.number}`} title="A word or question to push this further (N)" onClick={() => nudge(id)}>
               nudge

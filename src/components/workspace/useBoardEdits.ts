@@ -1,7 +1,7 @@
 import { useState, type RefObject } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { MAX_BOARD_NAME, numberOf, type Board } from '../../lib/board'
-import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
+import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
 import { favouritesBoard } from '../../lib/favouritesBoard'
 import { pickNudge, type NudgeChoice } from '../../lib/nudges/pickNudge'
 import { BOX, PLACE, centreOfBox } from '../../lib/placement'
@@ -21,7 +21,7 @@ function withoutLinks(board: Board, links: [string, string][]): Board {
 }
 
 // Every change to the board from the screen, the keyboard and the terminal: adding and editing
-// ideas, branching, nudges, notes from the machine, themes, favourites, picking the one,
+// ideas, branching, nudges, notes from the machine, themes, favourites,
 // renaming, and deleting (which asks first if it would break a chain). Each goes through
 // `commit`, so it can be undone.
 export function useBoardEdits({
@@ -32,7 +32,6 @@ export function useBoardEdits({
   view: { spotNear, centreOf, reveal, noteSpot },
   say,
   edit,
-  onPicked,
   onOpenNew,
 }: {
   board: Board
@@ -45,9 +44,7 @@ export function useBoardEdits({
   say: (message: string) => void
   // Start typing in a box (or stop, with null).
   edit: (id: string | null) => void
-  // You picked the idea you're going with (the summary opens).
-  onPicked: () => void
-  // Open a board made here (a favourites board).
+  // Open a board made here (a favourited board).
   onOpenNew: (board: Board) => void
 }) {
   const { getNodes } = useReactFlow()
@@ -154,13 +151,6 @@ export function useBoardEdits({
     setPendingDelete(null)
   }
 
-  function pick(id: string) {
-    const result = chooseIdea(board, id)
-    if (!result.ok) return
-    commit(board, result.board)
-    if (result.node?.chosen) onPicked()
-  }
-
   function makeFavouritesBoard(): string {
     const made = favouritesBoard(board)
     if (!made) return 'no favourites on this board yet. try /fav <id>'
@@ -216,7 +206,6 @@ export function useBoardEdits({
     pendingDelete,
     finishDelete,
     cancelDelete: () => setPendingDelete(null),
-    pick,
     makeFavouritesBoard,
     addThemes,
     favourite,

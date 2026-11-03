@@ -1,7 +1,7 @@
-import { MAX_NODE_TEXT, MAX_NODES, numberOf, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
+import { MAX_NODE_TEXT, MAX_NODES, ME, numberOf, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
 
 // Pure board edits. Each returns a new board; nothing is mutated.
-// Only what you wrote can be edited: your ideas and your themes. Anything can be deleted or favourited.
+// Only what you wrote can be edited: your ideas and your themes. Anything can be deleted or favourites.
 // In the UI sparks are called notes: the shrimp notes from the vending machine.
 
 const sameLink = (a: string, b: string) => (l: { from: string; to: string }) =>
@@ -199,12 +199,13 @@ export function addNote(board: Board, note: { text: string; category: SparkCateg
   return { ok: true, board: touch({ ...board, nodes: [...board.nodes, node] }, now), node }
 }
 
-// Marks or unmarks anything on the board as a favourite.
-export function toggleFavourite(board: Board, id: string, now = new Date()): OpResult {
+// Favourites or unfavourites anything on the board, for one person (you, when signed out).
+export function toggleFavourite(board: Board, id: string, who = ME, now = new Date()): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `Nothing numbered ${numberOf(board, id)}` }
-  const { favourite, ...rest } = node
-  const toggled: BoardNode = favourite ? rest : { ...rest, favourite: true }
+  const { favouritedBy = [], ...rest } = node
+  const next = favouritedBy.includes(who) ? favouritedBy.filter((h) => h !== who) : [...favouritedBy, who]
+  const toggled: BoardNode = next.length ? { ...rest, favouritedBy: next } : rest
   return {
     ok: true,
     board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? toggled : n)) }, now),
@@ -215,16 +216,4 @@ export function toggleFavourite(board: Board, id: string, now = new Date()): OpR
 // Adds another theme to the board. Change one with /edit, like any idea.
 export function addTheme(board: Board, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
   return addNote(board, { text, category: 'theme' }, at, now)
-}
-
-// Marks the idea you're going with (or unmarks it). Only one per board.
-export function chooseIdea(board: Board, id: string, now = new Date()): OpResult {
-  const node = findNode(board, id)
-  if (!node) return { ok: false, error: `Nothing numbered ${numberOf(board, id)}` }
-  const choosing = !node.chosen
-  const nodes = board.nodes.map((n) => {
-    const { chosen: _, ...rest } = n
-    return choosing && n.id === id ? { ...rest, chosen: true } : rest
-  })
-  return { ok: true, board: touch({ ...board, nodes }, now), node: nodes.find((n) => n.id === id) }
 }

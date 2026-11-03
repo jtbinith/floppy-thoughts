@@ -14,8 +14,6 @@ export type BoardActions = {
   nudge: (id: string) => void
   // Favourite or unfavourite anything (F key or the heart button).
   favourite: (id: string) => void
-  // Mark the idea you're going with.
-  pick: (id: string) => void
   deleteNode: (id: string) => void
   // Delete several things at once (and remove selected links), as one change.
   deleteMany: (ids: string[], links: [string, string][]) => void

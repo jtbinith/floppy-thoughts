@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import type { Board } from '../lib/board'
+import { isFavourite, type Board } from '../lib/board'
 import { addLink, findNode, themes } from '../lib/boardOps'
 import { runCommand, type CommandResult } from '../lib/commands'
 import { FIT_VIEW } from '../lib/flow'
@@ -31,7 +31,7 @@ type Props = {
   onChange: (board: Board) => void
   onNewBoard: () => void
   onOpenBoard: (id: string) => void
-  // Save and open a board made here (a favourites board).
+  // Save and open a board made here (a favourited board).
   onOpenNew: (board: Board) => void
   onDeleteBoard: (id: string) => void
   // A brand-new board asks "got a theme?" first.
@@ -96,10 +96,9 @@ export function Workspace(props: Props) {
     view: { spotNear, centreOf, reveal, noteSpot },
     say: setNotice,
     edit: setEditingId,
-    onPicked: () => setShowSummary(true),
     onOpenNew,
   })
-  const { addAndEdit, branchFrom, requestNudge, nudgeSelected, placeNote, requestDelete, pick, makeFavouritesBoard, addThemes, favourite, rename, saveEdit } = edits
+  const { addAndEdit, branchFrom, requestNudge, nudgeSelected, placeNote, requestDelete, makeFavouritesBoard, addThemes, favourite, rename, saveEdit } = edits
 
   // The machine in the drawer hands over its controls, so the terminal can run it.
   const machineControl = useRef<MachineControl | null>(null)
@@ -135,7 +134,6 @@ export function Workspace(props: Props) {
     branch: (id) => branchFrom(board, id),
     nudge: (id) => void requestNudge(id),
     favourite,
-    pick,
     deleteNode: (id) => void requestDelete([id]),
     deleteMany: (ids, links) => void requestDelete(ids, links),
     undo: () => void stepBack(),
@@ -174,7 +172,7 @@ export function Workspace(props: Props) {
   }
 
   // The favourites tab shows this board's favourites.
-  const boardFavourites: Favourite[] = board.nodes.filter((n) => n.favourite).map((node) => ({ boardId: board.id, boardName: board.name, node }))
+  const boardFavourites: Favourite[] = board.nodes.filter(isFavourite).map((node) => ({ boardId: board.id, boardName: board.name, node }))
 
   // Esc in the terminal: the keyboard goes to the board, on whatever is selected (usually what you
   // just added), so Delete, Tab, N and F work on it straight away.
@@ -242,7 +240,7 @@ export function Workspace(props: Props) {
   return (
     <BoardActionsContext.Provider value={actions}>
       <div className="workspace">
-        {/* In the order you work: add a thought, get a note, look back at favourites, then help. */}
+        {/* In the order you work: add a thought, get a note, look back at what you favourited, then help. */}
         <nav className="device__rail" aria-label="Device buttons">
           <button type="button" className="device__button" aria-label="Add an idea" title="Add an idea" onClick={() => addAndEdit(visibleCentre())}>
             +
@@ -262,7 +260,7 @@ export function Workspace(props: Props) {
             className={`device__button${panel === 'favourites' ? ' device__button--on' : ''}`}
             aria-label="Favourites"
             aria-pressed={panel === 'favourites'}
-            title="This board's favourites"
+            title="What you favourited on this board"
             onClick={() => setPanel(panel === 'favourites' ? null : 'favourites')}
           >
             <HeartIcon size={14} />

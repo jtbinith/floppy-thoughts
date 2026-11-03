@@ -3,7 +3,7 @@ import type { Board } from './board'
 import { complete } from './complete'
 
 const board: Board = {
-  version: 3,
+  version: 4,
   id: 'b',
   name: 'b',
   nodes: [

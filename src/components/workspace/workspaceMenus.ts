@@ -1,4 +1,5 @@
-import type { Board } from '../../lib/board'
+import { isFavourite, type Board } from '../../lib/board'
+import { favouriteIdeas } from '../../lib/summary'
 import type { BoardSummary } from '../../lib/storage'
 import type { Menu, MenuItem } from '../MenuBar'
 import type { PanelTab } from '../SidePanel'
@@ -30,7 +31,7 @@ export function workspaceMenus(d: {
   showKeys: () => void
 }): Menu[] {
   const { board } = d
-  const hasFavourites = board.nodes.some((n) => n.favourite)
+  const hasFavourites = board.nodes.some(isFavourite)
   const recentBoards = d.boards.filter((b) => b.id !== board.id).slice(0, 5)
   return [
     {
@@ -43,8 +44,8 @@ export function workspaceMenus(d: {
         ...recentBoards.map((b): MenuItem => ({ label: b.name, onSelect: () => d.openBoard(b.id) })),
         { label: 'All boards…', onSelect: () => (location.hash = '/boards') },
         'divider',
-        { label: 'Favourites on a new board', onSelect: d.favouritesBoard, disabled: !hasFavourites },
-        { label: 'My idea', onSelect: d.showIdea, disabled: !board.nodes.some((n) => n.chosen) },
+        { label: 'Favourite on a new board', onSelect: d.favouritesBoard, disabled: !hasFavourites },
+        { label: 'My favourite ideas', onSelect: d.showIdea, disabled: !favouriteIdeas(board).length },
         'divider',
         { label: 'Delete this board…', onSelect: d.deleteBoard },
       ],
