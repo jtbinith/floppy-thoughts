@@ -3,8 +3,6 @@ import { ReactFlowProvider } from '@xyflow/react'
 import { BoardsPage } from './components/BoardsPage'
 import { Home } from './components/Home'
 import { PalettePage } from './components/palette/PalettePage'
-import { TypePage } from './components/type/TypePage'
-import { NotesPage } from './components/notes/NotesPage'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
@@ -17,9 +15,7 @@ import { LocalStorageAdapter, withSummary, type BoardSummary } from './lib/stora
 
 const storage = new LocalStorageAdapter()
 
-// The 3D machine prototype loads on its own, so its 3D and animation libraries only download on that page.
-const LookPage = lazy(() => import('./components/look/LookPage').then((m) => ({ default: m.LookPage })))
-const MachinePage = lazy(() => import('./components/machine/MachinePage').then((m) => ({ default: m.MachinePage })))
+// The shrimp prototype loads on its own, so its 3D and animation libraries only download on that page.
 const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) => ({ default: m.ShrimpPage })))
 
 // Pages, kept in the URL hash so they work on GitHub Pages:
@@ -27,14 +23,10 @@ const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) 
 //   #/new     makes a new, blank board straight away, then shows it
 //   #/board   the board you had open last
 //   #/boards  all your boards: open, rename, delete
-//   #/machine PROTOTYPE: the vending machine as a live 3D scene
 //   #/shrimp  PROTOTYPE: the shrimp token, a chunky spinning pickup
-//   #/palette PROTOTYPE: the colour palette, contrast and colour blocking
-//   #/look    PROTOTYPE: the home page around the machine, in each palette version
-//   #/type    PROTOTYPE: choosing the terminal font, and the typing headline
-//   #/notes   PROTOTYPE: ways for the note to come out of the shrimp token
-type Route = 'home' | 'new' | 'board' | 'boards' | 'machine' | 'shrimp' | 'palette' | 'look' | 'type' | 'notes'
-const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/machine': 'machine', '#/shrimp': 'shrimp', '#/palette': 'palette', '#/look': 'look', '#/type': 'type', '#/notes': 'notes' }
+//   #/palette the colour palette: where it came from, contrast checks, dark and light mode
+type Route = 'home' | 'new' | 'board' | 'boards' | 'shrimp' | 'palette'
+const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/shrimp': 'shrimp', '#/palette': 'palette' }
 const routeFromHash = (): Route => ROUTES[location.hash] ?? 'home'
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
@@ -183,20 +175,6 @@ export default function App() {
 
   if (route === 'home') return <Home hasBoards={hasBoards} />
   if (route === 'palette') return <PalettePage />
-  if (route === 'type') return <TypePage />
-  if (route === 'notes') return <NotesPage />
-  if (route === 'look')
-    return (
-      <Suspense fallback={null}>
-        <LookPage />
-      </Suspense>
-    )
-  if (route === 'machine')
-    return (
-      <Suspense fallback={null}>
-        <MachinePage />
-      </Suspense>
-    )
   if (route === 'shrimp')
     return (
       <Suspense fallback={null}>

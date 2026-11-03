@@ -3,7 +3,7 @@ import { bestText, contrast, luminance, rate } from '../../lib/contrast'
 import { BACKGROUNDS, CATEGORY_COLOURS, PALETTE, SOURCES, TEXTS, type Swatch } from './palette'
 import { ThemeToggle } from '../ThemeToggle'
 
-// PROTOTYPE: a page for designing the site's colours: where they came from, the proposed palette,
+// The page for the site's colours: where they came from, the proposed palette,
 // how well text reads on each colour, and the palette blocked out into real-looking UI.
 // Lives at #/palette.
 

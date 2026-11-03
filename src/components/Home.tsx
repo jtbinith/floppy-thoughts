@@ -4,7 +4,7 @@
 import { lazy, Suspense } from 'react'
 import { CATEGORIES } from './machine/categories'
 import { NavBar } from './NavBar'
-import { TypedHeadline } from './type/TypedHeadline'
+import { TypedHeadline } from './TypedHeadline'
 
 // The 3D machine loads on its own, so the 3D library only downloads with the home page.
 const HomeMachine = lazy(() => import('./machine/HomeMachine'))
