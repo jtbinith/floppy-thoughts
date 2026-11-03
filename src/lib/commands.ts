@@ -35,6 +35,8 @@ export type BoardUi = {
   showSummary: () => boolean
   favouritesBoard: () => string
   vend: (row: string | undefined) => { text: string; error?: boolean }
+  // The note out of the machine: swap it for another, stick it on the board, or put it back.
+  note: (action: 'swap' | 'stick' | 'back') => { text: string; error?: boolean }
   // Nudges come back later (Datamuse is asked), so they print when they arrive.
   nudge: (id: string, type: string | undefined) => void
 }
@@ -131,6 +133,18 @@ export const COMMANDS: Command[] = [
       return { output: [r.text], error: r.error }
     },
   },
+  ...(['swap', 'stick', 'back'] as const).map((action) => ({
+    name: action,
+    group: 'NOTES AND NUDGES' as Group,
+    usage: `/${action}`,
+    does: { swap: 'another note from the same row, for the one out of the machine', stick: 'stick the note out of the machine on the board', back: 'put the note out of the machine back' }[action],
+    args: [],
+    run: ({ ctx }: Call): CommandResult => {
+      if (!ctx.ui) return needsBoard(action)
+      const r = ctx.ui.note(action)
+      return { output: [r.text], error: r.error }
+    },
+  })),
   {
     name: 'nudge',
     group: 'NOTES AND NUDGES',

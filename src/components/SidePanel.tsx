@@ -1,11 +1,17 @@
-import { useState, type PointerEvent } from 'react'
+import { lazy, Suspense, useState, type PointerEvent } from 'react'
 import { CATEGORY_LABEL } from '../lib/board'
 import type { Spark } from '../lib/sparks/deal'
 import type { Favourite } from '../lib/storage'
 import { CommandsTab } from './CommandsTab'
 import { HeartIcon } from './HeartIcon'
-import { VendingMachine } from './VendingMachine'
+import { loadSeen } from '../lib/sparks/seen'
+import { rowEmpty, vendNote, type VendRow } from '../lib/sparks/vend'
 import { KEYS } from '../lib/keys'
+
+// The 3D machine loads on its own, the first time the drawer shows it.
+const Machine = lazy(() => import('./machine/HomeMachine'))
+type MachineControl = import('./machine/HomeMachine').MachineControl
+type NoteLanding = import('./machine/HomeMachine').NoteLanding
 
 // The drawer beside the board: the vending machine, your favourites, or the commands.
 export type PanelTab = 'machine' | 'favourites' | 'commands'
@@ -15,9 +21,12 @@ type Props = {
   onTab: (tab: PanelTab) => void
   onClose: () => void
   onBoard: ReadonlySet<string>
-  onVend: (note: Spark) => void
-  // A note is out of the machine and showing in the popup.
-  busy: boolean
+  // Stick the note that came out of the machine on the board (at a spot, if it flew to one).
+  onStick: (note: Spark, at?: { x: number; y: number }) => void
+  // Where a stuck note will land on screen, so it can fly there.
+  noteLanding: () => NoteLanding
+  // The machine hands over its controls, so the terminal can run it.
+  onMachineControl: (control: MachineControl | null) => void
   boardId: string
   // This board's favourites.
   favourites: Favourite[]
@@ -113,8 +122,28 @@ export function SidePanel(props: Props) {
   )
 }
 
-function MachineTab({ onBoard, onVend, busy }: Props) {
-  return <VendingMachine onBoard={onBoard} onVend={onVend} busy={busy} />
+// The 3D vending machine. Click it (or tab to it) and type a row letter like B, then Enter. Its
+// little screen says WAIT while a note is still out, and EMPTY once all of a row's notes are on
+// the board. The note comes out on a scroll by the machine: stick it on the board, or put it back.
+function MachineTab({ onBoard, onStick, onMachineControl, noteLanding }: Props) {
+  const machine = {
+    vendGate: (category: string) => (rowEmpty(category as VendRow, onBoard) ? 'EMPTY' : null),
+    pickNote: (category: string) => vendNote(category as VendRow, onBoard, { seen: loadSeen() }),
+    onStick,
+    landing: noteLanding,
+    onPutBack: () => {},
+    onControl: onMachineControl,
+  }
+  return (
+    <>
+      <Suspense fallback={<div className="panel__machine" />}>
+        <Machine className="panel__machine" onBoard={machine} />
+      </Suspense>
+      <p className="panel__hint">
+        Click the machine, type a row letter like <kbd>B</kbd> (or a slot like <kbd>B2</kbd>) and press <kbd>Enter</kbd>, or <kbd>?</kbd> for a surprise.
+      </p>
+    </>
+  )
 }
 
 function FavouritesTab({ favourites, onOpenFavourite, onUnfavourite, onFavouritesBoard }: Props) {

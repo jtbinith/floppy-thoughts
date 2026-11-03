@@ -140,19 +140,46 @@ test.describe('the vending machine', () => {
   test('a note from the machine goes on the board only when you stick it', async ({ page }) => {
     await page.getByRole('menuitem', { name: 'View' }).click()
     await page.getByRole('menuitem', { name: 'Vending machine' }).click()
-    await page.getByRole('button', { name: /words \(key W\)/ }).click()
-    const popup = page.getByRole('dialog', { name: 'A new note from the vending machine' })
-    await expect(popup).toBeVisible()
+    // The 3D machine takes focus; a row letter and Enter vend from that row.
+    await expect(page.locator('.panel__machine .home__machine')).toBeFocused()
+    await page.keyboard.press('a')
+    await page.keyboard.press('Enter')
+    // The token cracks open and the note comes out as a note box.
+    const scroll = page.getByRole('dialog', { name: 'A note from the vending machine' })
+    await expect(scroll).toBeVisible({ timeout: 10_000 })
+    await expect(scroll).toContainText('word')
     await expect(boxes(page)).toHaveCount(0)
-    await page.getByRole('button', { name: 'stick it on the board' }).click()
+    await scroll.getByRole('button', { name: 'stick on board' }).click()
     await expect(boxes(page)).toHaveCount(1)
-    await expect(box(page, 'n1')).toHaveClass(/selected/)
+    await expect(scroll).toBeHidden()
   })
 
   test('putting a note back leaves the board alone', async ({ page }) => {
-    await type(page, '/vend')
-    await page.getByRole('button', { name: 'put it back' }).click()
+    await page.getByRole('menuitem', { name: 'View' }).click()
+    await page.getByRole('menuitem', { name: 'Vending machine' }).click()
+    await expect(page.locator('.panel__machine .home__machine')).toBeFocused()
+    await page.keyboard.press('?')
+    const scroll = page.getByRole('dialog', { name: 'A note from the vending machine' })
+    await scroll.getByRole('button', { name: 'put back' }).click({ timeout: 10_000 })
     await expect(boxes(page)).toHaveCount(0)
+  })
+
+  test('/vend in the terminal runs the machine; /swap and /stick deal with the note', async ({ page }) => {
+    await type(page, '/vend nature')
+    const out = page.getByRole('dialog', { name: 'A note from the vending machine' })
+    await expect(out).toBeVisible({ timeout: 10_000 })
+    await expect(out).toContainText('nature')
+    const first = await out.locator('.idea__text').textContent()
+    await type(page, '/swap')
+    await expect(out.locator('.idea__text')).not.toHaveText(first!)
+    await type(page, '/stick')
+    await expect(boxes(page)).toHaveCount(1)
+    await expect(box(page, 'n1')).toContainText('nature')
+  })
+
+  test('/stick with nothing out says so', async ({ page }) => {
+    await type(page, '/stick')
+    await expect(page.locator('.terminal__line--error').last()).toContainText('no note is out of the machine')
   })
 })
 

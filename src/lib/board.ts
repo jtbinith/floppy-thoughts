@@ -16,6 +16,7 @@ export const SPARK_CATEGORIES = [
   'objects',
   'nature',
   'problems',
+  'constraints',
 ] as const
 // How each spark category is shown (singular, as in a file path: ~/object).
 export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> = {
@@ -25,6 +26,7 @@ export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> =
   objects: 'object',
   nature: 'nature',
   problems: 'problem',
+  constraints: 'constraint',
 }
 
 export const NUDGE_TYPES = [

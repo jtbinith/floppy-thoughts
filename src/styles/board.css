@@ -102,9 +102,10 @@
   align-items: center;
   padding: 0.15rem 0.5rem;
   font-size: 0.82rem;
-  color: var(--cat, var(--muted));
+  /* The readable version of the row colour, so buttons on dark notes (like plum) can be seen. */
+  color: var(--cat-ink, var(--cat, var(--muted)));
   background: transparent;
-  border: 1px solid var(--cat, var(--line));
+  border: 1px solid var(--cat-ink, var(--cat, var(--line)));
   border-radius: 3px;
   cursor: pointer;
 }
@@ -178,15 +179,17 @@
 /* Notes are orange unless their category says otherwise (these must come after this default). */
 .idea--spark { --cat: var(--spark); }
 
-.idea--cat-words { --cat: var(--cat-words); --cat-text: var(--cat-words-text); }
+.idea--cat-words { --cat: var(--cat-words); --cat-text: var(--cat-words-text); --cat-ink: var(--cat-words-ink); }
 
-.idea--cat-objects { --cat: var(--cat-objects); --cat-text: var(--cat-objects-text); }
+.idea--cat-objects { --cat: var(--cat-objects); --cat-text: var(--cat-objects-text); --cat-ink: var(--cat-objects-ink); }
 
-.idea--cat-problems { --cat: var(--cat-problems); --cat-text: var(--cat-problems-text); }
+.idea--cat-problems { --cat: var(--cat-problems); --cat-text: var(--cat-problems-text); --cat-ink: var(--cat-problems-ink); }
 
-.idea--cat-curiosities { --cat: var(--cat-curiosities); --cat-text: var(--cat-curiosities-text); }
+.idea--cat-curiosities { --cat: var(--cat-curiosities); --cat-text: var(--cat-curiosities-text); --cat-ink: var(--cat-curiosities-ink); }
 
-.idea--cat-nature { --cat: var(--cat-nature); --cat-text: var(--cat-nature-text); }
+.idea--cat-nature { --cat: var(--cat-nature); --cat-text: var(--cat-nature-text); --cat-ink: var(--cat-nature-ink); }
+
+.idea--cat-constraints { --cat: var(--cat-constraints); --cat-text: var(--cat-constraints-text); --cat-ink: var(--cat-constraints-ink); }
 
 .idea--cat-headlines { --cat: #ff7a52; }
 
@@ -232,7 +235,7 @@
 
 .idea--spark .idea__text::before {
   content: '> ';
-  color: var(--cat);
+  color: var(--cat-ink, var(--cat));
 }
 
 .idea--user,

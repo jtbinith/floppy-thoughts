@@ -1,11 +1,7 @@
-/* Popups: the shrimp note, dialogs and the summary */
+/* Popups: the machine's note, dialogs and the summary */
 
-.pixel-shrimp {
-  display: block;
-}
-
-/* Base styles are the finished, opened state; the animations play from closed to there.
-   Skipping (or reduced motion) just drops the animations, leaving the open note. */
+/* The note that came out of the machine, over the board: a card like the note boxes on the
+   board, in its row's colour, waiting for you to stick it on or put it back. */
 .popup {
   position: absolute;
   inset: 0;
@@ -16,116 +12,53 @@
 }
 
 .popup__card {
-  --cat: #ff7a52;
-  --t: 2.2s;
+  --cat: var(--spark);
+  --cat-text: var(--on-spark);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  align-items: center;
-  width: min(500px, 94%);
-  padding: 1.4rem 1.4rem 1.2rem;
+  gap: 1.1rem;
+  width: min(440px, 92%);
+  padding: 1.1rem;
   background: var(--screen-bar);
   border: 3px solid var(--frame-edge);
-  box-shadow:
-    inset 2px 2px 0 #3a2a20,
-    6px 6px 0 rgb(0 0 0 / 45%);
+  box-shadow: 6px 6px 0 rgb(0 0 0 / 45%);
 }
 
 .popup__card:focus {
   outline: none;
 }
 
-.popup__card--playing {
-  cursor: pointer;
+@media (prefers-reduced-motion: no-preference) {
+  .popup__card {
+    animation: note-in 0.28s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
 }
 
-.popup__stage {
-  position: relative;
-  width: 440px;
-  max-width: 100%;
-  height: 210px;
-  /* A soft spotlight, so the shrimp's dark outline and feelers stand out. */
-  background: radial-gradient(ellipse 55% 50% at 50% 55%, #4a3426 0 60%, transparent 100%);
+@keyframes note-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.92); }
 }
 
-/* The capsule drops in, its lid pops off, and once the shrimp is out it sinks away. */
-.popup__capsule-base,
-.popup__capsule-top {
-  position: absolute;
-  left: 50%;
-  width: 120px;
-  height: 52px;
-  margin-left: -60px;
-  border: 3px solid #2f2526;
-  opacity: 0;
+.popup__note {
+  margin: 0;
+  background: var(--raised);
+  border: 2px solid var(--cat);
 }
 
-.popup__capsule-base {
-  bottom: 10px;
-  background: var(--cat);
-  border-radius: 0 0 60px 60px;
-  box-shadow: inset 0 -6px 0 rgb(0 0 0 / 18%);
-}
-
-.popup__capsule-top {
-  bottom: 62px;
-  background: color-mix(in srgb, var(--cat) 45%, #fbf6ee);
-  border-radius: 60px 60px 0 0;
-}
-
-/* The two halves sit on top of each other (looking whole, with a crack), then part. */
-.cracked-shrimp {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.cracked-shrimp__half {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  width: 210px;
-  height: auto;
-  margin-left: -118px;
-  overflow: visible;
-}
-
-/* Opened: head half on the left, tail half on the right, like a split fortune cookie. */
-.cracked-shrimp__half--head {
-  transform: translate(-122px, 44px) rotate(-6deg);
-}
-
-.cracked-shrimp__half--tail {
-  transform: translate(150px, -6px) rotate(-12deg);
-}
-
-/* The note: a slip of paper stretched between the halves, as if pulled out of both. */
-.popup__slip {
-  position: absolute;
-  top: 78px;
-  left: 50%;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  width: 184px;
-  margin: 0 0 0 -92px;
-  padding: 0.5rem 1rem;
-  font-family: var(--font-body);
-  font-size: 0.92rem;
-  line-height: 1.3;
-  color: #2b1a12;
-  background: #fbf6ee;
-  border-top: 4px solid var(--cat);
-  box-shadow: 2px 3px 0 rgb(0 0 0 / 35%);
-  transform: rotate(-3deg);
-}
-
-.popup__slip small {
-  font-family: var(--mono);
-  font-size: 0.68rem;
+.popup__note header {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #6e5446;
+  color: var(--cat-text);
+  background: var(--cat);
+}
+
+.popup__note p {
+  margin: 0;
+  padding: 1rem 0.9rem 1.2rem;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  color: var(--text);
 }
 
 .popup__actions {
@@ -135,10 +68,10 @@
 
 .popup__stick,
 .popup__back {
-  padding: 0.45rem 0.9rem;
+  padding: 0.5rem 0.9rem;
   white-space: nowrap;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   cursor: pointer;
   border: 3px solid var(--frame-edge);
 }
@@ -162,89 +95,6 @@
 .popup__back:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
-}
-
-/* The sequence: drop, pop, hop out, a wobble as it cracks, the halves part, the slip pulls out. */
-.popup__card--playing .popup__capsule-base {
-  animation: capsule-base calc(var(--t) * 0.5) both;
-}
-
-.popup__card--playing .popup__capsule-top {
-  animation: capsule-top calc(var(--t) * 0.36) both;
-}
-
-.popup__card--playing .cracked-shrimp {
-  animation:
-    shrimp-hop calc(var(--t) * 0.12) steps(3) calc(var(--t) * 0.26) both,
-    crack-wobble calc(var(--t) * 0.12) steps(4) calc(var(--t) * 0.46);
-}
-
-.popup__card--playing .cracked-shrimp__half--head {
-  animation: part-head calc(var(--t) * 0.16) cubic-bezier(0.3, 1.4, 0.6, 1) calc(var(--t) * 0.6) both;
-}
-
-.popup__card--playing .cracked-shrimp__half--tail {
-  animation: part-tail calc(var(--t) * 0.16) cubic-bezier(0.3, 1.4, 0.6, 1) calc(var(--t) * 0.6) both;
-}
-
-.popup__card--playing .popup__slip {
-  animation: slip-out calc(var(--t) * 0.18) steps(6) calc(var(--t) * 0.68) both;
-}
-
-.popup__card--playing .popup__actions {
-  animation: fade-in calc(var(--t) * 0.1) ease-out calc(var(--t) * 0.88) both;
-}
-
-@keyframes capsule-base {
-  0% { transform: translateY(-150px); opacity: 1; }
-  36% { transform: none; opacity: 1; }
-  70% { transform: none; opacity: 1; }
-  100% { transform: translateY(30px); opacity: 0; }
-}
-
-@keyframes capsule-top {
-  0% { transform: translateY(-150px); opacity: 1; }
-  50% { transform: none; opacity: 1; }
-  100% { transform: translate(110px, -40px) rotate(40deg); opacity: 0; }
-}
-
-/* Out of the capsule, then a little wobble as it cracks. */
-@keyframes shrimp-hop {
-  from { transform: translateY(50px) scale(0.6); opacity: 0; }
-  to { transform: none; opacity: 1; }
-}
-
-@keyframes crack-wobble {
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
-}
-
-/* Before they part, both halves sit together. */
-@keyframes part-head {
-  from { transform: none; }
-  to { transform: translate(-122px, 44px) rotate(-6deg); }
-}
-
-@keyframes part-tail {
-  from { transform: none; }
-  to { transform: translate(150px, -6px) rotate(-12deg); }
-}
-
-/* Pulled out sideways from the middle, like the slip from a fortune cookie. */
-@keyframes slip-out {
-  from { clip-path: inset(0 50% 0 50%); transform: rotate(-3deg) scaleY(0.6); }
-  to { clip-path: inset(0 0 0 0); transform: rotate(-3deg); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .popup__card--playing * {
-    animation: none !important;
-  }
 }
 
 .dialog {

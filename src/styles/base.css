@@ -21,6 +21,14 @@
   --cat-constraints-text: #2b1d18;
   --cat-theme: #f6eedd;
   --cat-theme-text: #2b1d18;
+  /* Each row's colour as text or lines on the board's dark background (the plain colours, like
+     plum, are too dark to read there). At least 4.5:1. */
+  --cat-words-ink: #f07a63;
+  --cat-objects-ink: #f2b84b;
+  --cat-problems-ink: #5fb3a9;
+  --cat-curiosities-ink: #c98aa0;
+  --cat-nature-ink: #a9b65a;
+  --cat-constraints-ink: #ef8a6b;
 
   /* Page and device frame */
   --page: #1f1b18;
@@ -70,6 +78,13 @@
 }
 
 :root[data-theme='light'] {
+  /* …and on the light board (amber, coral and shrimp red are too pale there). */
+  --cat-words-ink: #a3321f;
+  --cat-objects-ink: #7a560c;
+  --cat-problems-ink: #1b5a55;
+  --cat-curiosities-ink: #5b2a3a;
+  --cat-nature-ink: #55601c;
+  --cat-constraints-ink: #983c22;
   --cat-theme: #2b1d18;
   --cat-theme-text: #f6eedd;
 

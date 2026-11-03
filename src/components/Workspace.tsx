@@ -10,8 +10,9 @@ import { pickNudge, type NudgeChoice } from '../lib/nudges/pickNudge'
 import { BOX, PLACE, centreOfBox, freeSpotNear, type Rect } from '../lib/placement'
 import { tidyPositions } from '../lib/tidy'
 import type { Spark } from '../lib/sparks/deal'
-import { loadSeen, rememberSeen } from '../lib/sparks/seen'
-import { VEND_ROWS, vendNote, type VendRow } from '../lib/sparks/vend'
+import { rememberSeen } from '../lib/sparks/seen'
+import { VEND_ROWS, rowEmpty, type VendRow } from '../lib/sparks/vend'
+import type { MachineControl } from './machine/HomeMachine'
 import type { BoardSummary, Favourite } from '../lib/storage'
 import { emptyUndo, pushChange, redo, undo, type UndoState } from '../lib/undo'
 import { BoardActionsContext, type BoardActions } from './boardActions'
@@ -19,7 +20,6 @@ import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
 import { ThemeToggle } from './ThemeToggle'
 import { MenuBar, type Menu, type MenuItem } from './MenuBar'
-import { NotePopup } from './NotePopup'
 import { Dialog } from './Dialog'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
@@ -64,11 +64,10 @@ const isTyping = (target: EventTarget | null) => target instanceof Element && !!
 export function Workspace(props: Props) {
   const { board, boards, onChange, onNewBoard, onOpenBoard } = props
   const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked } = props
-  const { screenToFlowPosition, getNodes, getEdges, setNodes, setCenter, getZoom, fitView } = useReactFlow()
+  const { screenToFlowPosition, flowToScreenPosition, getNodes, getEdges, setNodes, setCenter, getZoom, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
   const [renaming, setRenaming] = useState(false)
   // A note just out of the machine, waiting in the popup for you to stick it on or put it back.
-  const [vended, setVended] = useState<Spark | null>(null)
   // Deleting from the middle of a chain asks first whether to keep it connected.
   const [pendingDelete, setPendingDelete] = useState<{
     ids: string[]
@@ -277,11 +276,27 @@ export function Workspace(props: Props) {
   }
 
   // A note from the vending machine lands next to what you have selected, or in the middle of the view.
-  function placeNote(note: Spark): { text: string; error?: boolean } {
+  function noteSpot(): { x: number; y: number } {
     const current = latest.current
     const selected = getNodes().filter((n) => n.selected)
     const anchor = selected.length === 1 ? findNode(current, selected[0].id) : undefined
-    const at = anchor ? spotNear(current, { x: anchor.x + PLACE.note.x, y: anchor.y + PLACE.note.y }) : centreOf(current)
+    return anchor ? spotNear(current, { x: anchor.x + PLACE.note.x, y: anchor.y + PLACE.note.y }) : centreOf(current)
+  }
+
+  // For the machine's flying note: where it will land, on screen, at the board's zoom. If that
+  // spot is out of view, the board glides there first (then it's asked again).
+  function noteLanding(): { at: { x: number; y: number }; left: number; top: number; zoom: number; inView: boolean } {
+    const at = noteSpot()
+    const view = viewRect()
+    const inView = !view || (at.x >= view.x && at.y >= view.y && at.x + BOX.width <= view.x + view.width && at.y + BOX.height <= view.y + view.height)
+    if (!inView) reveal(at)
+    const { x: left, y: top } = flowToScreenPosition(at)
+    return { at, left, top, zoom: getZoom(), inView }
+  }
+
+  function placeNote(note: Spark, spot?: { x: number; y: number }): { text: string; error?: boolean } {
+    const current = latest.current
+    const at = spot ?? noteSpot()
     const result = addNote(current, note, at)
     if (!result.ok) {
       setNotice(result.error)
@@ -293,12 +308,19 @@ export function Workspace(props: Props) {
     return { text: `${shown(result.node?.id)}: ${note.text}` }
   }
 
-  // `vend` in the terminal brings up the same popup as the machine.
+  // `/vend` in the terminal opens the drawer and runs the machine there, so you see the capsule
+  // and the shrimp crack open; then /swap, /stick or /back deal with the note.
+  const machineControl = useRef<MachineControl | null>(null)
   function vendFromTerminal(row: VendRow): { text: string; error?: boolean } {
-    const note = vendNote(row, new Set(board.nodes.map((n) => n.text)), { seen: loadSeen() })
-    if (!note) return { text: `the ${row} row is empty: every one of those notes is on this board`, error: true }
-    setVended(note)
-    return { text: 'a shrimp is on its way…' }
+    if (rowEmpty(row, new Set(board.nodes.map((n) => n.text)))) return { text: `the ${row} row is empty: every one of those notes is on this board`, error: true }
+    setPanel('machine')
+    let tries = 0
+    const run = () => {
+      if (machineControl.current) machineControl.current.vend(row === 'surprise' ? undefined : row)
+      else if (tries++ < 60) setTimeout(run, 50)
+    }
+    run()
+    return { text: 'a shrimp is on its way… then /stick, /swap or /back' }
   }
 
   // Every delete comes through here. If something sits in the middle of a chain, ask first.
@@ -356,6 +378,19 @@ export function Workspace(props: Props) {
       if (result.ok) next = result.board
     }
     if (next !== board) commit(board, next)
+  }
+
+  // Opens the drawer on the machine and focuses it, so you can type a row straight away (it may
+  // still be loading, so it tries for a moment).
+  function openMachine() {
+    setPanel('machine')
+    let tries = 0
+    const focusMachine = () => {
+      const machine = document.querySelector<HTMLElement>('.panel__machine .home__machine')
+      if (machine) machine.focus()
+      else if (tries++ < 40) setTimeout(focusMachine, 50)
+    }
+    focusMachine()
   }
 
   function favourite(id: string) {
@@ -433,6 +468,11 @@ export function Workspace(props: Props) {
       if (row && !VEND_ROWS.includes(row as VendRow)) return { text: `there's no ${row} row. rows: ${VEND_ROWS.join(' ')}`, error: true }
       return vendFromTerminal((row as VendRow | undefined) ?? 'surprise')
     },
+    note: (action) => {
+      const text = machineControl.current?.note(action)
+      if (!text) return { text: 'no note is out of the machine. try /vend', error: true }
+      return { text: { swap: `swapped ${text}…`, stick: `stuck on the board: ${text}`, back: `put back: ${text}` }[action] }
+    },
     nudge: (id, type) => void requestNudge(id, type as NudgeChoice | undefined).then((r) => terminalRef.current?.print([r.text], r.error)),
   }
 
@@ -500,7 +540,7 @@ export function Workspace(props: Props) {
     {
       label: 'View',
       items: [
-        { label: 'Vending machine', shortcut: 'V', onSelect: () => setPanel('machine') },
+        { label: 'Vending machine', shortcut: 'V', onSelect: openMachine },
         { label: 'Favourites', onSelect: () => setPanel('favourites') },
         { label: 'Commands', onSelect: () => setPanel('commands') },
         { label: 'Close the drawer', shortcut: 'Esc', onSelect: () => setPanel(null), disabled: !panel },
@@ -524,8 +564,7 @@ export function Workspace(props: Props) {
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || (e.target as Element).closest?.('.popup')) return
       if (e.key === 'v' || e.key === 'V') {
         e.preventDefault()
-        setPanel('machine')
-        requestAnimationFrame(() => document.querySelector<HTMLElement>('.vend__key:not(:disabled)')?.focus())
+        openMachine()
       } else if (e.key === 'Escape' && panel && (e.target as Element).closest?.('.panel')) {
         setPanel(null)
       }
@@ -548,7 +587,7 @@ export function Workspace(props: Props) {
             aria-label="Vending machine"
             aria-pressed={panel === 'machine'}
             title="Vending machine (V)"
-            onClick={() => setPanel(panel === 'machine' ? null : 'machine')}
+            onClick={() => (panel === 'machine' ? setPanel(null) : openMachine())}
           >
             <ShrimpIcon size={24} />
           </button>
@@ -651,24 +690,15 @@ export function Workspace(props: Props) {
                 onTab={setPanel}
                 onClose={() => setPanel(null)}
                 onBoard={new Set(board.nodes.map((n) => n.text))}
-                onVend={setVended}
-                busy={!!vended}
+                onStick={(note, at) => void placeNote(note, at)}
+                noteLanding={noteLanding}
+                onMachineControl={(control) => void (machineControl.current = control)}
                 boardId={board.id}
                 favourites={boardFavourites}
                 onOpenFavourite={(f) => show(f.node.id)}
                 onUnfavourite={(f) => favourite(f.node.id)}
                 onFavouritesBoard={() => void makeFavouritesBoard()}
                 onUseCommand={(command) => terminalRef.current?.fill(command)}
-              />
-            )}
-            {vended && (
-              <NotePopup
-                note={vended}
-                onStick={() => {
-                  placeNote(vended)
-                  setVended(null)
-                }}
-                onPutBack={() => setVended(null)}
               />
             )}
             {(askTheme || themeAgain) && (

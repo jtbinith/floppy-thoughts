@@ -176,107 +176,6 @@
   cursor: pointer;
 }
 
-.vend {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.vend__machine {
-  position: relative;
-  /* Grows with the drawer, within reason. */
-  width: clamp(180px, 70%, 340px);
-  margin: 0 auto;
-}
-
-.vend__art {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.vend__sign {
-  font-family: var(--font-heading);
-  font-size: 17px;
-  font-weight: 800;
-  fill: #2f2526;
-}
-
-.vend__price {
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 700;
-  fill: #2f2526;
-}
-
-.vend__mark {
-  font-family: var(--mono);
-  font-size: 8px;
-  fill: #4b454c;
-}
-
-/* Overlays positioned over the drawing's side panel (in % of the 320 × 470 drawing). */
-.vend__screen {
-  position: absolute;
-  top: calc(88 / 400 * 100%);
-  left: calc(207 / 320 * 100%);
-  width: calc(46 / 320 * 100%);
-  height: calc(20 / 400 * 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-size: 0.45rem;
-  color: #9fd46a;
-}
-
-.vend__keys {
-  position: absolute;
-  top: calc(118 / 400 * 100%);
-  left: calc(206 / 320 * 100%);
-  width: calc(48 / 320 * 100%);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.vend__key {
-  aspect-ratio: 1;
-  padding: 0;
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #2f2526;
-  background: #ece7ee;
-  border: 2px solid #2f2526;
-  border-radius: 6px;
-  box-shadow: 0 3px 0 #2f2526;
-  cursor: pointer;
-}
-
-.vend__key:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #2f2526;
-}
-
-.vend__key:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.vend__key:focus-visible {
-  outline: 3px solid var(--spark);
-  outline-offset: 2px;
-}
-
-.vend__intro {
-  margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.9;
-  color: var(--muted);
-  text-align: center;
-}
-
 .panel__row {
   display: flex;
   gap: 0.8rem;
@@ -378,4 +277,26 @@
 
 .commands__tip {
   padding: 0.15rem 0.45rem;
+}
+
+/* The 3D vending machine in the drawer */
+.panel__machine .home__machine {
+  height: min(62vh, 520px);
+}
+
+.panel__machine .home__machine:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.panel__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* The keypad's bubble mustn't push the drawer sideways. */
+.panel__machine {
+  overflow: hidden;
 }

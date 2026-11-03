@@ -4,11 +4,14 @@ import { BoardsPage } from './components/BoardsPage'
 import { Home } from './components/Home'
 import { PalettePage } from './components/palette/PalettePage'
 import { TypePage } from './components/type/TypePage'
+import { NotesPage } from './components/notes/NotesPage'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
 import { createBoard } from './lib/sparks/newBoard'
+import { CONTENT_CATEGORIES } from './lib/sparks/content'
+import type { Spark } from './lib/sparks/deal'
 import { KEYS } from './lib/keys'
 import { LocalStorageAdapter, withSummary, type BoardSummary } from './lib/storage'
 
@@ -29,8 +32,9 @@ const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) 
 //   #/palette PROTOTYPE: the colour palette, contrast and colour blocking
 //   #/look    PROTOTYPE: the home page around the machine, in each palette version
 //   #/type    PROTOTYPE: choosing the terminal font, and the typing headline
-type Route = 'home' | 'new' | 'board' | 'boards' | 'machine' | 'shrimp' | 'palette' | 'look' | 'type'
-const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/machine': 'machine', '#/shrimp': 'shrimp', '#/palette': 'palette', '#/look': 'look', '#/type': 'type' }
+//   #/notes   PROTOTYPE: ways for the note to come out of the shrimp token
+type Route = 'home' | 'new' | 'board' | 'boards' | 'machine' | 'shrimp' | 'palette' | 'look' | 'type' | 'notes'
+const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/machine': 'machine', '#/shrimp': 'shrimp', '#/palette': 'palette', '#/look': 'look', '#/type': 'type', '#/notes': 'notes' }
 const routeFromHash = (): Route => ROUTES[location.hash] ?? 'home'
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
@@ -39,6 +43,18 @@ const go = (route: Route) => {
 // Which board you had open last, so coming back brings you to it.
 const LAST_BOARD_KEY = KEYS.lastBoard
 const rememberOpen = (id: string) => localStorage.setItem(LAST_BOARD_KEY, id)
+
+// A note picked on the home page's machine ("start a board with this"), used once.
+function takeStartNote(): Spark[] {
+  const saved = sessionStorage.getItem(KEYS.startNote)
+  sessionStorage.removeItem(KEYS.startNote)
+  try {
+    const note = saved ? (JSON.parse(saved) as Spark) : null
+    return note && typeof note.text === 'string' && (CONTENT_CATEGORIES as readonly string[]).includes(note.category) ? [note] : []
+  } catch {
+    return []
+  }
+}
 
 export default function App() {
   const [route, setRoute] = useState<Route>(routeFromHash)
@@ -96,7 +112,7 @@ export default function App() {
     if (creating.current) return
     creating.current = true
     const list = await storage.listBoards()
-    const created = createBoard({ sparks: [], name: `board ${list.length + 1}` })
+    const created = createBoard({ sparks: takeStartNote(), name: `board ${list.length + 1}` })
     try {
       await storage.saveBoard(created)
       rememberOpen(created.id)
@@ -168,6 +184,7 @@ export default function App() {
   if (route === 'home') return <Home hasBoards={hasBoards} />
   if (route === 'palette') return <PalettePage />
   if (route === 'type') return <TypePage />
+  if (route === 'notes') return <NotesPage />
   if (route === 'look')
     return (
       <Suspense fallback={null}>

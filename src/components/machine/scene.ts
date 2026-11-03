@@ -63,6 +63,9 @@ export type MachineScene = {
   zoomBy: (factor: number) => void
   showKeypad: () => void
   resetView: () => void
+  // Once you've dealt with the note: the token's halves close up, it sinks back into the capsule,
+  // the capsule goes and the slot refills.
+  closeNote: () => void
   setPixelSize: (size: number) => void
   dispose: () => void
 }
@@ -75,6 +78,18 @@ export function createMachineScene(container: HTMLElement, opts: {
     embedded?: boolean
     // Other colours for the six rows, in order (to try palettes).
     categoryColours?: string[]
+    // On a board: asked before each vend whether that row can give one now. Return a short word for
+    // the machine's little screen to refuse (e.g. "EMPTY"), or null to go ahead.
+    vendGate?: (category: string) => string | null
+    // Called as the shrimp token cracks open, with the row's category, so the page can show the
+    // note inside. With this set, everything stays out until closeNote() is called.
+    onOpened?: (category: string) => void
+    // Called every frame with where the top of the opened token is on screen (CSS pixels from the
+    // canvas's top left), so the page can put the note there.
+    onToken?: (at: { x: number; y: number; visible: boolean }) => void
+    // Where to listen for keys. The page by default; on a board, only the machine itself (so typing
+    // on the board doesn't press its keys).
+    keyTarget?: HTMLElement
     // Called every frame with where the keypad is on screen (in CSS pixels from the canvas's top
     // left), and whether it's facing you, so the page can point at it.
     onKeypad?: (at: { x: number; y: number; visible: boolean }) => void
@@ -238,8 +253,8 @@ export function createMachineScene(container: HTMLElement, opts: {
   screenBox.position.set(panelX, 3.0, front + 0.03)
   machine.add(screenBox)
 
-  // The keys: the row letters, then slot numbers, then "?" (surprise), "←" (rub out) and "⏎" (go).
-  const KEYS = [...LETTERS, ...Array.from({ length: SLOTS }, (_, i) => String(i + 1)), '?', '←', '⏎']
+  // The keys: the row letters, then slot numbers, then "?" (surprise), "←" (rub out) and "OK" (go).
+  const KEYS = [...LETTERS, ...Array.from({ length: SLOTS }, (_, i) => String(i + 1)), '?', '←', 'OK']
   const keys: THREE.Mesh[] = []
   const keySize = 0.155
   const keyGap = 0.185
@@ -247,7 +262,7 @@ export function createMachineScene(container: HTMLElement, opts: {
     const col = i % 3
     const row = Math.floor(i / 3)
     const letterRow = LETTERS.indexOf(label)
-    const face = letterRow >= 0 ? cats[letterRow].colour : label === '⏎' ? '#9fd46a' : COLOURS.key
+    const face = letterRow >= 0 ? cats[letterRow].colour : label === 'OK' ? '#9fd46a' : COLOURS.key
     const tex = keep(centredText(label, face, labelOn(face), 'bold 80px "Courier Prime", ui-monospace, monospace', 128, 128))
     const side = toon(face)
     const k = inked(new THREE.BoxGeometry(keySize, keySize, 0.06), [side, side, side, side, toon('#ffffff', { map: tex }), side], 0.012)
@@ -314,6 +329,22 @@ export function createMachineScene(container: HTMLElement, opts: {
     return m
   }
   const token = buildToken({ inked, toon, keep, tube })
+  // The token cracks in two like a fortune cookie to let the note out: its head end (head, eye,
+  // feelers) one way, the rest the other. Split once here; the halves sit together, looking whole.
+  const tokenInner = token.group.children[0] as THREE.Group
+  token.group.updateMatrixWorld(true)
+  const halves = { head: new THREE.Group(), tail: new THREE.Group() }
+  const centre = new THREE.Vector3()
+  for (const part of [...tokenInner.children]) {
+    const isTube = part instanceof THREE.Mesh && part.geometry instanceof THREE.TubeGeometry
+    new THREE.Box3().setFromObject(part).getCenter(centre)
+    ;(isTube || centre.x < -0.12 ? halves.head : halves.tail).add(part)
+  }
+  tokenInner.add(halves.head, halves.tail)
+  // While cracked, the token stops spinning and faces you.
+  const crack = { on: false, angle: 0 }
+  let lastSlot: THREE.Group | null = null
+
   // The token floats a little above its holder's origin; the holder sits on the opened capsule.
   const TOKEN_SIZE = 0.42
   const tokenHolder = new THREE.Group()
@@ -361,7 +392,12 @@ export function createMachineScene(container: HTMLElement, opts: {
     renderer.setPixelRatio(1 / drawnAt)
     renderer.setSize(w, h)
     const aspect = w / h
-    Object.assign(camera, { left: -view.zoom * aspect, right: view.zoom * aspect, top: view.zoom, bottom: -view.zoom, near: 0.1, far: 100 })
+    // In a narrow space (like the board's drawer), keep the width that fits the machine and the
+    // capsule's roll, and show more above and below instead of cutting off the sides.
+    const narrowest = opts.embedded ? 0.8 : 0
+    const halfW = view.zoom * Math.max(aspect, narrowest)
+    const halfH = halfW / aspect
+    Object.assign(camera, { left: -halfW, right: halfW, top: halfH, bottom: -halfH, near: 0.1, far: 100 })
     camera.updateProjectionMatrix()
   }
   resize()
@@ -458,7 +494,7 @@ export function createMachineScene(container: HTMLElement, opts: {
     if (k) gsap.fromTo(k.position, { z: front + 0.01 }, { z: front + 0.04, duration: 0.15, ease: 'power2.out' })
     if (label === '?') return vend()
     if (label === '←') typed = typed.slice(0, -1)
-    else if (label === '⏎') return vend(typed)
+    else if (label === 'OK') return vend(typed)
     // A letter starts a new code; a number finishes it.
     else if (LETTERS.includes(label)) typed = label
     else if (typed.length === 1) typed += label
@@ -493,10 +529,11 @@ export function createMachineScene(container: HTMLElement, opts: {
     const k = e.key.toUpperCase()
     if (LETTERS.includes(k) || (/^[1-9]$/.test(k) && Number(k) <= SLOTS)) press(k)
     else if (e.key === 'Backspace') press('←')
-    else if (e.key === 'Enter') press('⏎')
+    else if (e.key === 'Enter') press('OK')
     else if (e.key === '?') press('?')
   }
-  window.addEventListener('keydown', onKey)
+  const keys$ = opts.keyTarget ?? window
+  keys$.addEventListener('keydown', onKey as EventListener)
 
   // Easter egg: no pointer or keys for a while and the sign changes its tune, until you're back.
   let lastActive = 0
@@ -521,7 +558,10 @@ export function createMachineScene(container: HTMLElement, opts: {
       led.setMessage(SIGN.idle)
     }
     led.update(t)
-    if (tokenHolder.visible) token.update(t, opts.reducedMotion)
+    if (tokenHolder.visible) {
+      token.update(t, opts.reducedMotion)
+      if (crack.on) tokenInner.rotation.y = crack.angle
+    }
     // The light blinks slowly while waiting.
     ;(light.material as THREE.MeshToonMaterial).emissive.set(Math.sin(t * 3) > 0.6 ? '#3f7a22' : '#000000')
     controls.update()
@@ -533,12 +573,16 @@ export function createMachineScene(container: HTMLElement, opts: {
     }
     if (!move && !zooming && t > zoomSettledAt && Math.abs(scaleForZoom() - drawnAt) > 0.25) resize()
     renderer.render(scene, camera)
+    if (opts.onToken) {
+      const p = tokenHolder.position.clone().add(new THREE.Vector3(0, 0.75, 0)).project(camera)
+      opts.onToken({ x: ((p.x + 1) / 2) * container.clientWidth, y: ((1 - p.y) / 2) * container.clientHeight, visible: tokenHolder.visible && crack.on })
+    }
     if (opts.onKeypad) {
       const p = keypadCorner.clone().project(camera)
       const toCamera = camera.position.clone().sub(controls.target)
       const facing = Math.abs(Math.atan2(toCamera.x, toCamera.z)) < THREE.MathUtils.degToRad(75)
       const onScreen = Math.abs(p.x) < 0.95 && Math.abs(p.y) < 0.95
-      opts.onKeypad({ x: ((p.x + 1) / 2) * container.clientWidth, y: ((1 - p.y) / 2) * container.clientHeight, visible: facing && onScreen && shot !== 'keypad' })
+      opts.onKeypad?.({ x: ((p.x + 1) / 2) * container.clientWidth, y: ((1 - p.y) / 2) * container.clientHeight, visible: facing && onScreen && shot !== 'keypad' })
     }
   })
 
@@ -565,8 +609,17 @@ export function createMachineScene(container: HTMLElement, opts: {
   function vend(code?: string) {
     let row: number
     let col: number
+    const refusal = (r: number) => opts.vendGate?.(cats[r].name) ?? null
+    const refuse = (word: string) => {
+      showOnScreen(word, '#ff7a52')
+      typed = ''
+      gsap.delayedCall(1.2, showTyped)
+    }
     if (code === undefined || code === '') {
-      row = Math.floor(Math.random() * cats.length)
+      // A surprise: any row that can give one right now.
+      const open = cats.map((_, i) => i).filter((i) => !refusal(i))
+      if (!open.length) return refuse(refusal(0) ?? 'EMPTY')
+      row = open[Math.floor(Math.random() * open.length)]
       col = Math.floor(Math.random() * SLOTS)
     } else {
       row = LETTERS.indexOf(code[0])
@@ -579,6 +632,8 @@ export function createMachineScene(container: HTMLElement, opts: {
         gsap.delayedCall(0.8, showTyped)
         return
       }
+      const no = refusal(row)
+      if (no) return refuse(no)
     }
     tl?.kill()
     away?.kill()
@@ -601,11 +656,17 @@ export function createMachineScene(container: HTMLElement, opts: {
     vendedTop.rotation.set(0, 0, 0)
     vended.scale.setScalar(1.6)
     tokenHolder.visible = false
+    crack.on = false
+    for (const h of [halves.head, halves.tail]) {
+      h.position.set(0, 0, 0)
+      h.rotation.set(0, 0, 0)
+    }
     machine.rotation.set(0, 0, 0)
     machine.position.set(0, 0, 0)
     flapPivot.rotation.set(0, 0, 0)
 
     const slot = slots[row][col]
+    lastSlot = slot
     // Where it stops: out in front, a little to the left, so it stays in view with the machine.
     const rest = { x: -0.75, z: 2.5 }
     tl = gsap.timeline({
@@ -613,7 +674,8 @@ export function createMachineScene(container: HTMLElement, opts: {
         gsap.delayedCall(1.2, showTyped)
         // A while later the token sinks back in, the capsule closes and goes, and the slot refills,
         // so the machine looks ready again. (With less motion it all just stays put.)
-        if (!opts.reducedMotion) away = gsap.delayedCall(AWAY_AFTER, () => putAway(slot))
+        // (On a page that shows the note, it waits for closeNote() instead.)
+        if (!opts.reducedMotion && !opts.onOpened) away = gsap.delayedCall(AWAY_AFTER, () => putAway(slot))
       },
     })
     // The capsule in that slot drops off its shelf, out of sight.
@@ -650,6 +712,20 @@ export function createMachineScene(container: HTMLElement, opts: {
         tokenHolder.visible = true
       }, '<')
       .to(tokenHolder.scale, { x: TOKEN_SIZE, y: TOKEN_SIZE, z: TOKEN_SIZE, duration: 0.5, ease: 'back.out(2.5)' }, '<')
+      // A moment spinning, then it turns to face you and cracks in two, and the note comes out.
+      .add(() => {
+        crack.on = true
+        crack.angle = tokenInner.rotation.y
+        const toCamera = camera.position.clone().sub(controls.target)
+        const facing = Math.atan2(toCamera.x, toCamera.z)
+        const turns = Math.round((crack.angle - facing) / (Math.PI * 2))
+        gsap.to(crack, { angle: facing + turns * Math.PI * 2, duration: opts.reducedMotion ? 0 : 0.35, ease: 'power2.out' })
+      }, '+=0.6')
+      .to(halves.head.position, { x: -0.32, y: 0.06, duration: 0.45, ease: 'back.out(2)' }, '+=0.35')
+      .to(halves.head.rotation, { z: 0.35, duration: 0.45, ease: 'back.out(2)' }, '<')
+      .to(halves.tail.position, { x: 0.32, y: -0.04, duration: 0.45, ease: 'back.out(2)' }, '<')
+      .to(halves.tail.rotation, { z: -0.3, duration: 0.45, ease: 'back.out(2)' }, '<')
+      .add(() => opts.onOpened?.(cat.name), '<0.15')
     // Less motion: just show the capsule where it lands.
     if (opts.reducedMotion) tl.progress(1)
   }
@@ -666,6 +742,19 @@ export function createMachineScene(container: HTMLElement, opts: {
         zooming = true
         gsap.to(camera, { zoom, duration: 0.25, ease: 'power2.out', onUpdate: () => camera.updateProjectionMatrix(), onComplete: () => void (zooming = false) })
       }
+    },
+    closeNote() {
+      if (!lastSlot || !crack.on) return
+      const slot = lastSlot
+      away?.kill()
+      const rejoin = gsap.timeline({ onComplete: () => putAway(slot) })
+      for (const h of [halves.head, halves.tail]) {
+        rejoin.to(h.position, { x: 0, y: 0, duration: 0.3, ease: 'power2.in' }, 0)
+        rejoin.to(h.rotation, { z: 0, duration: 0.3, ease: 'power2.in' }, 0)
+      }
+      rejoin.add(() => void (crack.on = false))
+      if (opts.reducedMotion) rejoin.progress(1)
+      away = rejoin
     },
     showKeypad() {
       shot = 'free'
@@ -687,7 +776,7 @@ export function createMachineScene(container: HTMLElement, opts: {
       controls.removeEventListener('start', onControlStart)
       controls.dispose()
       renderer.domElement.removeEventListener('wheel', onWheel, { capture: true })
-      window.removeEventListener('keydown', onKey)
+      keys$.removeEventListener('keydown', onKey as EventListener)
       activity.forEach((type) => window.removeEventListener(type, active))
       renderer.domElement.removeEventListener('pointerdown', onDown, { capture: true })
       renderer.domElement.removeEventListener('pointermove', onMove)

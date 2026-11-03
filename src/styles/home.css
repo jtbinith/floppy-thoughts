@@ -203,12 +203,24 @@
   border-right: 12px solid transparent;
 }
 
+.home__bubble--left {
+  border-radius: 12px 12px 2px;
+}
+
+.home__bubble--left::after {
+  right: -2px;
+  left: auto;
+  border-right: 0;
+  border-left: 12px solid transparent;
+}
+
 .home__bubble:hover,
 .home__bubble:focus-visible {
   background: var(--btn);
 }
 
-.home__bubble[data-visible='false'] {
+.home__bubble[data-visible='false'],
+.home__machine-stage:has(.vended) .home__bubble {
   opacity: 0;
   pointer-events: none;
 }
@@ -222,6 +234,134 @@
 @keyframes bubble-bob {
   50% { translate: 0 -3px; }
 }
+
+/* The note out of the machine: the very note box it'll be on the board (the board's own classes),
+   with its tool buttons. It pops out of the crack small and rises to size (moved by the scene
+   each frame); sticking it slides it off towards the board. */
+.vended {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: min(270px, calc(100% - 12px));
+  font-family: var(--mono);
+}
+
+.vended__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transform-origin: var(--crack-x, 50%) 100%;
+}
+
+.vended__note {
+  width: 100%;
+  max-width: none;
+}
+
+.vended__note {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Joined on under the note: the main action across the full width, then swap and put back side
+   by side. Each shows its key as a little keycap. */
+.vended__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  border: 1px solid var(--cat);
+  border-top: 0;
+  box-shadow: 3px 3px 0 rgb(0 0 0 / 35%);
+}
+
+.vended__actions button {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--screen-bar);
+  border: 0;
+  cursor: pointer;
+}
+
+.vended__actions button + button {
+  border-left: 1px solid var(--line);
+}
+
+.vended__actions .vended__go {
+  grid-column: 1 / -1;
+  font-weight: 700;
+  color: var(--on-spark);
+  background: var(--spark);
+  border-bottom: 1px solid var(--cat);
+}
+
+.vended__actions .vended__go + button {
+  border-left: 0;
+}
+
+.vended__actions button:hover {
+  background: var(--raised);
+}
+
+.vended__actions .vended__go:hover {
+  background: color-mix(in srgb, var(--spark) 85%, white);
+}
+
+.vended__actions button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -3px;
+}
+
+.vended__actions kbd {
+  padding: 0 0.35rem;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.75;
+}
+
+/* The copy that flies from the drawer to the board, above everything. */
+.vended__flyer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  width: auto;
+  max-width: 270px;
+  margin: 0;
+  font-family: var(--mono);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* While it flies, the one in the drawer is gone. */
+.vended--leaving .vended__body {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vended__body {
+    animation: vended-out 0.55s cubic-bezier(0.25, 1.4, 0.45, 1) both;
+  }
+
+}
+
+@keyframes vended-out {
+  from { opacity: 0; transform: translateY(var(--rise, 60px)) scale(0.2); }
+  40% { opacity: 1; }
+}
+
 
 /* Zoom buttons in the machine's corner */
 .home__zoom {

@@ -47,6 +47,8 @@ const FIT_BY_CATEGORY: Record<SparkCategory, readonly NudgeChoice[]> = {
   problems: ['perspective', 'scale', 'push', 'wildcard'],
   curiosities: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
   nature: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
+  // A limit: push it further, or see it from someone else's side.
+  constraints: ['perspective', 'scale', 'push', 'wildcard'],
 }
 
 // How many links a node is from the nearest spark (Infinity if it isn't connected to one).
