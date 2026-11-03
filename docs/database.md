@@ -7,7 +7,7 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | | |
 |---|---|
 | Accounts | Optional. Everything works without one, with boards saved in the browser as today. Signing in is always there (a "sign in" button in the nav bar) and is asked for when you share a board. With an account, your boards are on every device you sign in on, and backed up. |
-| Sign-in | GitHub or Google, through Supabase Auth. No passwords are stored by Floppy Thoughts at all. |
+| Sign-in | GitHub, through Supabase Auth. It's a tool for people who code, so a GitHub account is the one they're most likely to have, and it's what project linking will use later. No passwords are stored by Floppy Thoughts at all. |
 | Sharing | By invite link. Anyone signed in who opens the link joins the board. The owner can turn the link off or make a new one. |
 | Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
 | How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
@@ -71,6 +71,7 @@ erDiagram
     uuid created_by FK
   }
   favourites {
+    uuid board_id FK
     uuid node_id PK, FK
     uuid user_id PK, FK
     timestamptz created_at
@@ -149,6 +150,7 @@ Primary key `(node_a, node_b)`; both boxes must be on `board_id`.
 ### favourites
 | Column | Type | Notes |
 |---|---|---|
+| `board_id` | `uuid` | The box's board (checked), so the rules and live updates can work per board |
 | `node_id` | `uuid` | → `nodes`, deleted with the box |
 | `user_id` | `uuid` | → `auth.users` |
 | `created_at` | `timestamptz` | |
@@ -175,7 +177,7 @@ A project published to the community gallery: the idea a board landed on, and wh
 | `id` | `uuid` | Primary key |
 | `board_id` | `uuid` | → `boards`; empty if the board was later deleted (the entry can stay) |
 | `author_id` | `uuid` | → `auth.users`. Empty once the author's account is gone (shown as "a past member") |
-| `author_claim_hash` | `text` | Only set when the account is deleted: a one-way hash of their GitHub or Google sign-in id, so if they sign in again with the same account the entry becomes theirs again. Not their name or email |
+| `author_claim_hash` | `text` | Only set when the account is deleted: a one-way hash of their GitHub account id, so if they sign in again with the same account the entry becomes theirs again. Not their name or email |
 | `title`, `description` | `text` | What the project is |
 | `repo_url` | `text` | Optional link to the code |
 | `published_at` | `timestamptz` | |
@@ -210,6 +212,13 @@ Every table has row-level security on, so the database itself refuses anything n
 Someone who isn't a member can't see a board exists. Joining through an invite runs in one database function that checks the link's hash and adds the member as an `editor`, so the token is never readable from the app.
 
 Each policy gets a test: as an owner, an editor, a viewer, a stranger and someone signed out.
+
+## In the repo
+
+- **The tables and rules:** `supabase/migrations/`. The gallery table comes with the gallery feature.
+- **Invite links** are three database functions, the only way to touch `board_invites`: `make_invite(board)` (owner only; returns the secret for the link, keeps only its hash, and replaces any old link), `stop_invite(board)` and `join_board(secret)`.
+- **The database also checks** what the app checks: box text length, at most 1,000 boxes, links and favourites on the right board, one owner who can't be demoted, and who added a box can't be changed.
+- **Tests:** `npm run db:test` runs `supabase/tests/` against a throwaway copy of Supabase's Postgres in Docker, with no ports open. (Don't use `supabase start`: it opens the database to the whole network.)
 
 ## Collaboration
 
@@ -247,7 +256,7 @@ Signed out, nothing leaves the browser. Everything below applies once someone ha
 
 | Data | Where from | Why |
 |---|---|---|
-| Name, email, profile picture | GitHub or Google, at sign-in | To show who added a box or favourited it, and to sign you in |
+| Name, email, profile picture | GitHub, at sign-in | To show who added a box or favourited it, and to sign you in |
 | Boards, boxes, links, favourites | You | They're your boards |
 | Board members and roles, invite links (hashed) | You, when sharing | So the right people can open a board |
 
@@ -258,7 +267,7 @@ The only reason data is held is to provide the service people signed up for. No 
 | Service | What it sees |
 |---|---|
 | Supabase | Everything above (the database and sign-in). Hosted in the London or EU region |
-| GitHub, Google | That you signed in to Floppy Thoughts |
+| GitHub | That you signed in to Floppy Thoughts |
 | The web host | Standard request logs (IP address, pages loaded) |
 | Datamuse (through the word-lookup proxy) | The single word being looked up, nothing about you |
 
@@ -286,7 +295,7 @@ The only reason data is held is to provide the service people signed up for. No 
 
 ### Browser storage
 
-No cookies are set (Google sets its own during Google sign-in). The browser keeps:
+No cookies are set. The browser keeps:
 
 | Item | What for | How long |
 |---|---|---|
@@ -301,7 +310,7 @@ No cookies are set (Google sets its own during Google sign-in). The browser keep
 - **Download my data:** a file of all your boards (and your favourites), from your account page.
 - **Delete my account:** removes your account, your profile, your favourites, and the boards you own (with everything on them). On boards someone else owns, the boxes you added stay, so the team doesn't lose its work, but your name is removed from them. Your gallery entries: you choose to remove them, or leave them up as "a past member" (with the claim hash, so you can take them back if you return).
 - **Leave a board:** removes you from it; your boxes stay, without your name.
-- Correcting your name or picture happens on GitHub or Google and updates at the next sign-in.
+- Correcting your name or picture happens on GitHub and updates at the next sign-in.
 
 ### Keeping it safe
 
