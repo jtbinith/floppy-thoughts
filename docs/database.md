@@ -12,7 +12,9 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | Hearts | Each person hearts what they like; everyone on the board sees who hearted what. The box with the most hearts is the board's top pick. There is no separate "chosen idea". |
 | How we got there | The trail from the notes to an idea can be opened from any hearted box. |
 | Signing in later | The boards in your browser are uploaded to your account the first time you sign in, so nothing made before is lost. |
-| Projects (later) | Link an idea to the repo you built. GitHub asks for permission to read repos only then, not at sign-in. |
+| Collaboration | The heart of the tool: a board can be worked on by a team at the same time. You see who's on the board right now, their changes appear live, every box shows who added it, and hearts show who liked what. |
+| Projects and the gallery (later) | Link an idea to the repo you built, and publish it to a community gallery. GitHub asks for permission to read repos only then, not at sign-in. |
+| Age | Accounts are for 13 and over. |
 
 ## Entities and relationships
 
@@ -28,6 +30,8 @@ erDiagram
   users ||--o{ hearts : gives
   boards ||--o| board_invites : "shared by"
   users ||--o{ nodes : "created"
+  boards ||--o{ gallery_entries : "published as"
+  users |o--o{ gallery_entries : "made by"
 
   users {
     uuid id PK
@@ -76,6 +80,16 @@ erDiagram
     text token_hash
     uuid created_by FK
     timestamptz created_at
+  }
+  gallery_entries {
+    uuid id PK
+    uuid board_id FK
+    uuid author_id FK
+    text author_claim_hash
+    text title
+    text description
+    text repo_url
+    timestamptz published_at
   }
 ```
 
@@ -153,6 +167,21 @@ One live invite link per board.
 
 Turning the link off deletes the row; making a new one replaces it, so old links stop working.
 
+### gallery_entries
+A project published to the community gallery: the idea a board landed on, and what was built.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | Primary key |
+| `board_id` | `uuid` | → `boards`; empty if the board was later deleted (the entry can stay) |
+| `author_id` | `uuid` | → `auth.users`. Empty once the author's account is gone (shown as "a past member") |
+| `author_claim_hash` | `text` | Only set when the account is deleted: a one-way hash of their GitHub or Google sign-in id, so if they sign in again with the same account the entry becomes theirs again. Not their name or email |
+| `title`, `description` | `text` | What the project is |
+| `repo_url` | `text` | Optional link to the code |
+| `published_at` | `timestamptz` | |
+
+Anyone signed in can see the gallery; only the author can change or remove their entry.
+
 ## Indexes
 
 Beyond the primary keys:
@@ -175,11 +204,20 @@ Every table has row-level security on, so the database itself refuses anything n
 | Add, edit, move, link and delete boxes | | ✓ | ✓ |
 | Rename the board | | ✓ | ✓ |
 | Make or turn off the invite link, change roles, remove people | | | ✓ |
+| Publish the board to the gallery | | | ✓ |
 | Delete the board | | | ✓ |
 
 Someone who isn't a member can't see a board exists. Joining through an invite runs in one database function that checks the link's hash and adds the member as an `editor`, so the token is never readable from the app.
 
 Each policy gets a test: as an owner, an editor, a viewer, a stranger and someone signed out.
+
+## Collaboration
+
+- **Who's here now:** each open board shows who else has it open (their picture), using Supabase's live presence. This isn't stored; it disappears when they close the board.
+- **Live changes:** boxes, links, moves and hearts from others appear as they happen, merged box by box.
+- **Who did what:** every box and link records who made it; hearts show who gave them.
+- **Joining:** an invite link takes a teammate straight onto the board (after signing in, if they haven't).
+- **Roles:** owners can make someone a viewer (see and heart only) or remove them.
 
 ## On the device
 
@@ -198,3 +236,86 @@ No server-side cache is needed at this size. The app's files are cached by the h
 Boards saved in the browser use box ids `n1, n2, …`. On first sign-in each one is uploaded with new random ids, keeping the short numbers and the links, and you become its owner. Favourites become your hearts. The browser copy is kept until the upload is confirmed.
 
 From then on, signed in, new boards go to your account. Signing out removes your account's boards from that browser (so a shared computer doesn't keep them), and the app goes back to browser-only boards.
+
+## Privacy and data
+
+Signed out, nothing leaves the browser. Everything below applies once someone has an account.
+
+**Who runs it:** Floppy Thoughts is a free, open-source project run by one person, who is the data controller, with a contact address on the privacy page.
+
+### What's stored, and why
+
+| Data | Where from | Why |
+|---|---|---|
+| Name, email, profile picture | GitHub or Google, at sign-in | To show who added a box or hearted it, and to sign you in |
+| Boards, boxes, links, hearts | You | They're your boards |
+| Board members and roles, invite links (hashed) | You, when sharing | So the right people can open a board |
+
+The only reason data is held is to provide the service people signed up for. No analytics, no tracking, no ads, nothing sold or shared beyond the services that run the site.
+
+### Services that handle it
+
+| Service | What it sees |
+|---|---|
+| Supabase | Everything above (the database and sign-in). Hosted in the London or EU region |
+| GitHub, Google | That you signed in to Floppy Thoughts |
+| The web host | Standard request logs (IP address, pages loaded) |
+| Datamuse (through the word-lookup proxy) | The single word being looked up, nothing about you |
+
+### Who can see what
+
+| | Who sees it |
+|---|---|
+| Your name and picture | People on boards you're a member of, and gallery visitors on entries you publish |
+| Your email | Only you (and the database, for sign-in) |
+| A board and what's on it | Only its members |
+| Gallery entries | Anyone signed in |
+
+### How long it's kept
+
+| Data | Kept for |
+|---|---|
+| Your account and boards | Until you delete them, or 24 months with no sign-in (see below) |
+| Hearts | As long as the box and your account |
+| Invite links | Until turned off or replaced |
+| A deleted account's gallery entries | Kept, as "a past member", until removed |
+| A deleted account's claim hash | As long as the gallery entry it belongs to |
+| The host's request logs | The host's own period (usually days to weeks) |
+
+**Inactive accounts:** after 24 months with no sign-in, the account, its name and email and the boards it owns are deleted. You're emailed three times before: a month before, a week before, and on the day. Each says: sign in to keep it, or remove your gallery entries first. Gallery entries stay, as "a past member", with the claim hash described above. Anyone can ask for an entry to be taken down through the contact address; the repo link, or describing it, usually shows it's theirs.
+
+### Browser storage
+
+No cookies are set (Google sets its own during Google sign-in). The browser keeps:
+
+| Item | What for | How long |
+|---|---|---|
+| Boards (signed out) | Your boards | Until you delete them |
+| Settings | Light or dark mode, the drawer, the terminal's height, board sort | Until you clear them |
+| Notes seen | So the machine prefers notes you haven't had | Until you clear them |
+| Sign-in session (signed in) | Staying signed in | Until you sign out |
+| A note to start a board with | From the home page's machine | That browser tab |
+
+### People's rights, as features
+
+- **Download my data:** a file of all your boards (and your hearts), from your account page.
+- **Delete my account:** removes your account, your profile, your hearts, and the boards you own (with everything on them). On boards someone else owns, the boxes you added stay, so the team doesn't lose its work, but your name is removed from them. Your gallery entries: you choose to remove them, or leave them up as "a past member" (with the claim hash, so you can take them back if you return).
+- **Leave a board:** removes you from it; your boxes stay, without your name.
+- Correcting your name or picture happens on GitHub or Google and updates at the next sign-in.
+
+### Keeping it safe
+
+- Row-level security on every table (see above), tested for each role.
+- The database's service key only ever lives in the host's settings, never in the repo.
+- Invite links are stored hashed.
+- No cookie banner is needed while the only storage is what sign-in needs to work.
+
+### Complaints and changes
+
+People can complain to the UK Information Commissioner's Office (ICO). If the policy changes in a way that matters, signed-in users are told by email.
+
+### Before accounts go live
+
+- A privacy policy page (what's above, in plain words, with a contact address) and short terms of use: free, volunteer-run and as is; 13 and over; what's not allowed on shared boards (impersonation, harassment, sharing others' personal details, spam, trying to get into others' boards); you own what you write; publishing to the gallery lets it be shown there; governed by the laws of England and Wales.
+- Sending email (Supabase's email settings), for the inactive-account warnings and policy changes.
+- Check whether the ICO data protection fee applies (its self-assessment), and choose the Supabase region.
