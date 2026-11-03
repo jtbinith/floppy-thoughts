@@ -1,5 +1,6 @@
 import { boardSchema, parseBoard, type Board, type BoardNode } from './board'
 import { KEYS } from './keys'
+import { isEmpty, type BoardChange } from './changes'
 
 // What a board list shows: enough to recognise a board without opening it.
 export type BoardSummary = Pick<Board, 'id' | 'name' | 'createdAt' | 'updatedAt'> & {
@@ -62,6 +63,9 @@ export type LoadResult =
 // Methods are async so a Supabase adapter can be added later without changing callers.
 export interface StorageAdapter {
   saveBoard(board: Board): Promise<void>
+  // One change to an open board: `change` is just what it touched (see changes.ts), and `board`
+  // is the whole board after it. A shared board will send only the change.
+  saveChange(board: Board, change: BoardChange): Promise<void>
   loadBoard(id: string): Promise<LoadResult>
   listBoards(): Promise<BoardSummary[]>
   deleteBoard(id: string): Promise<void>
@@ -95,6 +99,11 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
       throw error
     }
+  }
+
+  // The browser keeps each board as one item, so it's written whole. Nothing changed, nothing written.
+  async saveChange(board: Board, change: BoardChange): Promise<void> {
+    if (!isEmpty(change)) await this.saveBoard(board)
   }
 
   async loadBoard(id: string): Promise<LoadResult> {

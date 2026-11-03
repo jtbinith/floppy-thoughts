@@ -7,6 +7,7 @@ import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
+import { changeBetween } from './lib/changes'
 import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
@@ -163,11 +164,15 @@ export default function App() {
     }
   }
 
-  // Every change to the open board: save it, and update just its line in the board list.
+  // Every change to the open board: save what it touched, and update just its line in the board list.
+  // `saved` is the board as last saved, so two changes before React re-renders each send only their own.
+  const saved = useRef<Board | null>(null)
   function handleChange(next: Board) {
+    const before = saved.current?.id === next.id ? saved.current : board?.id === next.id ? board : null
+    saved.current = next
     setBoard(next)
     setBoards((list) => withSummary(list ?? [], next))
-    storage.saveBoard(next).catch((e: unknown) => setError(String(e)))
+    storage.saveChange(next, changeBetween(before, next)).catch((e: unknown) => setError(String(e)))
   }
 
   if (boards === null && !error) return null

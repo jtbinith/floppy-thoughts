@@ -22,7 +22,7 @@ flowchart LR
 | Commands | `src/lib/commands.ts` | The command registry and router for the terminal |
 | Completion | `src/lib/complete.ts` | Tab completion, by command, number or words |
 | Layout | `src/lib/placement.ts`, `src/lib/tidy.ts` | Where new boxes go; the tidy layout |
-| Storage | `src/lib/storage.ts`, `src/lib/keys.ts` | The storage interface, its localStorage version, key names |
+| Storage | `src/lib/storage.ts`, `src/lib/changes.ts`, `src/lib/keys.ts` | The storage interface, its localStorage version, what each change touched, key names |
 | Notes and nudges | `src/lib/sparks/`, `src/lib/nudges/` | The vending machine's content; nudge picking |
 | Screens | `src/components/` | React components (board, terminal, drawer, popups, menus, home) |
 | Styles | `src/styles/` | One CSS file per part of the screen |
@@ -76,6 +76,7 @@ classDiagram
   class StorageAdapter {
     <<interface>>
     saveBoard(board) Promise
+    saveChange(board, change) Promise
     loadBoard(id) Promise~LoadResult~
     listBoards() Promise~BoardSummary[]~
     deleteBoard(id) Promise
@@ -87,6 +88,7 @@ classDiagram
 - Keys live in `src/lib/keys.ts`, all under `floppy:` (boards, the last open board, panel and terminal sizes, notes already seen).
 - **Saving** validates first, so an invalid board is never written. A full browser storage raises `StorageFullError` with a friendly message.
 - **Loading** returns `ok`, `not-found` or `invalid`. It never crashes on corrupted or tampered data, and broken entries are skipped but kept.
+- **Each edit saves what it touched.** `changeBetween` (`src/lib/changes.ts`) works out the boxes and links a change added, edited or removed, at the one place every change is saved. The browser still writes the board whole (and skips changes that touched nothing); a shared board will send only those rows, and `applyChange` merges other people's changes in, box by box.
 - **Each edit is one write.** The board list is updated from the board that changed (`withSummary`) rather than re-reading every board.
 - **Async on purpose:** localStorage is synchronous, but a server won't be.
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Board } from './board'
+import { changeBetween } from './changes'
 import { LocalStorageAdapter, StorageFullError, summaryOf, withSummary } from './storage'
 
 // Minimal in-memory stand-in for the browser's localStorage.
@@ -59,6 +60,22 @@ describe('LocalStorageAdapter', () => {
     await adapter.saveBoard({ ...board('a'), name: 'renamed' })
     const result = await adapter.loadBoard('a')
     expect(result.status === 'ok' && result.board.name).toBe('renamed')
+  })
+
+  it('saves a change by writing the board after it, and skips one that touched nothing', async () => {
+    await adapter.saveBoard(board('a'))
+    let writes = 0
+    const setItem = storage.setItem.bind(storage)
+    storage.setItem = (k, v) => {
+      writes++
+      setItem(k, v)
+    }
+    const edited = { ...board('a'), nodes: [{ ...board('a').nodes[0], text: 'tape' }] }
+    await adapter.saveChange(edited, changeBetween(board('a'), edited))
+    await adapter.saveChange(edited, changeBetween(edited, edited))
+    expect(writes).toBe(1)
+    const result = await adapter.loadBoard('a')
+    expect(result.status === 'ok' && result.board.nodes[0].text).toBe('tape')
   })
 
   it('reports a missing board as not-found', async () => {
