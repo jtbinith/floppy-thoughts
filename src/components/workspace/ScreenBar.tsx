@@ -1,0 +1,67 @@
+import { MAX_BOARD_NAME, type Board } from '../../lib/board'
+import { MenuBar, type Menu } from '../MenuBar'
+import { ThemeToggle } from '../ThemeToggle'
+
+// The strip along the top of the board's screen: the menus, the board's name in the middle like
+// a window title (click to rename), and on the right the sun/moon button, a short notice when
+// there is one, and "my idea" once you've picked it.
+export function ScreenBar({
+  menus,
+  board,
+  renaming,
+  onRenaming,
+  onRename,
+  notice,
+  onShowIdea,
+}: {
+  menus: Menu[]
+  board: Board
+  renaming: boolean
+  onRenaming: (renaming: boolean) => void
+  onRename: (name: string) => void
+  notice: string | null
+  onShowIdea: () => void
+}) {
+  return (
+    <header className="screen__bar">
+      <MenuBar menus={menus} />
+      <div className="screen__name">
+        {renaming ? (
+          <input
+            className="screen__rename"
+            aria-label="Board name"
+            defaultValue={board.name}
+            maxLength={MAX_BOARD_NAME}
+            autoFocus
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'Escape') onRenaming(false)
+            }}
+            onBlur={(e) => {
+              onRename(e.currentTarget.value)
+              onRenaming(false)
+            }}
+          />
+        ) : (
+          <button type="button" className="screen__name-button" title="Rename this board" onClick={() => onRenaming(true)}>
+            {board.name}
+          </button>
+        )}
+      </div>
+      <div className="screen__end">
+        <ThemeToggle className="theme-toggle--bar" />
+        {notice && (
+          <span className="screen__notice" role="status">
+            {notice}
+          </span>
+        )}
+        {board.nodes.some((n) => n.chosen) && (
+          <button type="button" className="screen__new screen__summary" onClick={onShowIdea}>
+            my idea ✓
+          </button>
+        )}
+      </div>
+    </header>
+  )
+}

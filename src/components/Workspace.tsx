@@ -1,25 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { MAX_BOARD_NAME, shown, type Board } from '../lib/board'
-import { addLink, addLinkedIdea, addNote, addNudge, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, moveNodes, addTheme, themes, toggleFavourite, touch } from '../lib/boardOps'
-import { runCommand, type BoardUi, type CommandResult } from '../lib/commands'
-import { favouritesBoard } from '../lib/favouritesBoard'
+import type { Board } from '../lib/board'
+import { addLink, findNode, themes } from '../lib/boardOps'
+import { runCommand, type CommandResult } from '../lib/commands'
 import { FIT_VIEW } from '../lib/flow'
 import { complete } from '../lib/complete'
-import { pickNudge, type NudgeChoice } from '../lib/nudges/pickNudge'
-import { BOX, PLACE, centreOfBox, freeSpotNear, type Rect } from '../lib/placement'
-import { tidyPositions } from '../lib/tidy'
-import type { Spark } from '../lib/sparks/deal'
-import { rememberSeen } from '../lib/sparks/seen'
-import { VEND_ROWS, rowEmpty, type VendRow } from '../lib/sparks/vend'
 import type { MachineControl } from './machine/HomeMachine'
 import type { BoardSummary, Favourite } from '../lib/storage'
-import { emptyUndo, pushChange, redo, undo, type UndoState } from '../lib/undo'
+import { useBoardHistory } from './workspace/useBoardHistory'
+import { workspaceMenus } from './workspace/workspaceMenus'
+import { terminalUi } from './workspace/terminalUi'
+import { useBoardView } from './workspace/useBoardView'
+import { NEW_IDEA, useBoardEdits } from './workspace/useBoardEdits'
+import { isTyping } from './workspace/isTyping'
 import { BoardActionsContext, type BoardActions } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
-import { ThemeToggle } from './ThemeToggle'
-import { MenuBar, type Menu, type MenuItem } from './MenuBar'
+import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
 import { KeysSheet } from './KeysSheet'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
@@ -49,32 +46,13 @@ const loadPanel = (): PanelTab | null => {
   return saved === 'machine' || saved === 'favourites' || saved === 'commands' ? saved : null
 }
 
-// The board without the given links (e.g. links selected along with nodes for deleting).
-function withoutLinks(board: Board, links: [string, string][]): Board {
-  if (links.length === 0) return board
-  const gone = (l: { from: string; to: string }) => links.some(([a, b]) => (l.from === a && l.to === b) || (l.from === b && l.to === a))
-  return { ...board, links: board.links.filter((l) => !gone(l)) }
-}
-
-// Text a brand-new idea starts with, selected so typing replaces it.
-const NEW_IDEA = 'new idea'
-
-const isTyping = (target: EventTarget | null) => target instanceof Element && !!target.closest('input, textarea')
-
 // The board plus the terminal. Both edit the same board through the same operations.
 export function Workspace(props: Props) {
   const { board, boards, onChange, onNewBoard, onOpenBoard } = props
   const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked } = props
-  const { screenToFlowPosition, flowToScreenPosition, getNodes, getEdges, setNodes, setCenter, getZoom, fitView } = useReactFlow()
+  const { getNodes, getEdges, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
   const [renaming, setRenaming] = useState(false)
-  // A note just out of the machine, waiting in the popup for you to stick it on or put it back.
-  // Deleting from the middle of a chain asks first whether to keep it connected.
-  const [pendingDelete, setPendingDelete] = useState<{
-    ids: string[]
-    links: [string, string][]
-    chains: { id: string; around: [string, string] }[]
-  } | null>(null)
   const [showSummary, setShowSummary] = useState(false)
   const [showKeys, setShowKeys] = useState(false)
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false)
@@ -95,13 +73,6 @@ export function Workspace(props: Props) {
   const terminalRef = useRef<TerminalHandle>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [history, setHistory] = useState<UndoState>(emptyUndo)
-  // Nudges arrive asynchronously, so they must be added to the latest board, not the one at click time.
-  const latest = useRef(board)
-  useEffect(() => {
-    latest.current = board
-  })
-
   // Notices fade after a few seconds.
   useEffect(() => {
     if (!notice) return
@@ -109,278 +80,29 @@ export function Workspace(props: Props) {
     return () => clearTimeout(timer)
   }, [notice])
 
-  // Every change goes through here so it can be undone. `previous` is passed explicitly
-  // so two changes in a row (save an edit, then add a linked idea) undo one at a time.
-  function commit(previous: Board, next: Board) {
-    setHistory((h) => pushChange(h, previous))
-    // Two notes can land back to back, before React re-renders, so keep `latest` current here too.
-    latest.current = next
-    onChange(next)
-  }
+  // Saving changes, undo and redo.
+  const { commit, stepBack, stepForward, latest } = useBoardHistory(board, onChange, () => setEditingId(null))
 
-  function stepBack(): string {
-    const result = undo(history, board)
-    if (!result) return 'nothing to undo'
-    setHistory(result.state)
-    setEditingId(null)
-    onChange(result.board)
-    return 'undone'
-  }
-
-  function stepForward(): string {
-    const result = redo(history, board)
-    if (!result) return 'nothing to redo'
-    setHistory(result.state)
-    setEditingId(null)
-    onChange(result.board)
-    return 'redone'
-  }
-
-  // Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z or Ctrl+Y redoes. Inside a text box the browser's own undo wins.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey) || isTyping(e.target)) return
-      const key = e.key.toLowerCase()
-      if (key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        stepBack()
-      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
-        e.preventDefault()
-        stepForward()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
-
-  // The part of the board you can see, in board coordinates, so new things land on screen.
-  function viewRect(): Rect | undefined {
-    const rect = boardRef.current?.getBoundingClientRect()
-    if (!rect) return undefined
-    const margin = 24
-    const topLeft = screenToFlowPosition({ x: rect.left + margin, y: rect.top + margin })
-    const bottomRight = screenToFlowPosition({ x: rect.right - margin, y: rect.bottom - margin })
-    return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y }
-  }
-
-  // Somewhere free near `target`, on screen if there's room.
-  const spotNear = (on: Board, target: { x: number; y: number }) => freeSpotNear(on, target, viewRect())
-
-  // The nearest free spot to the middle of the visible board.
-  function centreOf(on: Board) {
-    const rect = boardRef.current?.getBoundingClientRect()
-    if (!rect) return freeSpotNear(on, { x: 0, y: 0 })
-    return spotNear(on, screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }))
-  }
-
-  // If something landed off screen anyway (the view was full), glide over to it.
-  function reveal(at: { x: number; y: number }) {
-    const view = viewRect()
-    if (!view) return
-    const inside = at.x >= view.x && at.y >= view.y && at.x + BOX.width <= view.x + view.width && at.y + BOX.height <= view.y + view.height
-    const centre = centreOfBox(at)
-    if (!inside) void setCenter(centre.x, centre.y, { zoom: getZoom(), duration: 350 })
-  }
-
-  // Tidy: lay the board out organically (see lib/tidy), gliding boxes to their new places.
-  // One change, so one undo puts everything back.
-  function tidy(): string {
-    if (board.nodes.length < 2) return 'nothing to tidy yet'
-    const sizes = new Map(getNodes().map((n) => [n.id, { width: n.measured?.width ?? BOX.width, height: n.measured?.height ?? BOX.height }]))
-    // A Map from each box's id to where it's going, so each frame looks them up in constant time.
-    const targets = new Map(tidyPositions(board, sizes).map((p) => [p.id, p]))
-    const from = new Map(board.nodes.map((n) => [n.id, { x: n.x, y: n.y }]))
-    const finished = moveNodes(board, [...targets.values()])
-    const start = performance.now()
-    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450
-    const ease = (t: number) => 1 - (1 - t) ** 3
-    const step = (now: number) => {
-      const t = duration ? Math.min(1, (now - start) / duration) : 1
-      setNodes((nodes) =>
-        nodes.map((n) => {
-          const a = from.get(n.id)
-          const b = targets.get(n.id)
-          if (!a || !b) return n
-          return { ...n, position: { x: a.x + (b.x - a.x) * ease(t), y: a.y + (b.y - a.y) * ease(t) } }
-        }),
-      )
-      if (t < 1) requestAnimationFrame(step)
-      else commit(board, finished)
-    }
-    requestAnimationFrame(step)
-    return 'tidied the board (undo puts it back)'
-  }
+  // Where things go on screen: free spots, gliding to a box, tidying, where a note lands.
+  const { spotNear, centreOf, reveal, show, noteSpot, noteLanding, tidy } = useBoardView({ board, boardRef, latest, commit })
   const visibleCentre = () => centreOf(board)
 
-  function addAndEdit(at: { x: number; y: number }) {
-    const result = addUserNode(board, NEW_IDEA, at)
-    if (!result.ok) {
-      setNotice(result.error)
-      return
-    }
-    commit(board, result.board)
-    setEditingId(result.node?.id ?? null)
-  }
+  // Every change to the board: adding, editing, branching, nudges, notes, themes, deleting.
+  const edits = useBoardEdits({
+    board,
+    latest,
+    commit,
+    onChange,
+    view: { spotNear, centreOf, reveal, noteSpot },
+    say: setNotice,
+    edit: setEditingId,
+    onPicked: () => setShowSummary(true),
+    onOpenNew,
+  })
+  const { addAndEdit, branchFrom, requestNudge, nudgeSelected, placeNote, requestDelete, pick, makeFavouritesBoard, addThemes, favourite, rename, saveEdit } = edits
 
-  // Tab: add a new idea linked to `fromId`, just below it, and start typing in it.
-  function branchFrom(from: Board, fromId: string) {
-    const parent = findNode(from, fromId)
-    if (!parent) return
-    const at = spotNear(from, { x: parent.x + PLACE.branch.x, y: parent.y + PLACE.branch.y })
-    const result = addLinkedIdea(from, fromId, NEW_IDEA, at)
-    if (!result.ok) {
-      setNotice(result.error)
-      return
-    }
-    commit(from, result.board)
-    setEditingId(result.node?.id ?? null)
-    reveal(at)
-  }
-
-  // N key, the device button, or `nudge <id>` in the terminal. Returns what happened, for the terminal.
-  async function requestNudge(targetId: string, type?: NudgeChoice): Promise<{ text: string; error?: boolean }> {
-    const nudge = await pickNudge(latest.current, targetId, { type })
-    const current = latest.current
-    const target = findNode(current, targetId)
-    if (!target) return { text: `Nothing numbered ${shown(targetId)}`, error: true }
-    if (!nudge) {
-      const message = `${shown(targetId)} is a nudge already. Nudge the idea or note it's about instead.`
-      setNotice(message)
-      return { text: message, error: true }
-    }
-    const at = spotNear(current, { x: target.x + PLACE.nudge.x, y: target.y + PLACE.nudge.y })
-    const result = addNudge(current, targetId, nudge, at)
-    if (!result.ok) {
-      setNotice(result.error)
-      return { text: result.error, error: true }
-    }
-    commit(current, result.board)
-    reveal(at)
-    return { text: `${shown(result.node?.id)} (${nudge.type}): ${nudge.text}` }
-  }
-
-  function nudgeSelected() {
-    const selected = getNodes().filter((n) => n.selected)
-    if (selected.length !== 1) {
-      setNotice('Select one idea first, then press N (or its nudge button) for a nudge.')
-      return
-    }
-    void requestNudge(selected[0].id)
-  }
-
-  // Shows a node: selects it and pans the board to it.
-  function show(id: string, on: Board = board) {
-    const node = findNode(on, id)
-    if (!node) return
-    setNodes((nodes) => nodes.map((n) => ({ ...n, selected: n.id === id })))
-    const centre = centreOfBox(node)
-    void setCenter(centre.x, centre.y, { zoom: 1, duration: 400 })
-  }
-
-  // A note from the vending machine lands next to what you have selected, or in the middle of the view.
-  function noteSpot(): { x: number; y: number } {
-    const current = latest.current
-    const selected = getNodes().filter((n) => n.selected)
-    const anchor = selected.length === 1 ? findNode(current, selected[0].id) : undefined
-    return anchor ? spotNear(current, { x: anchor.x + PLACE.note.x, y: anchor.y + PLACE.note.y }) : centreOf(current)
-  }
-
-  // For the machine's flying note: where it will land, on screen, at the board's zoom. If that
-  // spot is out of view, the board glides there first (then it's asked again).
-  function noteLanding(): { at: { x: number; y: number }; left: number; top: number; zoom: number; inView: boolean } {
-    const at = noteSpot()
-    const view = viewRect()
-    const inView = !view || (at.x >= view.x && at.y >= view.y && at.x + BOX.width <= view.x + view.width && at.y + BOX.height <= view.y + view.height)
-    if (!inView) reveal(at)
-    const { x: left, y: top } = flowToScreenPosition(at)
-    return { at, left, top, zoom: getZoom(), inView }
-  }
-
-  function placeNote(note: Spark, spot?: { x: number; y: number }): { text: string; error?: boolean } {
-    const current = latest.current
-    const at = spot ?? noteSpot()
-    const result = addNote(current, note, at)
-    if (!result.ok) {
-      setNotice(result.error)
-      return { text: result.error, error: true }
-    }
-    if (note.category !== 'theme') rememberSeen([note.text])
-    commit(current, result.board)
-    reveal(at)
-    return { text: `${shown(result.node?.id)}: ${note.text}` }
-  }
-
-  // `/vend` in the terminal opens the drawer and runs the machine there, so you see the capsule
-  // and the shrimp crack open; then /swap, /stick or /back deal with the note.
+  // The machine in the drawer hands over its controls, so the terminal can run it.
   const machineControl = useRef<MachineControl | null>(null)
-  function vendFromTerminal(row: VendRow): { text: string; error?: boolean } {
-    if (rowEmpty(row, new Set(board.nodes.map((n) => n.text)))) return { text: `the ${row} row is empty: every one of those notes is on this board`, error: true }
-    setPanel('machine')
-    let tries = 0
-    const run = () => {
-      if (machineControl.current) machineControl.current.vend(row === 'surprise' ? undefined : row)
-      else if (tries++ < 60) setTimeout(run, 50)
-    }
-    run()
-    return { text: 'a shrimp is on its way… then /stick, /swap or /back' }
-  }
-
-  // Every delete comes through here. If something sits in the middle of a chain, ask first.
-  // Returns false when it's waiting for that answer.
-  function requestDelete(ids: string[], links: [string, string][] = []): boolean {
-    const chains = ids
-      .map((id) => ({ id, around: chainAround(withoutLinks(board, links), id) }))
-      .filter((c): c is { id: string; around: [string, string] } => !!c.around)
-    if (chains.length === 0) {
-      applyDelete(ids, links, false)
-      return true
-    }
-    setPendingDelete({ ids, links, chains })
-    return false
-  }
-
-  function applyDelete(ids: string[], links: [string, string][], reconnect: boolean) {
-    const base = withoutLinks(board, links)
-    const next = ids.length ? deleteNodes(base, ids, { reconnect }) : base === board ? board : touch(base, new Date())
-    if (next !== board) commit(board, next)
-  }
-
-  function finishDelete(reconnect: boolean) {
-    if (!pendingDelete) return
-    applyDelete(pendingDelete.ids, pendingDelete.links, reconnect)
-    setPendingDelete(null)
-  }
-
-  function pick(id: string) {
-    const result = chooseIdea(board, id)
-    if (!result.ok) return
-    commit(board, result.board)
-    if (result.node?.chosen) setShowSummary(true)
-  }
-
-  function makeFavouritesBoard(): string {
-    const made = favouritesBoard(board)
-    if (!made) return 'no favourites on this board yet. try /fav <id>'
-    onOpenNew(made)
-    return `made ${made.name}`
-  }
-
-  // Adds one or more themes. The first on an empty board goes in the middle; each one after sits
-  // beside the last theme. All in one go, so one undo takes them all back.
-  function addThemes(texts: string[]) {
-    let next = board
-    for (const text of texts) {
-      const last = themes(next).at(-1)
-      const at = last
-        ? spotNear(next, { x: centreOfBox(last).x + BOX.width + 40, y: centreOfBox(last).y })
-        : next.nodes.length
-          ? centreOf(next)
-          : { x: 0, y: 0 }
-      const result = addTheme(next, text, at)
-      if (result.ok) next = result.board
-    }
-    if (next !== board) commit(board, next)
-  }
 
   // Opens the drawer on the machine and focuses it, so you can type a row straight away (it may
   // still be loading, so it tries for a moment).
@@ -393,27 +115,6 @@ export function Workspace(props: Props) {
       else if (tries++ < 40) setTimeout(focusMachine, 50)
     }
     focusMachine()
-  }
-
-  function favourite(id: string) {
-    const result = toggleFavourite(board, id)
-    if (result.ok) commit(board, result.board)
-  }
-
-  function rename(name: string) {
-    const clean = cleanText(name).slice(0, MAX_BOARD_NAME)
-    if (clean && clean !== board.name) commit(board, touch({ ...board, name: clean }, new Date()))
-  }
-
-  function saveEdit(id: string, text: string): Board {
-    const node = findNode(board, id)
-    if (node?.text === text.trim()) return board
-    const result = editUserNode(board, id, text)
-    if (!result.ok) return board
-    // Typing into a brand-new idea counts as part of adding it, so one undo removes both.
-    if (node?.text === NEW_IDEA) onChange(result.board)
-    else commit(board, result.board)
-    return result.board
   }
 
   const actions: BoardActions = {
@@ -444,48 +145,29 @@ export function Workspace(props: Props) {
     showKeys: () => setShowKeys(true),
   }
 
-  // What the board on screen does for commands that need more than the board itself.
-  const ui: BoardUi = {
-    undo: stepBack,
-    redo: stepForward,
+  // What the board on screen does for terminal commands that need more than the board itself.
+  // Made when a command runs (not while drawing), since it reaches into the terminal and machine.
+  const makeUi = () => terminalUi({
+    board,
+    boards,
+    stepBack,
+    stepForward,
     tidy,
-    fit: () => {
-      void fitView(FIT_VIEW)
-      return board.nodes.length ? 'fitted the board to the screen' : 'the board is empty'
-    },
-    showCommands: () => setPanel('commands'),
-    newBoard: onNewBoard,
-    boards: () => boards.map((b) => ({ name: b.id === board.id ? board.name : b.name, open: b.id === board.id })),
-    openBoard: (n) => {
-      const target = boards[n - 1]
-      if (!target) return null
-      onOpenBoard(target.id)
-      return target.name
-    },
-    remove: (id) => {
-      const text = findNode(board, id)?.text
-      return requestDelete([id]) ? `deleted ${shown(id)}: ${text}` : `${shown(id)} is in the middle of a chain: answer on the board`
-    },
-    showSummary: () => {
-      setShowSummary(true)
-      return true
-    },
-    favouritesBoard: makeFavouritesBoard,
-    vend: (row) => {
-      if (row && !VEND_ROWS.includes(row as VendRow)) return { text: `there's no ${row} row. rows: ${VEND_ROWS.join(' ')}`, error: true }
-      return vendFromTerminal((row as VendRow | undefined) ?? 'surprise')
-    },
-    note: (action) => {
-      const text = machineControl.current?.note(action)
-      if (!text) return { text: 'no note is out of the machine. try /vend', error: true }
-      return { text: { swap: `swapped ${text}…`, stick: `stuck on the board: ${text}`, back: `put back: ${text}` }[action] }
-    },
-    nudge: (id, type) => void requestNudge(id, type as NudgeChoice | undefined).then((r) => terminalRef.current?.print([r.text], r.error)),
-  }
+    fit: () => void fitView(FIT_VIEW),
+    openPanel: setPanel,
+    onNewBoard,
+    onOpenBoard,
+    requestDelete,
+    showSummary: () => setShowSummary(true),
+    makeFavouritesBoard,
+    machine: () => machineControl.current,
+    requestNudge,
+    print: (lines, error) => terminalRef.current?.print(lines, error),
+  })
 
   // Every line from the terminal goes through the one command router.
   function handleCommand(input: string): CommandResult {
-    const result = runCommand(board, input, { addAt: visibleCentre(), ui })
+    const result = runCommand(board, input, { addAt: visibleCentre(), ui: makeUi() })
     if (result.board) commit(board, result.board)
     result.then?.()
     return result
@@ -511,60 +193,36 @@ export function Workspace(props: Props) {
     else setNotice('Select something on the board first.')
   }
 
-  const hasFavourites = board.nodes.some((n) => n.favourite)
-  const recentBoards = boards.filter((b) => b.id !== board.id).slice(0, 5)
-  const menus: Menu[] = [
-    {
-      label: 'Board',
-      items: [
-        { label: 'New board', onSelect: onNewBoard },
-        { label: 'Rename…', onSelect: () => setRenaming(true) },
-        'divider',
-        // Recent boards, one click to switch (like VS Code's Open Recent).
-        ...recentBoards.map((b): MenuItem => ({ label: b.name, onSelect: () => onOpenBoard(b.id) })),
-        { label: 'All boards…', onSelect: () => (location.hash = '/boards') },
-        'divider',
-        { label: 'Favourites on a new board', onSelect: () => void makeFavouritesBoard(), disabled: !hasFavourites },
-        { label: 'My idea', onSelect: () => setShowSummary(true), disabled: !board.nodes.some((n) => n.chosen) },
-        'divider',
-        { label: 'Delete this board…', onSelect: () => setConfirmDeleteBoard(true) },
-      ],
-    },
-    {
-      label: 'Edit',
-      items: [
-        { label: 'Undo', shortcut: 'u / Ctrl+Z', onSelect: () => void stepBack() },
-        { label: 'Redo', shortcut: 'Ctrl+R / Ctrl+Shift+Z', onSelect: () => void stepForward() },
-        'divider',
-        { label: 'Add an idea', shortcut: 'a / double-click', onSelect: () => addAndEdit(visibleCentre()) },
-        { label: 'Add a theme…', onSelect: () => setThemeAgain(true) },
-        { label: 'Nudge the selected idea', shortcut: 'n', onSelect: nudgeSelected },
-        { label: 'Delete selected', shortcut: 'x / Delete', onSelect: deleteSelected },
-        'divider',
-        { label: 'Tidy the board', onSelect: () => void tidy(), disabled: board.nodes.length < 2 },
-      ],
-    },
-    {
-      label: 'View',
-      items: [
-        { label: 'Vending machine', shortcut: 'v', onSelect: openMachine },
-        { label: 'Favourites', onSelect: () => setPanel('favourites') },
-        { label: 'Commands', onSelect: () => setPanel('commands') },
-        { label: 'Close the drawer', shortcut: 'Esc', onSelect: () => setPanel(null), disabled: !panel },
-        'divider',
-        { label: 'Terminal', shortcut: 'Ctrl+`', onSelect: () => terminalRef.current?.focus() },
-        { label: 'Fit the board to the screen', onSelect: () => void fitView(FIT_VIEW) },
-      ],
-    },
-    {
-      label: 'Help',
-      items: [
-        { label: 'Commands', onSelect: () => setPanel('commands') },
-        { label: 'Keyboard shortcuts', shortcut: '?', onSelect: () => setShowKeys(true) },
-        { label: 'Terminal commands', onSelect: () => setPanel('commands') },
-      ],
-    },
-  ]
+  function focusTerminal() {
+    terminalRef.current?.focus()
+  }
+
+  // The linter can't tell these handlers only run on a click (some reach into the terminal), so
+  // it warns about refs here; nothing reads a ref while drawing.
+  // oxlint-disable-next-line react/refs
+  const menus = workspaceMenus({
+    board,
+    boards,
+    panel,
+    newBoard: onNewBoard,
+    rename: () => setRenaming(true),
+    openBoard: onOpenBoard,
+    favouritesBoard: () => void makeFavouritesBoard(),
+    showIdea: () => setShowSummary(true),
+    deleteBoard: () => setConfirmDeleteBoard(true),
+    undo: () => void stepBack(),
+    redo: () => void stepForward(),
+    addIdea: () => addAndEdit(visibleCentre()),
+    addTheme: () => setThemeAgain(true),
+    nudge: nudgeSelected,
+    deleteSelected,
+    tidy: () => void tidy(),
+    openMachine,
+    openPanel: setPanel,
+    focusTerminal,
+    fit: () => void fitView(FIT_VIEW),
+    showKeys: () => setShowKeys(true),
+  })
 
   // V opens the machine and Esc closes the drawer, from anywhere but a text box.
   useEffect(() => {
@@ -622,47 +280,15 @@ export function Workspace(props: Props) {
         </nav>
 
         <div className="device__screen">
-          <header className="screen__bar">
-            <MenuBar menus={menus} />
-            {/* The board's name sits in the middle, like a window title. Click to rename. */}
-            <div className="screen__name">
-              {renaming ? (
-                <input
-                  className="screen__rename"
-                  aria-label="Board name"
-                  defaultValue={board.name}
-                  maxLength={MAX_BOARD_NAME}
-                  autoFocus
-                  onFocus={(e) => e.currentTarget.select()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur()
-                    if (e.key === 'Escape') setRenaming(false)
-                  }}
-                  onBlur={(e) => {
-                    rename(e.currentTarget.value)
-                    setRenaming(false)
-                  }}
-                />
-              ) : (
-                <button type="button" className="screen__name-button" title="Rename this board" onClick={() => setRenaming(true)}>
-                  {board.name}
-                </button>
-              )}
-            </div>
-            <div className="screen__end">
-              <ThemeToggle className="theme-toggle--bar" />
-              {notice && (
-                <span className="screen__notice" role="status">
-                  {notice}
-                </span>
-              )}
-              {board.nodes.some((n) => n.chosen) && (
-                <button type="button" className="screen__new screen__summary" onClick={() => setShowSummary(true)}>
-                  my idea ✓
-                </button>
-              )}
-            </div>
-          </header>
+          <ScreenBar
+            menus={menus}
+            board={board}
+            renaming={renaming}
+            onRenaming={setRenaming}
+            onRename={rename}
+            notice={notice}
+            onShowIdea={() => setShowSummary(true)}
+          />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>
               <BoardCanvas
@@ -719,7 +345,7 @@ export function Workspace(props: Props) {
                 onSkip={closeTheme}
               />
             )}
-            {pendingDelete && <ChainPrompt board={board} chains={pendingDelete.chains} onAnswer={finishDelete} onCancel={() => setPendingDelete(null)} />}
+            {edits.pendingDelete && <ChainPrompt board={board} chains={edits.pendingDelete.chains} onAnswer={edits.finishDelete} onCancel={edits.cancelDelete} />}
             {showKeys && <KeysSheet onClose={() => setShowKeys(false)} />}
             {showSummary && <SummaryPopup board={board} onClose={() => setShowSummary(false)} />}
             {confirmDeleteBoard && (
