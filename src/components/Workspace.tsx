@@ -21,6 +21,7 @@ import { HeartIcon } from './HeartIcon'
 import { ThemeToggle } from './ThemeToggle'
 import { MenuBar, type Menu, type MenuItem } from './MenuBar'
 import { Dialog } from './Dialog'
+import { KeysSheet } from './KeysSheet'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
 import { SidePanel, type PanelTab } from './SidePanel'
@@ -75,6 +76,7 @@ export function Workspace(props: Props) {
     chains: { id: string; around: [string, string] }[]
   } | null>(null)
   const [showSummary, setShowSummary] = useState(false)
+  const [showKeys, setShowKeys] = useState(false)
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false)
   // Box numbers only show while you're typing a command, so the board stays calm otherwise.
   const [showIds, setShowIds] = useState(false)
@@ -435,6 +437,11 @@ export function Workspace(props: Props) {
     pick,
     deleteNode: (id) => void requestDelete([id]),
     deleteMany: (ids, links) => void requestDelete(ids, links),
+    undo: () => void stepBack(),
+    redo: () => void stepForward(),
+    addIdea: () => addAndEdit(visibleCentre()),
+    say: setNotice,
+    showKeys: () => setShowKeys(true),
   }
 
   // What the board on screen does for commands that need more than the board itself.
@@ -526,13 +533,13 @@ export function Workspace(props: Props) {
     {
       label: 'Edit',
       items: [
-        { label: 'Undo', shortcut: 'Ctrl+Z', onSelect: () => void stepBack() },
-        { label: 'Redo', shortcut: 'Ctrl+Shift+Z', onSelect: () => void stepForward() },
+        { label: 'Undo', shortcut: 'u / Ctrl+Z', onSelect: () => void stepBack() },
+        { label: 'Redo', shortcut: 'Ctrl+R / Ctrl+Shift+Z', onSelect: () => void stepForward() },
         'divider',
-        { label: 'Add an idea', shortcut: 'double-click', onSelect: () => addAndEdit(visibleCentre()) },
+        { label: 'Add an idea', shortcut: 'a / double-click', onSelect: () => addAndEdit(visibleCentre()) },
         { label: 'Add a theme…', onSelect: () => setThemeAgain(true) },
-        { label: 'Nudge the selected idea', shortcut: 'N', onSelect: nudgeSelected },
-        { label: 'Delete selected', shortcut: 'Delete', onSelect: deleteSelected },
+        { label: 'Nudge the selected idea', shortcut: 'n', onSelect: nudgeSelected },
+        { label: 'Delete selected', shortcut: 'x / Delete', onSelect: deleteSelected },
         'divider',
         { label: 'Tidy the board', onSelect: () => void tidy(), disabled: board.nodes.length < 2 },
       ],
@@ -540,7 +547,7 @@ export function Workspace(props: Props) {
     {
       label: 'View',
       items: [
-        { label: 'Vending machine', shortcut: 'V', onSelect: openMachine },
+        { label: 'Vending machine', shortcut: 'v', onSelect: openMachine },
         { label: 'Favourites', onSelect: () => setPanel('favourites') },
         { label: 'Commands', onSelect: () => setPanel('commands') },
         { label: 'Close the drawer', shortcut: 'Esc', onSelect: () => setPanel(null), disabled: !panel },
@@ -553,7 +560,8 @@ export function Workspace(props: Props) {
       label: 'Help',
       items: [
         { label: 'Commands', onSelect: () => setPanel('commands') },
-        { label: 'Keyboard shortcuts', onSelect: () => setPanel('commands') },
+        { label: 'Keyboard shortcuts', shortcut: '?', onSelect: () => setShowKeys(true) },
+        { label: 'Terminal commands', onSelect: () => setPanel('commands') },
       ],
     },
   ]
@@ -712,6 +720,7 @@ export function Workspace(props: Props) {
               />
             )}
             {pendingDelete && <ChainPrompt board={board} chains={pendingDelete.chains} onAnswer={finishDelete} onCancel={() => setPendingDelete(null)} />}
+            {showKeys && <KeysSheet onClose={() => setShowKeys(false)} />}
             {showSummary && <SummaryPopup board={board} onClose={() => setShowSummary(false)} />}
             {confirmDeleteBoard && (
               <Dialog label="Delete this board?" onCancel={() => setConfirmDeleteBoard(false)}>

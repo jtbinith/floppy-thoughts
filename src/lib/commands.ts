@@ -392,10 +392,10 @@ export const COMMANDS: Command[] = [
 
 const TIPS = [
   'Tab completes commands and ids · ↑ ↓ for previous lines · Ctrl+C cancels the line',
-  'Esc: jump to the board, to act on what you just added (Delete, Tab, N, F)',
-  '/ on the board starts a command · Ctrl+` (backtick) jumps back to the terminal',
+  'Esc: jump to the board, to act on what you just added',
+  '/ or : on the board starts a command · Ctrl+` (backtick) jumps back to the terminal',
   'ids are the numbers that show on boxes while you type a command · Tab finds them by words: /link clo',
-  'on the board: Tab = linked idea · N = nudge · F = favourite · V = machine',
+  'on the board, vim-style: h j k l move · i edit · o linked idea · x delete · c…c link · ? all the keys',
 ]
 
 // Looks a command up by its name or an alias.

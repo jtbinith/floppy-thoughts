@@ -19,6 +19,13 @@ export type BoardActions = {
   deleteNode: (id: string) => void
   // Delete several things at once (and remove selected links), as one change.
   deleteMany: (ids: string[], links: [string, string][]) => void
+  // For the keyboard: undo and redo, a new idea in the middle of the view, a short message by
+  // the board's title, and the shortcuts cheat sheet.
+  undo: () => void
+  redo: () => void
+  addIdea: () => void
+  say: (message: string) => void
+  showKeys: () => void
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null)

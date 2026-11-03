@@ -337,3 +337,56 @@ test.describe('unlinking', () => {
     await expect(links(page)).toHaveCount(2)
   })
 })
+
+test.describe('keyboard, vim-style', () => {
+  // Two ideas, then Esc from the terminal to put the focus on the board (the newest is selected).
+  async function twoIdeas(page: import('@playwright/test').Page) {
+    await type(page, 'first')
+    await type(page, 'second')
+    await page.getByLabel('Terminal command').press('Escape')
+    await expect(box(page, 'n2')).toHaveClass(/selected/)
+  }
+
+  test('h j k l move the selection between boxes', async ({ page }) => {
+    await twoIdeas(page)
+    // Wherever the first one landed, one of the four directions reaches it.
+    for (const key of ['h', 'l', 'k', 'j']) {
+      await page.keyboard.press(key)
+      if (await box(page, 'n1').evaluate((n) => n.classList.contains('selected'))) break
+    }
+    await expect(box(page, 'n1')).toHaveClass(/selected/)
+    await expect(page.locator('.react-flow__node.selected')).toHaveCount(1)
+  })
+
+  test('c on one box and c on another links them', async ({ page }) => {
+    await twoIdeas(page)
+    await page.keyboard.press('c')
+    for (const key of ['h', 'l', 'k', 'j']) {
+      await page.keyboard.press(key)
+      if (await box(page, 'n1').evaluate((n) => n.classList.contains('selected'))) break
+    }
+    await page.keyboard.press('c')
+    await expect(links(page)).toHaveCount(1)
+  })
+
+  test('x deletes, u brings it back', async ({ page }) => {
+    await twoIdeas(page)
+    await page.keyboard.press('x')
+    await expect(boxes(page)).toHaveCount(1)
+    await page.keyboard.press('u')
+    await expect(boxes(page)).toHaveCount(2)
+  })
+
+  test('o adds a linked idea to type into; ? shows the shortcuts', async ({ page }) => {
+    await twoIdeas(page)
+    await page.keyboard.press('o')
+    await expect(boxes(page)).toHaveCount(3)
+    await expect(links(page)).toHaveCount(1)
+    // Esc on the empty new idea takes it back off; the focus stays on the board.
+    await page.keyboard.press('Escape')
+    await expect(boxes(page)).toHaveCount(2)
+    await expect(page.locator('.react-flow__node.selected, .react-flow:focus')).not.toHaveCount(0)
+    await page.keyboard.press('?')
+    await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible()
+  })
+})

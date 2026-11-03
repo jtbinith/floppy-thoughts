@@ -100,7 +100,8 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
     function onKey(e: globalThis.KeyboardEvent) {
       const typing = e.target instanceof Element && !!e.target.closest('input, textarea')
       const backtick = e.ctrlKey && (e.code === 'Backquote' || e.key === '`')
-      const slash = e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target instanceof Element && e.target.closest('.panel, .popup'))
+      // ":" works too, like vim's command line.
+      const slash = (e.key === '/' || e.key === ':') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target instanceof Element && e.target.closest('.panel, .popup'))
       if (backtick || slash) {
         e.preventDefault()
         if (slash) setValue((v) => (v ? v : '/'))

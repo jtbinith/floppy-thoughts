@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   Background,
   BackgroundVariant,
@@ -18,6 +18,9 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { Board } from '../lib/board'
 import { FIT_VIEW, toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
+import { nearestInDirection, nearestTo, type Direction } from '../lib/nav'
+import { BOX } from '../lib/placement'
+import { shown } from '../lib/board'
 import { useBoardActions } from './boardActions'
 import { CentreEdge } from './CentreEdge'
 import { IdeaNode } from './IdeaNode'
@@ -36,8 +39,8 @@ type Props = {
 }
 
 export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
-  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, favourite, deleteMany } = useBoardActions()
+  const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
+  const { editingId, startEdit, branch, nudge, favourite, pick, deleteMany, undo, redo, addIdea, say, showKeys } = useBoardActions()
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
@@ -105,37 +108,190 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
     if (editingId && document.activeElement instanceof HTMLElement) document.activeElement.blur()
   }
 
-  // Keyboard: Enter edits the selected idea; Delete/Backspace removes whatever is selected.
-  function handleKeyDown(event: KeyboardEvent) {
+  // --- The keyboard, vim-style (see KeysSheet for the list). Works while the board has focus. ---
+  // A key waiting for its pair (g g, z z), and the box a link starts from (c … c).
+  const pending = useRef<{ key: string; at: number } | null>(null)
+  const linkFrom = useRef<string | null>(null)
+  const MOVE_STEP = 24
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // If the focused box goes (deleted, or a new idea you cancelled), keep the focus on the board,
+  // so the next key still works.
+  // And if nothing has focus at all (the box you were on just went), the board still takes the
+  // key, as long as no dialog is open.
+  useEffect(() => {
+    function onKey(e: globalThis.KeyboardEvent) {
+      if (e.target === document.body && rootRef.current && !document.querySelector('[role="dialog"]')) handleKey(e, rootRef.current)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  // (React Flow takes the box out a frame or two later, so check after that.)
+  useEffect(() => {
+    if (editingId) return
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        const active = document.activeElement
+        if (active && active !== document.body && active.isConnected) return
+        const selected = rootRef.current?.querySelector<HTMLElement>('.react-flow__node.selected')
+        ;(selected ?? rootRef.current)?.focus({ preventScroll: true })
+      })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [board, editingId])
+
+  const boxes = () =>
+    getNodes().map((n) => ({ id: n.id, x: n.position.x, y: n.position.y, width: n.measured?.width ?? BOX.width, height: n.measured?.height ?? BOX.height }))
+
+  // Select one box, focus it, and glide the board if it's out of view.
+  function selectOnly(id: string, root: HTMLElement) {
+    setNodes((current) => current.map((n) => ({ ...n, selected: n.id === id })))
+    setEdges((current) => current.map((e) => ({ ...e, selected: false })))
+    requestAnimationFrame(() => {
+      const el = root.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`)
+      el?.focus({ preventScroll: true })
+      const area = root.getBoundingClientRect()
+      const r = el?.getBoundingClientRect()
+      const margin = 30
+      if (r && (r.left < area.left + margin || r.right > area.right - margin || r.top < area.top + margin || r.bottom > area.bottom - margin)) centreOn(id)
+    })
+  }
+
+  function centreOn(id: string) {
+    const b = boxes().find((x) => x.id === id)
+    if (b) void setCenter(b.x + b.width / 2, b.y + b.height / 2, { zoom: getZoom(), duration: 250 })
+  }
+
+  function go(direction: Direction, root: HTMLElement) {
+    const all = boxes()
+    if (!all.length) return
+    const current = getNodes().filter((n) => n.selected)
+    if (current.length !== 1) {
+      // Nothing (or several) selected: start from the box nearest the middle of the view.
+      const area = root.getBoundingClientRect()
+      const middle = screenToFlowPosition({ x: area.left + area.width / 2, y: area.top + area.height / 2 })
+      const start = nearestTo(all, middle)
+      if (start) selectOnly(start, root)
+      return
+    }
+    const next = nearestInDirection(all, current[0].id, direction)
+    if (next) selectOnly(next, root)
+  }
+
+  // Shift + h j k l: move what's selected a little, saved as one change.
+  function shift(direction: Direction) {
+    const moving = getNodes().filter((n) => n.selected)
+    if (!moving.length) return
+    const d = { left: [-MOVE_STEP, 0], right: [MOVE_STEP, 0], up: [0, -MOVE_STEP], down: [0, MOVE_STEP] }[direction]
+    onChange(withPositions(board, moving.map((n) => ({ ...n, position: { x: n.position.x + d[0], y: n.position.y + d[1] } }))))
+  }
+
+  function handleKey(event: KeyboardEvent<HTMLDivElement> | globalThis.KeyboardEvent, root: HTMLElement) {
     if (editingId || (event.target as Element).closest('input, textarea')) return
     const allSelected = getNodes().filter((n) => n.selected)
+    const one = allSelected.length === 1 ? allSelected[0] : null
     // What you wrote yourself can be edited: your ideas and your themes.
-    const selected = allSelected.filter((n) => n.data.kind === 'user' || n.data.category === 'theme')
-    const plainKey = !event.ctrlKey && !event.metaKey && !event.altKey
-    if ((event.key === 'f' || event.key === 'F') && plainKey && allSelected.length === 1) {
+    const editable = (n: IdeaFlowNode) => n.data.kind === 'user' || n.data.category === 'theme'
+    const plain = !event.ctrlKey && !event.metaKey && !event.altKey
+    const key = event.key
+    const handled = () => {
       event.preventDefault()
-      favourite(allSelected[0].id)
-    } else if ((event.key === 'n' || event.key === 'N') && plainKey && allSelected.length === 1) {
-      event.preventDefault()
-      nudge(allSelected[0].id)
-    } else if (event.key === 'Tab' && !event.shiftKey && allSelected.length === 1) {
-      // Any node, including sparks, can grow a linked idea.
-      event.preventDefault()
-      branch(allSelected[0].id)
-    } else if (event.key === 'Enter' && selected.length === 1) {
-      event.preventDefault()
-      startEdit(selected[0].id)
-    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.stopPropagation()
+    }
+    // A pair like g g or z z: the second press within a moment.
+    const pair = (k: string) => {
+      const now = Date.now()
+      const isPair = pending.current?.key === k && now - pending.current.at < 700
+      pending.current = isPair ? null : { key: k, at: now }
+      return isPair
+    }
+    const directions: Record<string, Direction> = { h: 'left', ArrowLeft: 'left', j: 'down', ArrowDown: 'down', k: 'up', ArrowUp: 'up', l: 'right', ArrowRight: 'right' }
+    const direction = directions[key] ?? directions[key.toLowerCase()]
+
+    if (direction && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      handled()
+      if (event.shiftKey) shift(direction)
+      else go(direction, root)
+    } else if (key === 'r' && event.ctrlKey) {
+      handled()
+      redo()
+    } else if (!plain) {
+      return
+    } else if (key === 'c' || (key === 'Enter' && linkFrom.current)) {
+      handled()
+      if (!one) return say('select one box to link from')
+      if (!linkFrom.current) {
+        linkFrom.current = one.id
+        say(`linking from ${shown(one.id)}: move to another box and press c (Esc to stop)`)
+      } else if (linkFrom.current === one.id) {
+        say('move to another box first, then press c')
+      } else {
+        onLink(linkFrom.current, one.id)
+        say(`linked ${shown(linkFrom.current)} to ${shown(one.id)}`)
+        linkFrom.current = null
+      }
+    } else if (key === 'Escape') {
+      handled()
+      if (linkFrom.current) {
+        linkFrom.current = null
+        say('stopped linking')
+      } else {
+        setNodes((current) => current.map((n) => ({ ...n, selected: false })))
+        setEdges((current) => current.map((e) => ({ ...e, selected: false })))
+      }
+    } else if (key === 'i' || key === 'Enter') {
+      if (!one) return
+      handled()
+      if (editable(one)) startEdit(one.id)
+      else say('only your own ideas and themes can be edited')
+    } else if ((key === 'o' || (key === 'Tab' && !event.shiftKey)) && one) {
+      // Any box, including notes, can grow a linked idea.
+      handled()
+      branch(one.id)
+    } else if (key === 'a') {
+      handled()
+      addIdea()
+    } else if (key === 'f' && one) {
+      handled()
+      favourite(one.id)
+    } else if (key === 'n' && one) {
+      handled()
+      nudge(one.id)
+    } else if (key === 'p' && one) {
+      handled()
+      pick(one.id)
+    } else if (key === 'u') {
+      handled()
+      undo()
+    } else if (key === 'g') {
+      handled()
+      if (pair('g')) {
+        const theme = board.nodes.find((n) => n.category === 'theme') ?? board.nodes[0]
+        if (theme) selectOnly(theme.id, root)
+      }
+    } else if (key === 'z') {
+      handled()
+      if (pair('z') && one) centreOn(one.id)
+    } else if (key === '?') {
+      handled()
+      showKeys()
+    } else if (key === 'x' || key === 'Delete' || key === 'Backspace') {
       // Everything selected goes as one change (asking first if it would break a chain).
       const links = getEdges()
         .filter((e) => e.selected)
         .map((e): [string, string] => [e.source, e.target])
-      if (allSelected.length || links.length) deleteMany(allSelected.map((n) => n.id), links)
+      if (allSelected.length || links.length) {
+        handled()
+        deleteMany(allSelected.map((n) => n.id), links)
+      }
     }
   }
 
   return (
     <ReactFlow
+      ref={rootRef}
+      tabIndex={-1}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
@@ -153,7 +309,8 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
       onDoubleClick={handleDoubleClick}
       onPaneClick={finishEditing}
       onNodeClick={(_e, node) => node.id !== editingId && finishEditing()}
-      onKeyDown={handleKeyDown}
+      // Capture, so our keys come before React Flow's own (its arrows would move boxes).
+      onKeyDownCapture={(e) => handleKey(e, e.currentTarget)}
       zoomOnDoubleClick={false}
       colorMode="dark"
       fitView

@@ -233,3 +233,60 @@
     inset 2px 2px 0 #e06a5c,
     inset -2px -2px 0 #8f2f25;
 }
+
+/* The keyboard shortcuts card */
+.keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.8rem 1.6rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.keys h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--heading);
+  text-transform: uppercase;
+}
+
+.keys dl {
+  margin: 0;
+}
+
+.keys dl > div {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.keys dt {
+  font-family: var(--mono);
+}
+
+.keys dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.keys kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-right: 0.2rem;
+  padding: 0 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+}
+
+.keys small {
+  color: var(--muted);
+}
