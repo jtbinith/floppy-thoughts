@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { MAX_BOARD_NAME, shown, type Board } from '../../lib/board'
+import { MAX_BOARD_NAME, numberOf, type Board } from '../../lib/board'
 import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
 import { favouritesBoard } from '../../lib/favouritesBoard'
 import { pickNudge, type NudgeChoice } from '../../lib/nudges/pickNudge'
@@ -88,9 +88,9 @@ export function useBoardEdits({
     const nudge = await pickNudge(latest.current, targetId, { type })
     const current = latest.current
     const target = findNode(current, targetId)
-    if (!target) return { text: `Nothing numbered ${shown(targetId)}`, error: true }
+    if (!target) return { text: `Nothing numbered ${numberOf(current, targetId)}`, error: true }
     if (!nudge) {
-      const message = `${shown(targetId)} is a nudge already. Nudge the idea or note it's about instead.`
+      const message = `${numberOf(current, targetId)} is a nudge already. Nudge the idea or note it's about instead.`
       say(message)
       return { text: message, error: true }
     }
@@ -102,7 +102,7 @@ export function useBoardEdits({
     }
     commit(current, result.board)
     reveal(at)
-    return { text: `${shown(result.node?.id)} (${nudge.type}): ${nudge.text}` }
+    return { text: `${result.node?.number} (${nudge.type}): ${nudge.text}` }
   }
 
   function nudgeSelected() {
@@ -125,7 +125,7 @@ export function useBoardEdits({
     if (note.category !== 'theme') rememberSeen([note.text])
     commit(current, result.board)
     reveal(at)
-    return { text: `${shown(result.node?.id)}: ${note.text}` }
+    return { text: `${result.node?.number}: ${note.text}` }
   }
 
   // Every delete comes through here. If something sits in the middle of a chain, ask first.

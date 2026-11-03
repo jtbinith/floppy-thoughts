@@ -1,4 +1,4 @@
-import { MAX_BOARD_NAME, shown, toId, type Board } from './board'
+import { MAX_BOARD_NAME, idOf, numberOf, type Board } from './board'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
 import { addLink, addUserNode, chooseIdea, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleFavourite, touch, type OpResult } from './boardOps'
@@ -95,7 +95,7 @@ export const COMMANDS: Command[] = [
     usage: '/edit <id> <text>',
     does: 'change one of your ideas, or a theme',
     args: [{ kind: 'own' }, text],
-    run: ({ board, args, text, ctx }) => fromOp(editUserNode(board, args[0], text, ctx.now), (r) => `edited ${shown(r.node?.id)}: ${r.node?.text}`),
+    run: ({ board, args, text, ctx }) => fromOp(editUserNode(board, args[0], text, ctx.now), (r) => `edited ${r.node?.number}: ${r.node?.text}`),
   },
   {
     name: 'del',
@@ -106,9 +106,9 @@ export const COMMANDS: Command[] = [
     does: 'delete anything, with its links',
     args: [node],
     run: ({ board, args, ctx }) => {
-      if (!findNode(board, args[0])) return fail(`Nothing numbered ${shown(args[0])}`)
+      if (!findNode(board, args[0])) return fail(`Nothing numbered ${numberOf(board, args[0])}`)
       if (ctx.ui) return { output: [ctx.ui.remove(args[0])] }
-      return fromOp(deleteUserNode(board, args[0], ctx.now), (r) => `deleted ${shown(r.node?.id)}: ${r.node?.text}`)
+      return fromOp(deleteUserNode(board, args[0], ctx.now), (r) => `deleted ${r.node?.number}: ${r.node?.text}`)
     },
   },
 
@@ -119,7 +119,7 @@ export const COMMANDS: Command[] = [
     usage: '/theme <text>',
     does: 'add a theme (a board can have several), e.g. /theme Time',
     args: [text],
-    run: ({ board, text, ctx }) => fromOp(addTheme(board, text, ctx.addAt, ctx.now), (r) => `theme ${shown(r.node?.id)}: ${r.node?.text}`),
+    run: ({ board, text, ctx }) => fromOp(addTheme(board, text, ctx.addAt, ctx.now), (r) => `theme ${r.node?.number}: ${r.node?.text}`),
   },
   {
     name: 'vend',
@@ -154,11 +154,11 @@ export const COMMANDS: Command[] = [
     args: [node, { kind: 'nudgeType', optional: true }],
     run: ({ board, args, ctx }) => {
       if (!ctx.ui) return needsBoard('nudge')
-      if (!findNode(board, args[0])) return fail(`Nothing numbered ${shown(args[0])}`)
+      if (!findNode(board, args[0])) return fail(`Nothing numbered ${numberOf(board, args[0])}`)
       const type = args[1]?.toLowerCase()
       if (type && !(NUDGE_CHOICES as readonly string[]).includes(type)) return fail(`there's no "${type}" nudge. try: ${NUDGE_TYPES_HELP}`)
       ctx.ui.nudge(args[0], type)
-      return { output: [`nudging ${shown(args[0])}…`] }
+      return { output: [`nudging ${numberOf(board, args[0])}…`] }
     },
   },
 
@@ -177,7 +177,7 @@ export const COMMANDS: Command[] = [
         if (!r.ok) return fail(r.error)
         next = r.board
       }
-      return { board: next, output: [`linked ${shown(a)} to ${listOf(others.map(shown))}`] }
+      return { board: next, output: [`linked ${numberOf(board, a)} to ${listOf(others.map((id) => numberOf(board, id)))}`] }
     },
   },
   {
@@ -190,11 +190,11 @@ export const COMMANDS: Command[] = [
       const [a, ...others] = args
       // `/unlink 4` on its own: every link to 4 goes, and 4 stays.
       if (others.length === 0) {
-        if (!findNode(board, a)) return fail(`Nothing numbered ${shown(a)}`)
+        if (!findNode(board, a)) return fail(`Nothing numbered ${numberOf(board, a)}`)
         const around = neighbours(board, a)
-        if (around.length === 0) return fail(`${shown(a)} isn't linked to anything`)
+        if (around.length === 0) return fail(`${numberOf(board, a)} isn't linked to anything`)
         const links = board.links.filter((l) => l.from !== a && l.to !== a)
-        return { board: touch({ ...board, links }, ctx.now ?? new Date()), output: [`unlinked ${shown(a)} from ${listOf(around.map(shown))}`] }
+        return { board: touch({ ...board, links }, ctx.now ?? new Date()), output: [`unlinked ${numberOf(board, a)} from ${listOf(around.map((id) => numberOf(board, id)))}`] }
       }
       let next = board
       for (const b of others) {
@@ -202,7 +202,7 @@ export const COMMANDS: Command[] = [
         if (!r.ok) return fail(r.error)
         next = r.board
       }
-      return { board: next, output: [`unlinked ${shown(a)} from ${listOf(others.map(shown))}`] }
+      return { board: next, output: [`unlinked ${numberOf(board, a)} from ${listOf(others.map((id) => numberOf(board, id)))}`] }
     },
   },
   {
@@ -216,7 +216,7 @@ export const COMMANDS: Command[] = [
         ? board.nodes.map((n) => {
             const links = neighbours(board, n.id)
             const kind = n.kind === 'spark' ? (n.category === 'theme' ? 'theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
-            return `  ${shown(n.id).padEnd(3)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.map(shown).join(', ')})` : ''}`
+            return `  ${String(n.number).padEnd(3)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.map((id) => numberOf(board, id)).join(', ')})` : ''}`
           })
         : ['  the board is empty. type a thought, or try /vend'],
     }),
@@ -230,7 +230,7 @@ export const COMMANDS: Command[] = [
     does: 'favourite something, or unfavourite it',
     args: [node],
     run: ({ board, args, ctx }) =>
-      fromOp(toggleFavourite(board, args[0], ctx.now), (r) => `${r.node?.favourite ? '♥ favourited' : 'unfavourited'} ${shown(r.node?.id)}: ${r.node?.text}`),
+      fromOp(toggleFavourite(board, args[0], ctx.now), (r) => `${r.node?.favourite ? '♥ favourited' : 'unfavourited'} ${r.node?.number}: ${r.node?.text}`),
   },
   {
     name: 'favs',
@@ -240,7 +240,7 @@ export const COMMANDS: Command[] = [
     args: [],
     run: ({ board }) => {
       const mine = board.nodes.filter((n) => n.favourite)
-      return { output: mine.length ? mine.map((n) => `  ♥ ${shown(n.id).padEnd(3)} ${n.text}`) : ['no favourites on this board yet. try /fav <id>'] }
+      return { output: mine.length ? mine.map((n) => `  ♥ ${String(n.number).padEnd(3)} ${n.text}`) : ['no favourites on this board yet. try /fav <id>'] }
     },
   },
   {
@@ -263,7 +263,7 @@ export const COMMANDS: Command[] = [
       const chosen = !!result.node?.chosen
       return {
         board: result.board,
-        output: [chosen ? `${shown(args[0])} is the one: ${result.node?.text}` : `${shown(args[0])} is no longer the one`],
+        output: [chosen ? `${numberOf(board, args[0])} is the one: ${result.node?.text}` : `${numberOf(board, args[0])} is no longer the one`],
         then: chosen ? () => void ctx.ui?.showSummary() : undefined,
       }
     },
@@ -446,7 +446,9 @@ export const isHelpHeading = (line: string) => /^[A-Z][A-Z ]+$/.test(line)
 // A command is any line starting with "/". Everything else is a thought.
 export const looksLikeCommand = (input: string) => /^\/\S/.test(input.trim())
 
-const ID = /^n\d+$/
+// A box argument, once turned into its id: a random id, an older board's n1, n2…, or a number
+// that isn't on the board (so it gets a clear "nothing numbered" message).
+const ID = /^(n?\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
 const NUMBER = /^\d+$/
 
 // Does one typed argument fit what the command expects there?
@@ -456,9 +458,9 @@ function fits(kind: Arg, value: string): boolean {
   return true
 }
 
-// Splits a command line into the command, its arguments and any free text. Ids are typed as
-// plain numbers ("2"), so they're turned into the saved form ("n2") here, and nothing else has to.
-function read(input: string, command: Command): { args: string[]; text: string } | null {
+// Splits a command line into the command, its arguments and any free text. Boxes are typed as
+// their numbers ("2"), so they're turned into the box's id here, and nothing else has to.
+function read(board: Board, input: string, command: Command): { args: string[]; text: string } | null {
   const line = input.trim().slice(1)
   const raw = line.split(/\s+/).slice(1)
   const specs = command.args
@@ -467,7 +469,7 @@ function read(input: string, command: Command): { args: string[]; text: string }
   const words = textAt === -1 ? raw : raw.slice(0, textAt)
   words.forEach((word, i) => {
     const kind = i < specs.length ? specs[i].kind : specs.at(-1)?.repeats ? specs.at(-1)!.kind : undefined
-    args.push(kind === 'node' || kind === 'own' ? toId(word) : word)
+    args.push(kind === 'node' || kind === 'own' ? idOf(board, word) : word)
   })
   const text = textAt === -1 ? '' : raw.slice(textAt).join(' ').trim()
 
@@ -484,11 +486,11 @@ function read(input: string, command: Command): { args: string[]; text: string }
 export function runCommand(board: Board, input: string, ctx: CommandContext): CommandResult {
   const line = input.trim()
   if (!line) return { output: [] }
-  if (!looksLikeCommand(line)) return fromOp(addUserNode(board, line, ctx.addAt, ctx.now), (r) => `added ${shown(r.node?.id)}: ${r.node?.text}`)
+  if (!looksLikeCommand(line)) return fromOp(addUserNode(board, line, ctx.addAt, ctx.now), (r) => `added ${r.node?.number}: ${r.node?.text}`)
   const name = line.slice(1).split(/\s+/)[0]
   const command = findCommand(name)
   if (!command) return fail(`there's no /${name.toLowerCase()} command. type /help for them all`)
-  const parsed = read(line, command)
+  const parsed = read(board, line, command)
   if (!parsed) return fail(`usage: ${command.usage.split(', ')[0]}`)
   return command.run({ board, ...parsed, ctx })
 }

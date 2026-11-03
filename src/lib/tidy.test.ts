@@ -4,12 +4,12 @@ import { tidyPositions } from './tidy'
 
 // Everything piled on top of everything else, the worst case.
 const pile: Board = {
-  version: 2,
+  version: 3,
   id: 'b',
   name: 'pile',
   nodes: [
-    { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 100, y: 100 },
-    ...Array.from({ length: 9 }, (_, i) => ({ id: `n${i + 2}`, text: `idea ${i}`, kind: 'user' as const, x: 100 + i, y: 100 + i })),
+    { id: 'n1', number: 1, text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 100, y: 100 },
+    ...Array.from({ length: 9 }, (_, i) => ({ id: `n${i + 2}`, number: i + 2, text: `idea ${i}`, kind: 'user' as const, x: 100 + i, y: 100 + i })),
   ],
   links: [
     { from: 'n1', to: 'n2' },
@@ -49,11 +49,11 @@ describe('tidy', () => {
 
 describe('tidy on the screencast board', () => {
   // greetings + hello/ciao/bye/goodbye, a separate food group, and adios on its own.
-  const idea = (id: string, text: string, i: number) => ({ id, text, kind: 'user' as const, x: (i * 37) % 300, y: (i * 53) % 200 })
+  const idea = (id: string, text: string, i: number) => ({ id, number: Number(id.slice(1)), text, kind: 'user' as const, x: (i * 37) % 300, y: (i * 53) % 200 })
   const board: Board = {
     ...pile,
     nodes: [
-      { id: 'n1', text: 'greetings', kind: 'spark', category: 'theme', locked: true, x: 400, y: 100 },
+      { id: 'n1', number: 1, text: 'greetings', kind: 'spark', category: 'theme', locked: true, x: 400, y: 100 },
       idea('n2', 'hello', 1),
       idea('n3', 'ciao', 2),
       idea('n4', 'bye', 3),

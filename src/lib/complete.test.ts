@@ -3,14 +3,14 @@ import type { Board } from './board'
 import { complete } from './complete'
 
 const board: Board = {
-  version: 2,
+  version: 3,
   id: 'b',
   name: 'b',
   nodes: [
-    { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
-    { id: 'n2', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
-    { id: 'n3', text: 'radio', kind: 'user', x: 0, y: 0 },
-    { id: 'n12', text: 'dog radio', kind: 'user', x: 0, y: 0 },
+    { id: 'n1', number: 1, text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
+    { id: 'n2', number: 2, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
+    { id: 'n3', number: 3, text: 'radio', kind: 'user', x: 0, y: 0 },
+    { id: 'n12', number: 12, text: 'dog radio', kind: 'user', x: 0, y: 0 },
   ],
   links: [],
   createdAt: '2026-10-29T10:00:00Z',

@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_NODE_TEXT, parseBoard, type Board } from './board'
+import { MAX_NODE_TEXT, idOf, numberOf, parseBoard, type Board } from './board'
 
 function validBoard(): Board {
   return {
-    version: 2,
+    version: 3,
     id: 'b1',
     name: 'time',
     nodes: [
-      { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
-      { id: 'n2', text: 'cassette', kind: 'spark', category: 'words', x: 180, y: 40 },
-      { id: 'n3', text: 'how does a dog see this?', kind: 'nudge', nudgeType: 'perspective', x: 220, y: 160 },
-      { id: 'n4', text: 'plants', kind: 'user', x: -60, y: 150 },
+      { id: 'n1', number: 1, text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
+      { id: 'n2', number: 2, text: 'cassette', kind: 'spark', category: 'words', x: 180, y: 40 },
+      { id: 'n3', number: 3, text: 'how does a dog see this?', kind: 'nudge', nudgeType: 'perspective', x: 220, y: 160 },
+      { id: 'n4', number: 4, text: 'plants', kind: 'user', x: -60, y: 150 },
     ],
     links: [
       { from: 'n1', to: 'n2' },
@@ -33,7 +33,7 @@ describe('parseBoard', () => {
 
   it('accepts any number of notes and themes, and favourites on any node', () => {
     const board = validBoard()
-    for (let i = 5; i < 15; i++) board.nodes.push({ id: `n${i}`, text: `note ${i}`, kind: 'spark', category: i % 2 ? 'theme' : 'words', x: 0, y: 0 })
+    for (let i = 5; i < 15; i++) board.nodes.push({ id: `n${i}`, number: i, text: `note ${i}`, kind: 'spark', category: i % 2 ? 'theme' : 'words', x: 0, y: 0 })
     board.nodes[2].favourite = true
     expect(parseBoard(board).ok).toBe(true)
   })
@@ -116,5 +116,55 @@ describe('parseBoard', () => {
     const board = validBoard()
     board.nodes[0].x = Number.POSITIVE_INFINITY
     expect(parseBoard(board).ok).toBe(false)
+  })
+})
+
+describe('version 3: box numbers', () => {
+  // A version 2 board: boxes numbered through their ids, plus one odd id from an import.
+  const v2 = () => ({
+    version: 2,
+    id: 'b1',
+    name: 'old board',
+    nodes: [
+      { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
+      { id: 'n4', text: 'clocks', kind: 'user', x: 10, y: 10 },
+      { id: 'imported', text: 'odd one', kind: 'user', x: 20, y: 20 },
+    ],
+    links: [{ from: 'n1', to: 'n4' }],
+    createdAt: '2026-10-28T10:00:00Z',
+    updatedAt: '2026-10-28T10:00:00Z',
+  })
+
+  it('upgrades version 2 boards: keeps ids and links, adds numbers from n1, n2…', () => {
+    const result = parseBoard(v2())
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.board.version).toBe(3)
+    expect(result.board.nodes.map((n) => [n.id, n.number])).toEqual([
+      ['n1', 1],
+      ['n4', 4],
+      // Ids that aren't n-numbers get the next free number.
+      ['imported', 5],
+    ])
+    expect(result.board.links).toEqual([{ from: 'n1', to: 'n4' }])
+  })
+
+  it('refuses two boxes with the same number', () => {
+    const board = validBoard()
+    board.nodes[1].number = board.nodes[0].number
+    expect(parseBoard(board).ok).toBe(false)
+  })
+
+  it('turns typed numbers into ids, and ids into numbers', () => {
+    const result = parseBoard(v2())
+    if (!result.ok) throw new Error('bad board')
+    const board = result.board
+    expect(idOf(board, '4')).toBe('n4')
+    expect(idOf(board, 'n4')).toBe('n4')
+    expect(idOf(board, '5')).toBe('imported')
+    // Not on the board: left as typed, for a clear "nothing numbered 9".
+    expect(idOf(board, '9')).toBe('9')
+    expect(numberOf(board, 'imported')).toBe('5')
+    expect(numberOf(board, '9')).toBe('9')
   })
 })

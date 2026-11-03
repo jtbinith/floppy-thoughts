@@ -1,4 +1,4 @@
-import { shown, type Board, type BoardNode } from './board'
+import { type Board, type BoardNode } from './board'
 import { COMMANDS, argKinds, type Arg } from './commands'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
@@ -24,9 +24,9 @@ const commonPrefix = (words: string[]) =>
 function nodeMatches(nodes: BoardNode[], partial: string): { values: string[]; lines: string[] } {
   const p = partial.toLowerCase().replace(/^n(?=\d)/, '')
   const hits = /^\d*$/.test(p)
-    ? nodes.filter((n) => shown(n.id).startsWith(p))
+    ? nodes.filter((n) => String(n.number).startsWith(p))
     : nodes.filter((n) => n.text.toLowerCase().split(/[^a-z0-9']+/).some((w) => w.startsWith(p)) || n.text.toLowerCase().includes(p))
-  return { values: hits.map((n) => shown(n.id)), lines: hits.map((n) => `${shown(n.id).padStart(3)}  ${n.text}`) }
+  return { values: hits.map((n) => String(n.number)), lines: hits.map((n) => `${String(n.number).padStart(3)}  ${n.text}`) }
 }
 
 function candidates(arg: Arg, boardCount: number): string[] {

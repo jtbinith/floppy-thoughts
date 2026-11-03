@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { CATEGORY_LABEL, MAX_NODE_TEXT, shown } from '../lib/board'
+import { CATEGORY_LABEL, MAX_NODE_TEXT } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { HeartIcon } from './HeartIcon'
@@ -35,6 +35,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
 
   return (
     <div
+      data-number={data.number}
       className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${data.favourite ? ' idea--favourite' : ''}${data.chosen ? ' idea--chosen' : ''}`}
     >
       {/* Drag from either dot to another node to link them. */}
@@ -60,7 +61,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             <HeartIcon size={9} />
           </span>
         )}
-        <span className="idea__id">{shown(id)}</span>
+        <span className="idea__id">{data.number}</span>
       </span>
 
       {editing ? (
@@ -93,7 +94,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
       )}
 
       {selected && !editing && (
-        <button type="button" className="idea__delete nodrag" aria-label={`Delete ${id}`} onClick={() => deleteNode(id)}>
+        <button type="button" className="idea__delete nodrag" aria-label={`Delete ${data.number}`} onClick={() => deleteNode(id)}>
           ×
         </button>
       )}
@@ -102,7 +103,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
           <button
             type="button"
             className={`idea__tool idea__fav nodrag${data.favourite ? ' idea__fav--on' : ''}`}
-            aria-label={data.favourite ? `Unfavourite ${id}` : `Favourite ${id}`}
+            aria-label={data.favourite ? `Unfavourite ${data.number}` : `Favourite ${data.number}`}
             aria-pressed={!!data.favourite}
             title="Favourite (F)"
             onClick={() => favourite(id)}
@@ -121,7 +122,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             </button>
           )}
           {data.kind !== 'nudge' && (
-            <button type="button" className="idea__tool nodrag" aria-label={`Nudge ${id}`} title="A word or question to push this further (N)" onClick={() => nudge(id)}>
+            <button type="button" className="idea__tool nodrag" aria-label={`Nudge ${data.number}`} title="A word or question to push this further (N)" onClick={() => nudge(id)}>
               nudge
             </button>
           )}

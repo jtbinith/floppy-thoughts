@@ -14,5 +14,7 @@ export async function type(page: Page, line: string) {
 }
 
 export const boxes = (page: Page) => page.locator('.react-flow__node')
-export const box = (page: Page, id: string) => page.locator(`.react-flow__node[data-id="${id}"]`)
+// A box by its number, as shown on it ("n3" or "3" both mean box 3).
+export const box = (page: Page, number: string) =>
+  page.locator('.react-flow__node').filter({ has: page.locator(`.idea[data-number="${number.replace(/^n/, '')}"]`) })
 export const links = (page: Page) => page.locator('.react-flow__edge')

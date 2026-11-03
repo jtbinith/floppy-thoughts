@@ -3,12 +3,12 @@ import type { Board } from './board'
 import { toFlowEdges, toFlowNodes, withPositions } from './flow'
 
 const board: Board = {
-  version: 2,
+  version: 3,
   id: 'b1',
   name: 'test',
   nodes: [
-    { id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
-    { id: 'n2', text: 'plants', kind: 'user', x: 100, y: 50 },
+    { id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
+    { id: 'n2', number: 2, text: 'plants', kind: 'user', x: 100, y: 50 },
   ],
   links: [{ from: 'n2', to: 'n1' }],
   createdAt: '2026-10-28T10:00:00Z',
@@ -21,7 +21,7 @@ describe('flow conversion', () => {
       id: 'n2',
       type: 'idea',
       position: { x: 100, y: 50 },
-      data: { text: 'plants', kind: 'user', category: undefined, locked: undefined, nudgeType: undefined },
+      data: { number: 2, text: 'plants', kind: 'user', category: undefined, locked: undefined, nudgeType: undefined },
     })
   })
 

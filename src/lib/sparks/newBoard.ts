@@ -19,7 +19,8 @@ export function startingSpot(i: number): { x: number; y: number } {
 export function createBoard(options: { sparks: Spark[]; name?: string; now?: Date; id?: string }): Board {
   const now = (options.now ?? new Date()).toISOString()
   const nodes: BoardNode[] = options.sparks.map((spark, i) => ({
-    id: `n${i + 1}`,
+    id: crypto.randomUUID(),
+    number: i + 1,
     text: spark.text,
     kind: 'spark',
     category: spark.category,

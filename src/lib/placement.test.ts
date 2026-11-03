@@ -3,7 +3,7 @@ import type { Board } from './board'
 import { BOX, freeSpotNear } from './placement'
 
 const empty: Board = {
-  version: 2,
+  version: 3,
   id: 'b',
   name: 'b',
   nodes: [],
@@ -21,7 +21,7 @@ describe('freeSpotNear', () => {
     let board = empty
     for (let i = 0; i < 20; i++) {
       const spot = freeSpotNear(board, { x: 0, y: 0 })
-      board = { ...board, nodes: [...board.nodes, { id: `n${i}`, text: 'x', kind: 'user', ...spot }] }
+      board = { ...board, nodes: [...board.nodes, { id: `n${i}`, number: i + 1, text: 'x', kind: 'user', ...spot }] }
     }
     const spots = new Set(board.nodes.map((n) => `${n.x},${n.y}`))
     expect(spots.size).toBe(20)
@@ -33,7 +33,7 @@ describe('freeSpotNear', () => {
 
 describe('placing within the visible board', () => {
   // The middle of the view is taken, so the spot has to go somewhere else on screen.
-  const board: Board = { ...empty, nodes: [{ id: 'n1', text: 'x', kind: 'user', x: -115, y: -45 }] }
+  const board: Board = { ...empty, nodes: [{ id: 'n1', number: 1, text: 'x', kind: 'user', x: -115, y: -45 }] }
 
   it('prefers a free spot that is on screen', () => {
     const view = { x: -400, y: -300, width: 800, height: 600 }

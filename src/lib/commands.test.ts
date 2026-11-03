@@ -5,12 +5,12 @@ import { COMMANDS, HELP, argKinds, findCommand, helpGroups, looksLikeCommand, ru
 const ctx = { addAt: { x: 5, y: 5 }, now: new Date('2026-10-28T12:00:00Z') }
 
 const board: Board = {
-  version: 2,
+  version: 3,
   id: 'b1',
   name: 'test',
   nodes: [
-    { id: 'n1', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
-    { id: 'n2', text: 'plants', kind: 'user', x: 100, y: 50 },
+    { id: 'n1', number: 1, text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 0, y: 0 },
+    { id: 'n2', number: 2, text: 'plants', kind: 'user', x: 100, y: 50 },
   ],
   links: [{ from: 'n1', to: 'n2' }],
   createdAt: '2026-10-28T10:00:00Z',
@@ -29,7 +29,7 @@ describe('terminal commands', () => {
   it('adds a typed thought as an idea', () => {
     const r = runCommand(board, '  mixtapes for plants ', ctx)
     expect(r.output).toEqual(['added 3: mixtapes for plants'])
-    expect(r.board?.nodes.at(-1)).toMatchObject({ id: 'n3', kind: 'user', x: 5, y: 5 })
+    expect(r.board?.nodes.at(-1)).toMatchObject({ number: 3, kind: 'user', x: 5, y: 5 })
   })
 
   it('edits and deletes by id', () => {
@@ -130,7 +130,7 @@ describe('notes, favourites and names', () => {
 describe('linking several at once', () => {
   const three: Board = {
     ...board,
-    nodes: [...board.nodes, { id: 'n3', text: 'a', kind: 'user', x: 0, y: 0 }, { id: 'n4', text: 'b', kind: 'user', x: 0, y: 0 }],
+    nodes: [...board.nodes, { id: 'n3', number: 3, text: 'a', kind: 'user', x: 0, y: 0 }, { id: 'n4', number: 4, text: 'b', kind: 'user', x: 0, y: 0 }],
     links: [],
   }
   it('links the first to each of the others', () => {
@@ -164,7 +164,7 @@ describe('help groups for the commands tab', () => {
 describe('unlinking everything from one thought', () => {
   const hub: Board = {
     ...board,
-    nodes: [...board.nodes, { id: 'n3', text: 'a', kind: 'user', x: 0, y: 0 }, { id: 'n4', text: 'b', kind: 'user', x: 0, y: 0 }],
+    nodes: [...board.nodes, { id: 'n3', number: 3, text: 'a', kind: 'user', x: 0, y: 0 }, { id: 'n4', number: 4, text: 'b', kind: 'user', x: 0, y: 0 }],
     links: [
       { from: 'n1', to: 'n2' },
       { from: 'n2', to: 'n3' },

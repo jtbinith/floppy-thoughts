@@ -5,10 +5,10 @@ import { addLinkedIdea, moveNodes } from './boardOps'
 const now = new Date('2026-10-28T12:00:00Z')
 
 const base: Board = {
-  version: 2,
+  version: 3,
   id: 'b1',
   name: 'test',
-  nodes: [{ id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
+  nodes: [{ id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
   links: [],
   createdAt: '2026-10-28T10:00:00Z',
   updatedAt: '2026-10-28T10:00:00Z',
@@ -38,8 +38,8 @@ describe('addLinkedIdea', () => {
   it('adds an idea already linked to the node it came from', () => {
     const r = addLinkedIdea(base, 'n1', 'mixtape', { x: 0, y: 150 }, now)
     if (!r.ok) throw new Error(r.error)
-    expect(r.node).toMatchObject({ id: 'n2', text: 'mixtape' })
-    expect(r.board.links).toEqual([{ from: 'n1', to: 'n2' }])
+    expect(r.node).toMatchObject({ number: 2, text: 'mixtape' })
+    expect(r.board.links).toEqual([{ from: 'n1', to: r.node!.id }])
   })
 
   it('fails cleanly for an unknown node', () => {

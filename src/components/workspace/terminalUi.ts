@@ -1,4 +1,4 @@
-import { shown, type Board } from '../../lib/board'
+import { numberOf, type Board } from '../../lib/board'
 import { findNode } from '../../lib/boardOps'
 import type { BoardUi } from '../../lib/commands'
 import type { NudgeChoice } from '../../lib/nudges/pickNudge'
@@ -67,7 +67,7 @@ export function terminalUi(deps: {
     },
     remove: (id) => {
       const text = findNode(board, id)?.text
-      return deps.requestDelete([id]) ? `deleted ${shown(id)}: ${text}` : `${shown(id)} is in the middle of a chain: answer on the board`
+      return deps.requestDelete([id]) ? `deleted ${numberOf(board, id)}: ${text}` : `${numberOf(board, id)} is in the middle of a chain: answer on the board`
     },
     showSummary: () => {
       deps.showSummary()

@@ -41,12 +41,13 @@ classDiagram
     updatedAt
   }
   class BoardNode {
-    id (n1, n2…)
+    id (random; older boards: n1, n2…)
+    number (shown and typed: 1, 2…)
     text (1..200 chars)
     kind: spark | nudge | user
     x, y
     category? (notes)
-    locked? (the main theme)
+    locked? (themes)
     nudgeType? (nudges)
     favourite?
     chosen? (the idea you're going with)
@@ -61,7 +62,7 @@ classDiagram
 ```
 
 **Checked on every load:**
-- Node ids are unique; links point to real nodes, with no self-links and no duplicates in either direction.
+- Node ids and numbers are unique; links point to real nodes, with no self-links and no duplicates in either direction.
 - `category` and `locked` belong only to notes, `nudgeType` only to nudges.
 - At most one idea is `chosen`.
 - At most 1,000 nodes. There's no limit on brainstorming; this only stops a runaway board filling browser storage.
@@ -145,7 +146,7 @@ flowchart LR
 ```
 
 - **Commands start with `/`**, like Slack or Discord, so a thought is never mistaken for one. A mistyped command gets its usage line back instead of becoming an idea.
-- **Ids are numbers** (1, 2, 3…), saved as `n1`, `n2`…. They only appear on boxes while you're typing a command, so the board stays calm.
+- **Boxes are typed by their number** (1, 2, 3…), saved separately from each box's id, which is random so two people adding at once can't clash. Numbers only appear on boxes while you're typing a command, so the board stays calm.
 - **Tab completes** command names, numbers, and **thoughts by their words**: `/link 1 bag` + Tab fills in the number of "a bag that remembers".
 - Commands that need the screen (tidy, the machine, popups) get a small `BoardUi` interface from the board, so the command logic stays unit-testable without a browser.
 - `/help` opens the **commands tab** in the drawer; clicking a command there puts it in the terminal, ready to finish.

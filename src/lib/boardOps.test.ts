@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_NODES, MAX_NODE_TEXT, parseBoard, type Board } from './board'
-import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, chooseIdea, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNodeId, removeLink, themes, toggleFavourite } from './boardOps'
+import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, chooseIdea, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNumber, removeLink, themes, toggleFavourite } from './boardOps'
 
 const now = new Date('2026-10-28T12:00:00Z')
 
 function board(): Board {
   return {
-    version: 2,
+    version: 3,
     id: 'b1',
     name: 'test',
     nodes: [
-      { id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
-      { id: 'n2', text: 'plants', kind: 'user', x: 100, y: 50 },
-      { id: 'n7', text: 'what does it sound like?', kind: 'nudge', nudgeType: 'senses', x: 0, y: 90 },
+      { id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
+      { id: 'n2', number: 2, text: 'plants', kind: 'user', x: 100, y: 50 },
+      { id: 'n7', number: 7, text: 'what does it sound like?', kind: 'nudge', nudgeType: 'senses', x: 0, y: 90 },
     ],
     links: [
       { from: 'n1', to: 'n2' },
@@ -31,13 +31,17 @@ const expectOk = (r: ReturnType<typeof addUserNode>) => {
 }
 
 describe('board operations', () => {
-  it('gives new nodes the next free short id', () => {
-    expect(nextNodeId(board())).toBe('n8')
+  it('gives new nodes a random id and the next free number', () => {
+    expect(nextNumber(board())).toBe(8)
+    const a = expectOk(addUserNode(board(), 'one', { x: 0, y: 0 })).node!
+    const b = expectOk(addUserNode(board(), 'two', { x: 0, y: 0 })).node!
+    expect(a.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(a.id).not.toBe(b.id)
   })
 
   it('adds a user node with cleaned text at a rounded position', () => {
     const r = expectOk(addUserNode(board(), '  mixtapes   for\nplants ', { x: 10.4, y: 20.6 }, now))
-    expect(r.node).toEqual({ id: 'n8', text: 'mixtapes for plants', kind: 'user', x: 10, y: 21 })
+    expect(r.node).toEqual({ id: expect.any(String), number: 8, text: 'mixtapes for plants', kind: 'user', x: 10, y: 21 })
     expect(r.board.updatedAt).toBe(now.toISOString())
   })
 
@@ -79,8 +83,9 @@ describe('board operations', () => {
 
   it('links any two nodes once, and the result is still a valid board', () => {
     const added = expectOk(addUserNode(board(), 'radio', { x: 0, y: 0 })).board
-    const r = expectOk(addLink(added, 'n1', 'n8', now))
-    expect(r.board.links.at(-1)).toEqual({ from: 'n1', to: 'n8' })
+    const radio = added.nodes.at(-1)!.id
+    const r = expectOk(addLink(added, 'n1', radio, now))
+    expect(r.board.links.at(-1)).toEqual({ from: 'n1', to: radio })
     // The sample board already links n2 and n7, so either order is a duplicate.
     expect(addLink(board(), 'n7', 'n2')).toEqual({ ok: false, error: '7 and 2 are already linked' })
     expect(addLink(board(), 'n1', 'n1').ok).toBe(false)
@@ -98,13 +103,13 @@ describe('board operations', () => {
     let b = board()
     for (let i = 0; i < 50; i++) b = expectOk(addUserNode(b, 'idea', { x: 0, y: 0 })).board
     expect(b.nodes).toHaveLength(53)
-    const huge = { ...b, nodes: Array.from({ length: MAX_NODES }, (_, i) => ({ id: `n${i + 1}`, text: 'x', kind: 'user' as const, x: 0, y: 0 })), links: [] }
+    const huge = { ...b, nodes: Array.from({ length: MAX_NODES }, (_, i) => ({ id: `n${i + 1}`, number: i + 1, text: 'x', kind: 'user' as const, x: 0, y: 0 })), links: [] }
     expect(addUserNode(huge, 'one more', { x: 0, y: 0 })).toEqual({ ok: false, error: BOARD_FULL_MESSAGE })
   })
 
   it('adds notes, locking themes', () => {
     const r = expectOk(addNote(board(), { text: 'Time', category: 'theme' }, { x: 1, y: 2 }))
-    expect(r.node).toEqual({ id: 'n8', text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 1, y: 2 })
+    expect(r.node).toEqual({ id: expect.any(String), number: 8, text: 'Time', kind: 'spark', category: 'theme', locked: true, x: 1, y: 2 })
     expect(expectOk(addNote(board(), { text: 'kite', category: 'words' }, { x: 0, y: 0 })).node).not.toHaveProperty('locked')
   })
 
@@ -122,11 +127,11 @@ describe('deleting from a chain', () => {
   const chain = (): Board => ({
     ...board(),
     nodes: [
-      { id: 'n1', text: 'a', kind: 'user', x: 0, y: 0 },
-      { id: 'n2', text: 'b', kind: 'user', x: 0, y: 0 },
-      { id: 'n3', text: 'c', kind: 'user', x: 0, y: 0 },
-      { id: 'n4', text: 'hub', kind: 'user', x: 0, y: 0 },
-      { id: 'n5', text: 'e', kind: 'user', x: 0, y: 0 },
+      { id: 'n1', number: 1, text: 'a', kind: 'user', x: 0, y: 0 },
+      { id: 'n2', number: 2, text: 'b', kind: 'user', x: 0, y: 0 },
+      { id: 'n3', number: 3, text: 'c', kind: 'user', x: 0, y: 0 },
+      { id: 'n4', number: 4, text: 'hub', kind: 'user', x: 0, y: 0 },
+      { id: 'n5', number: 5, text: 'e', kind: 'user', x: 0, y: 0 },
     ],
     links: [
       { from: 'n1', to: 'n2' },

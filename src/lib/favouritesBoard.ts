@@ -6,11 +6,12 @@ export function favouritesBoard(from: Board, options: { id?: string; now?: Date 
   const favourites = from.nodes.filter((n) => n.favourite)
   if (favourites.length === 0) return null
   const now = (options.now ?? new Date()).toISOString()
-  const newId = new Map(favourites.map((n, i) => [n.id, `n${i + 1}`]))
-  const nodes: BoardNode[] = favourites.map((n) => {
+  // Fresh ids for the copies, numbered 1, 2, 3… on the new board.
+  const newId = new Map(favourites.map((n) => [n.id, crypto.randomUUID()]))
+  const nodes: BoardNode[] = favourites.map((n, i) => {
     // The copy isn't "the one" on the new board; that's a choice you make there.
     const { chosen: _, ...rest } = n
-    return { ...rest, id: newId.get(n.id)! }
+    return { ...rest, id: newId.get(n.id)!, number: i + 1 }
   })
   const links = from.links
     .filter((l) => newId.has(l.from) && newId.has(l.to))

@@ -30,10 +30,10 @@ class MemoryStorage implements Storage {
 
 function board(id: string, updatedAt = '2026-10-27T10:00:00Z'): Board {
   return {
-    version: 2,
+    version: 3,
     id,
     name: `board ${id}`,
-    nodes: [{ id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
+    nodes: [{ id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 }],
     links: [],
     createdAt: '2026-10-27T09:00:00Z',
     updatedAt,
@@ -129,10 +129,10 @@ describe('board summaries', () => {
   const b: Board = {
     ...board('a'),
     nodes: [
-      { id: 'n1', text: 'first', kind: 'user', x: 0, y: 0 },
-      { id: 'n2', text: 'Time', kind: 'spark', category: 'theme', x: 100, y: 0 },
-      { id: 'n3', text: 'second', kind: 'user', x: 100, y: 50 },
-      { id: 'n4', text: 'newest', kind: 'nudge', nudgeType: 'related', x: 200, y: 100 },
+      { id: 'n1', number: 1, text: 'first', kind: 'user', x: 0, y: 0 },
+      { id: 'n2', number: 2, text: 'Time', kind: 'spark', category: 'theme', x: 100, y: 0 },
+      { id: 'n3', number: 3, text: 'second', kind: 'user', x: 100, y: 50 },
+      { id: 'n4', number: 4, text: 'newest', kind: 'nudge', nudgeType: 'related', x: 200, y: 100 },
     ],
     links: [{ from: 'n1', to: 'n4' }],
   }

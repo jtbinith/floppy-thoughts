@@ -6,12 +6,12 @@ import { chooseType, distanceFromSpark, fittingTypes, keywordOf, pickNudge } fro
 import { fillQuestion } from './questions'
 
 const board: Board = {
-  version: 2,
+  version: 3,
   id: 'b',
   name: 'b',
   nodes: [
-    { id: 'n1', text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
-    { id: 'n2', text: '"My houseplants die while I\'m away"', kind: 'spark', category: 'problems', x: 0, y: 100 },
+    { id: 'n1', number: 1, text: 'cassette', kind: 'spark', category: 'words', x: 0, y: 0 },
+    { id: 'n2', number: 2, text: '"My houseplants die while I\'m away"', kind: 'spark', category: 'problems', x: 0, y: 100 },
   ],
   links: [],
   createdAt: '2026-10-28T10:00:00Z',
@@ -89,8 +89,8 @@ describe('addNudge', () => {
   it('adds a linked nudge node and keeps the board valid', () => {
     const r = addNudge(board, 'n1', { type: 'scale', text: 'What if cassette was the size of a city?' }, { x: 5, y: 5 })
     if (!r.ok) throw new Error(r.error)
-    expect(r.node).toMatchObject({ id: 'n3', kind: 'nudge', nudgeType: 'scale' })
-    expect(r.board.links).toEqual([{ from: 'n1', to: 'n3' }])
+    expect(r.node).toMatchObject({ number: 3, kind: 'nudge', nudgeType: 'scale' })
+    expect(r.board.links).toEqual([{ from: 'n1', to: r.node!.id }])
     expect(parseBoard(r.board).ok).toBe(true)
   })
 
@@ -104,10 +104,10 @@ describe('nudges that fit', () => {
     ...board,
     nodes: [
       ...board.nodes,
-      { id: 'n3', text: 'mixtape for plants', kind: 'user', x: 0, y: 0 },
-      { id: 'n4', text: 'a plant that DJs its own playlist while you are away', kind: 'user', x: 0, y: 0 },
-      { id: 'n5', text: 'what does this sound like?', kind: 'nudge', nudgeType: 'senses', x: 0, y: 0 },
-      { id: 'n6', text: 'lonely idea', kind: 'user', x: 0, y: 0 },
+      { id: 'n3', number: 3, text: 'mixtape for plants', kind: 'user', x: 0, y: 0 },
+      { id: 'n4', number: 4, text: 'a plant that DJs its own playlist while you are away', kind: 'user', x: 0, y: 0 },
+      { id: 'n5', number: 5, text: 'what does this sound like?', kind: 'nudge', nudgeType: 'senses', x: 0, y: 0 },
+      { id: 'n6', number: 6, text: 'lonely idea', kind: 'user', x: 0, y: 0 },
     ],
     links: [
       { from: 'n1', to: 'n3' },

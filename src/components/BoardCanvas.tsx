@@ -20,7 +20,7 @@ import type { Board } from '../lib/board'
 import { FIT_VIEW, toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
 import { nearestInDirection, nearestTo, type Direction } from '../lib/nav'
 import { BOX } from '../lib/placement'
-import { shown } from '../lib/board'
+import { numberOf } from '../lib/board'
 import { useBoardActions } from './boardActions'
 import { CentreEdge } from './CentreEdge'
 import { IdeaNode } from './IdeaNode'
@@ -223,12 +223,12 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
       if (!one) return say('select one box to link from')
       if (!linkFrom.current) {
         linkFrom.current = one.id
-        say(`linking from ${shown(one.id)}: move to another box and press c (Esc to stop)`)
+        say(`linking from ${one.data.number}: move to another box and press c (Esc to stop)`)
       } else if (linkFrom.current === one.id) {
         say('move to another box first, then press c')
       } else {
         onLink(linkFrom.current, one.id)
-        say(`linked ${shown(linkFrom.current)} to ${shown(one.id)}`)
+        say(`linked ${numberOf(board, linkFrom.current)} to ${one.data.number}`)
         linkFrom.current = null
       }
     } else if (key === 'Escape') {

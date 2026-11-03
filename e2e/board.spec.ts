@@ -230,7 +230,7 @@ test.describe('commands tab', () => {
 test.describe('nudges', () => {
   test('a selected idea has its own nudge button', async ({ page }) => {
     await type(page, 'a kettle that sings')
-    await box(page, 'n1').getByRole('button', { name: 'Nudge n1' }).click()
+    await box(page, 'n1').getByRole('button', { name: 'Nudge 1' }).click()
     await expect(page.locator('.idea--nudge')).toHaveCount(1)
   })
 })
