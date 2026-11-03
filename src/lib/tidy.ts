@@ -5,7 +5,7 @@ import { BOX } from './placement'
 
 // "Tidy": groups of linked thoughts each get their own space, laid out so links are short and
 // cross as little as possible, and the groups sit side by side with room between them, the way
-// you'd arrange them by hand. The main theme stays where it is. Only runs when you ask.
+// you'd arrange them by hand. The first theme stays where it is. Only runs when you ask.
 
 export type Size = { width: number; height: number }
 type Point = { x: number; y: number }
@@ -38,7 +38,7 @@ export function tidyPositions(board: Board, sizes: ReadonlyMap<string, Size> = n
   groups.sort((a, b) => Number(b.ids.includes(anchor?.id ?? '')) - Number(a.ids.includes(anchor?.id ?? '')) || b.ids.length - a.ids.length)
   const placed = packGroups(groups, size)
 
-  // Shift everything so the main theme (or, without one, the board's middle) doesn't move.
+  // Shift everything so the first theme (or, without one, the board's middle) doesn't move.
   const before = centreOfMass(board.nodes.map((n) => ({ x: n.x + size(n.id).width / 2, y: n.y + size(n.id).height / 2 })))
   const pin = anchor ? { x: anchor.x + size(anchor.id).width / 2, y: anchor.y + size(anchor.id).height / 2 } : before
   const pinned = anchor ? placed.get(anchor.id)! : centreOfMass([...placed.values()])

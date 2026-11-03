@@ -19,7 +19,7 @@ export const SPARK_CATEGORIES = [
 ] as const
 // How each spark category is shown (singular, as in a file path: ~/object).
 export const CATEGORY_LABEL: Record<(typeof SPARK_CATEGORIES)[number], string> = {
-  theme: 'main-theme',
+  theme: 'theme',
   words: 'word',
   curiosities: 'curiosity',
   objects: 'object',

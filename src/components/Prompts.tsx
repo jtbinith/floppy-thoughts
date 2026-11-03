@@ -7,34 +7,63 @@ import { Dialog } from './Dialog'
 // The small questions the board asks: a theme for a new board, whether to keep a chain
 // connected when you delete from the middle of it, and the summary once you've found your idea.
 
-export function ThemePrompt({ onTheme, onSkip }: { onTheme: (text: string) => void; onSkip: () => void }) {
+// Asks for themes: type one and press Enter to add it, as many as you like (a hackathon often has
+// a few), then start. `first` is a new board; otherwise you're adding to the ones it has.
+export function ThemePrompt({ first, onThemes, onSkip }: { first: boolean; onThemes: (texts: string[]) => void; onSkip: () => void }) {
+  const [list, setList] = useState<string[]>([])
   const [theme, setTheme] = useState('')
+  const typed = theme.trim()
+  const all = typed ? [...list, typed] : list
+  const title = first ? 'Got a theme?' : 'Add a theme'
   return (
-    <Dialog label="Got a theme?" onCancel={onSkip}>
+    <Dialog label={title} onCancel={onSkip}>
       <form
         className="dialog__form"
         onSubmit={(e) => {
           e.preventDefault()
-          if (theme.trim()) onTheme(theme)
+          if (all.length) onThemes(all)
           else onSkip()
         }}
       >
-        <h2 className="dialog__title">Got a theme?</h2>
-        <p className="dialog__text">A hackathon theme or a topic, like &quot;Time&quot;. It sits in the middle of your board. No theme is fine too.</p>
+        <h2 className="dialog__title">{title}</h2>
+        <p className="dialog__text">
+          {first ? 'A hackathon theme or a topic, like "Time". It sits in the middle of your board. ' : ''}
+          Got more than one? Press Enter after each.{first ? ' No theme is fine too.' : ''}
+        </p>
+        {list.length > 0 && (
+          <ul className="dialog__chips" aria-label="Themes to add">
+            {list.map((t, i) => (
+              <li key={`${t}-${i}`}>
+                {t}
+                <button type="button" aria-label={`Remove ${t}`} onClick={() => setList((l) => l.filter((_, j) => j !== i))}>
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <input
           className="dialog__input"
-          aria-label="Main theme"
+          aria-label="Theme"
           value={theme}
           maxLength={MAX_NODE_TEXT}
-          placeholder="e.g. Time"
+          placeholder={list.length ? 'another one? (or leave empty)' : 'e.g. Time'}
           onChange={(e) => setTheme(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter with text adds it to the list; Enter on an empty box (or the button) finishes.
+            if (e.key === 'Enter' && typed) {
+              e.preventDefault()
+              setList((l) => [...l, typed])
+              setTheme('')
+            } else if (e.key === 'Backspace' && !theme && list.length) setList((l) => l.slice(0, -1))
+          }}
         />
         <div className="popup__actions">
-          <button type="submit" className="popup__stick" disabled={!theme.trim()}>
-            set theme
+          <button type="submit" className="popup__stick" disabled={!all.length}>
+            {all.length > 1 ? `add ${all.length} themes` : 'add theme'}
           </button>
           <button type="button" className="popup__back" onClick={onSkip}>
-            skip
+            {first ? 'skip' : 'cancel'}
           </button>
         </div>
       </form>

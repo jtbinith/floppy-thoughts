@@ -31,7 +31,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     return () => cancelAnimationFrame(frame)
   }, [editing])
   const isTheme = data.category === 'theme'
-  const label = data.kind === 'spark' ? (isTheme ? 'main theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
+  const label = data.kind === 'spark' ? (isTheme ? 'theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
     <div

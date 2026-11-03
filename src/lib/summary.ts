@@ -1,12 +1,12 @@
 import { CATEGORY_LABEL, type Board, type BoardNode } from './board'
-import { findNode, mainTheme, neighbours } from './boardOps'
+import { findNode, neighbours, themes } from './boardOps'
 
 // The "found my idea" summary: the idea you chose, and the trails of links that led to it
 // from your starting notes. Plain text so it can be copied anywhere.
 
 export type Summary = {
   idea: BoardNode
-  theme?: BoardNode
+  themes: BoardNode[]
   // Each trail runs from a starting note to the idea, shortest way round.
   trails: BoardNode[][]
   favourites: BoardNode[]
@@ -40,7 +40,7 @@ export function summarise(board: Board): Summary | null {
     })
   return {
     idea,
-    theme: mainTheme(board),
+    themes: themes(board).filter((t) => t.id !== idea.id),
     trails,
     favourites: board.nodes.filter((n) => n.favourite && n.id !== idea.id),
   }
@@ -50,7 +50,7 @@ const label = (n: BoardNode) => (n.kind === 'spark' && n.category ? `${n.text} (
 
 export function summaryText(board: Board, summary: Summary): string {
   const lines = [`${board.name}`, '', `The idea: ${summary.idea.text}`]
-  if (summary.theme && summary.theme.id !== summary.idea.id) lines.push(`Theme: ${summary.theme.text}`)
+  if (summary.themes.length) lines.push(`${summary.themes.length > 1 ? 'Themes' : 'Theme'}: ${summary.themes.map((t) => t.text).join(', ')}`)
   if (summary.trails.length) {
     lines.push('', 'How I got there:')
     for (const trail of summary.trails) lines.push(`  ${trail.map(label).join(' → ')}`)

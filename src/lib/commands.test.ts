@@ -67,7 +67,7 @@ describe('terminal commands', () => {
 
   it('lists nodes with their ids and kinds', () => {
     expect(runCommand(board, '/list', ctx).output).toEqual([
-      '  1   main theme  Time  (linked to 2)',
+      '  1   theme       Time  (linked to 2)',
       '  2   idea        plants  (linked to 1)',
     ])
   })
@@ -95,13 +95,13 @@ describe('terminal commands', () => {
 })
 
 describe('notes, favourites and names', () => {
-  it('sets the main theme, and changes it rather than adding a second', () => {
+  it('adds themes, as many as you like', () => {
     const blank = { ...board, nodes: board.nodes.filter((n) => n.kind === 'user'), links: [] }
     const r = runCommand(blank, '/theme Time travel', ctx)
-    expect(r.output).toEqual(['main theme 3: Time travel'])
+    expect(r.output).toEqual(['theme 3: Time travel'])
     expect(r.board?.nodes.at(-1)).toMatchObject({ kind: 'spark', category: 'theme', locked: true })
-    const changed = runCommand(r.board!, '/theme Space', ctx)
-    expect(changed.board?.nodes.filter((n) => n.category === 'theme').map((n) => n.text)).toEqual(['Space'])
+    const again = runCommand(r.board!, '/theme Space', ctx)
+    expect(again.board?.nodes.filter((n) => n.category === 'theme').map((n) => n.text)).toEqual(['Time travel', 'Space'])
   })
 
   it('picks the idea you are going with', () => {

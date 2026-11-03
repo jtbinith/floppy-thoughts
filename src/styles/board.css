@@ -38,9 +38,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-width: 220px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.85rem;
+  max-width: 270px;
+  padding: 0.7rem 0.9rem;
+  /* Courier Prime runs small for its size, so the board text is set larger to stay easy to read. */
+  font-size: 1.05rem;
   line-height: 1.35;
   background: var(--screen-bar);
   border: 1px solid var(--line);
@@ -56,7 +57,7 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
@@ -79,7 +80,7 @@
 }
 
 .idea__input {
-  width: 200px;
+  width: 245px;
   padding: 0.25rem;
   font: inherit;
   color: var(--text);
@@ -99,8 +100,8 @@
   display: inline-flex;
   gap: 0.3rem;
   align-items: center;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.82rem;
   color: var(--cat, var(--muted));
   background: transparent;
   border: 1px solid var(--cat, var(--line));

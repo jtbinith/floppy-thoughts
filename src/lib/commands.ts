@@ -1,7 +1,7 @@
 import { MAX_BOARD_NAME, shown, toId, type Board } from './board'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
-import { addLink, addUserNode, chooseIdea, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, setMainTheme, toggleFavourite, touch, type OpResult } from './boardOps'
+import { addLink, addUserNode, chooseIdea, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleFavourite, touch, type OpResult } from './boardOps'
 
 // The terminal's command language. Anything you type is a thought; commands start with "/",
 // like Slack or Discord, so a thought is never mistaken for one.
@@ -91,7 +91,7 @@ export const COMMANDS: Command[] = [
     name: 'edit',
     group: 'IDEAS',
     usage: '/edit <id> <text>',
-    does: 'change one of your ideas, or the theme',
+    does: 'change one of your ideas, or a theme',
     args: [{ kind: 'own' }, text],
     run: ({ board, args, text, ctx }) => fromOp(editUserNode(board, args[0], text, ctx.now), (r) => `edited ${shown(r.node?.id)}: ${r.node?.text}`),
   },
@@ -115,9 +115,9 @@ export const COMMANDS: Command[] = [
     name: 'theme',
     group: 'NOTES AND NUDGES',
     usage: '/theme <text>',
-    does: 'set the main theme, e.g. /theme Time',
+    does: 'add a theme (a board can have several), e.g. /theme Time',
     args: [text],
-    run: ({ board, text, ctx }) => fromOp(setMainTheme(board, text, ctx.addAt, ctx.now), (r) => `main theme ${shown(r.node?.id)}: ${r.node?.text}`),
+    run: ({ board, text, ctx }) => fromOp(addTheme(board, text, ctx.addAt, ctx.now), (r) => `theme ${shown(r.node?.id)}: ${r.node?.text}`),
   },
   {
     name: 'vend',
@@ -201,7 +201,7 @@ export const COMMANDS: Command[] = [
       output: board.nodes.length
         ? board.nodes.map((n) => {
             const links = neighbours(board, n.id)
-            const kind = n.kind === 'spark' ? (n.category === 'theme' ? 'main theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
+            const kind = n.kind === 'spark' ? (n.category === 'theme' ? 'theme' : 'note') : n.kind === 'nudge' ? n.nudgeType : 'idea'
             return `  ${shown(n.id).padEnd(3)} ${kind?.padEnd(11)} ${n.favourite ? '♥ ' : ''}${n.text}${links.length ? `  (linked to ${links.map(shown).join(', ')})` : ''}`
           })
         : ['  the board is empty. type a thought, or try /vend'],

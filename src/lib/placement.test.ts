@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { freeSpotNear } from './placement'
+import { BOX, freeSpotNear } from './placement'
 
 const empty: Board = {
   version: 2,
@@ -14,7 +14,7 @@ const empty: Board = {
 
 describe('freeSpotNear', () => {
   it('centres the node on the target when the space is free', () => {
-    expect(freeSpotNear(empty, { x: 115, y: 45 })).toEqual({ x: 0, y: 0 })
+    expect(freeSpotNear(empty, { x: BOX.width / 2, y: BOX.height / 2 })).toEqual({ x: 0, y: 0 })
   })
 
   it('never puts many new nodes on top of each other', () => {

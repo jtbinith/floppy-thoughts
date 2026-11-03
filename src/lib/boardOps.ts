@@ -1,7 +1,7 @@
 import { MAX_NODE_TEXT, MAX_NODES, shown, type Board, type BoardNode, type NudgeType, type SparkCategory } from './board'
 
 // Pure board edits. Each returns a new board; nothing is mutated.
-// Only what you wrote can be edited: your ideas and the main theme. Anything can be deleted or favourited.
+// Only what you wrote can be edited: your ideas and your themes. Anything can be deleted or favourited.
 // In the UI sparks are called notes: the shrimp notes from the vending machine.
 
 const sameLink = (a: string, b: string) => (l: { from: string; to: string }) =>
@@ -33,7 +33,13 @@ export function findNode(board: Board, id: string): BoardNode | undefined {
 
 export const isTheme = (node: BoardNode) => node.kind === 'spark' && node.category === 'theme'
 
-// The board's main theme, if it has one (e.g. a hackathon theme like "Time").
+// The board's themes (e.g. hackathon themes like "Time" and "Sustainability"). A board can have
+// any number, or none.
+export function themes(board: Board): BoardNode[] {
+  return board.nodes.filter(isTheme)
+}
+
+// The first theme you added: what tidying keeps still.
 export function mainTheme(board: Board): BoardNode | undefined {
   return board.nodes.find(isTheme)
 }
@@ -178,7 +184,7 @@ export function addNudge(
   return linked.ok ? { ...linked, node } : linked
 }
 
-// Adds a note from the vending machine, or the main theme you typed (themes are marked locked).
+// Adds a note from the vending machine, or a theme you typed (themes are marked locked).
 export function addNote(board: Board, note: { text: string; category: SparkCategory }, at: { x: number; y: number }, now = new Date()): OpResult {
   if (isFull(board)) return { ok: false, error: BOARD_FULL_MESSAGE }
   const text = cleanText(note.text)
@@ -208,11 +214,9 @@ export function toggleFavourite(board: Board, id: string, now = new Date()): OpR
   }
 }
 
-// Sets the board's main theme: changes the text if there is one, otherwise adds it at `at`.
-export function setMainTheme(board: Board, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
-  const current = mainTheme(board)
-  if (!current) return addNote(board, { text, category: 'theme' }, at, now)
-  return editUserNode(board, current.id, text, now)
+// Adds another theme to the board. Change one with /edit, like any idea.
+export function addTheme(board: Board, text: string, at: { x: number; y: number }, now = new Date()): OpResult {
+  return addNote(board, { text, category: 'theme' }, at, now)
 }
 
 // Marks the idea you're going with (or unmarks it). Only one per board.

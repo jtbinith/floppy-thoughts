@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_NODES, MAX_NODE_TEXT, parseBoard, type Board } from './board'
-import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, chooseIdea, deleteNodes, deleteUserNode, editUserNode, mainTheme, nextNodeId, removeLink, setMainTheme, toggleFavourite } from './boardOps'
+import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, chooseIdea, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNodeId, removeLink, themes, toggleFavourite } from './boardOps'
 
 const now = new Date('2026-10-28T12:00:00Z')
 
@@ -150,12 +150,19 @@ describe('deleting from a chain', () => {
   })
 })
 
-describe('main theme and the chosen idea', () => {
-  it('has one main theme, edited in place', () => {
-    const first = expectOk(setMainTheme(board(), 'Time', { x: 0, y: 0 })).board
-    const second = expectOk(setMainTheme(first, 'Space', { x: 9, y: 9 })).board
-    expect(second.nodes.filter((n) => n.category === 'theme').map((n) => n.text)).toEqual(['Space'])
-    expect(mainTheme(second)?.text).toBe('Space')
+describe('themes and the chosen idea', () => {
+  it('can have several themes; the first one is the main one', () => {
+    const first = expectOk(addTheme(board(), 'Time', { x: 0, y: 0 })).board
+    const second = expectOk(addTheme(first, 'Space', { x: 9, y: 9 })).board
+    expect(themes(second).map((n) => n.text)).toEqual(['Time', 'Space'])
+    expect(themes(second).every((n) => n.locked)).toBe(true)
+    expect(mainTheme(second)?.text).toBe('Time')
+  })
+
+  it('edits a theme like an idea', () => {
+    const withTheme = expectOk(addTheme(board(), 'Time', { x: 0, y: 0 }))
+    const edited = expectOk(editUserNode(withTheme.board, withTheme.node!.id, 'Time travel')).board
+    expect(themes(edited).map((n) => n.text)).toEqual(['Time travel'])
   })
 
   it('chooses one idea at a time', () => {

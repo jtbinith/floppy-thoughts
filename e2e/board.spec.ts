@@ -124,12 +124,15 @@ test.describe('links and layout', () => {
 })
 
 test.describe('starting a board', () => {
-  test('a new board asks for a theme, which becomes the main theme', async ({ page }) => {
+  test('a new board asks for themes, as many as you like', async ({ page }) => {
     await page.goto('#/new')
-    await page.getByLabel('Main theme').fill('Time')
-    await page.getByRole('button', { name: 'set theme' }).click()
+    await page.getByLabel('Theme', { exact: true }).fill('Time')
+    await page.getByLabel('Theme', { exact: true }).press('Enter')
+    await page.getByLabel('Theme', { exact: true }).fill('Sustainability')
+    await page.getByRole('button', { name: 'add 2 themes' }).click()
     await expect(box(page, 'n1')).toContainText('Time')
-    await expect(box(page, 'n1')).toContainText('main-theme')
+    await expect(box(page, 'n1')).toContainText('theme')
+    await expect(box(page, 'n2')).toContainText('Sustainability')
   })
 })
 

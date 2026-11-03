@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { MAX_BOARD_NAME, shown, type Board } from '../lib/board'
-import { addLink, addLinkedIdea, addNote, addNudge, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, mainTheme, moveNodes, setMainTheme, toggleFavourite, touch } from '../lib/boardOps'
+import { addLink, addLinkedIdea, addNote, addNudge, addUserNode, chainAround, chooseIdea, cleanText, deleteNodes, editUserNode, findNode, moveNodes, addTheme, themes, toggleFavourite, touch } from '../lib/boardOps'
 import { runCommand, type BoardUi, type CommandResult } from '../lib/commands'
 import { favouritesBoard } from '../lib/favouritesBoard'
 import { FIT_VIEW } from '../lib/flow'
@@ -341,10 +341,21 @@ export function Workspace(props: Props) {
     return `made ${made.name}`
   }
 
-  function setTheme(text: string) {
-    const at = mainTheme(board) ? { x: 0, y: 0 } : board.nodes.length ? centreOf(board) : { x: 0, y: 0 }
-    const result = setMainTheme(board, text, at)
-    if (result.ok) commit(board, result.board)
+  // Adds one or more themes. The first on an empty board goes in the middle; each one after sits
+  // beside the last theme. All in one go, so one undo takes them all back.
+  function addThemes(texts: string[]) {
+    let next = board
+    for (const text of texts) {
+      const last = themes(next).at(-1)
+      const at = last
+        ? spotNear(next, { x: centreOfBox(last).x + BOX.width + 40, y: centreOfBox(last).y })
+        : next.nodes.length
+          ? centreOf(next)
+          : { x: 0, y: 0 }
+      const result = addTheme(next, text, at)
+      if (result.ok) next = result.board
+    }
+    if (next !== board) commit(board, next)
   }
 
   function favourite(id: string) {
@@ -479,7 +490,7 @@ export function Workspace(props: Props) {
         { label: 'Redo', shortcut: 'Ctrl+Shift+Z', onSelect: () => void stepForward() },
         'divider',
         { label: 'Add an idea', shortcut: 'double-click', onSelect: () => addAndEdit(visibleCentre()) },
-        { label: 'Set the main theme…', onSelect: () => setThemeAgain(true) },
+        { label: 'Add a theme…', onSelect: () => setThemeAgain(true) },
         { label: 'Nudge the selected idea', shortcut: 'N', onSelect: nudgeSelected },
         { label: 'Delete selected', shortcut: 'Delete', onSelect: deleteSelected },
         'divider',
@@ -662,8 +673,9 @@ export function Workspace(props: Props) {
             )}
             {(askTheme || themeAgain) && (
               <ThemePrompt
-                onTheme={(text) => {
-                  setTheme(text)
+                first={themes(board).length === 0}
+                onThemes={(texts) => {
+                  addThemes(texts)
                   closeTheme()
                 }}
                 onSkip={closeTheme}

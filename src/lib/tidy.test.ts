@@ -33,7 +33,7 @@ describe('tidy', () => {
       }
   })
 
-  it('keeps the main theme where it was', () => {
+  it('keeps the first theme where it was', () => {
     expect(at.get('n1')).toEqual({ id: 'n1', x: 100, y: 100 })
   })
 

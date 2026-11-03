@@ -286,6 +286,37 @@
   border: 2px solid var(--line);
 }
 
+.dialog__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Themes waiting to be added, like the theme boxes on the board */
+.dialog__chips li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.3rem 0.2rem 0.6rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--cat-theme-text);
+  background: var(--cat-theme);
+  border: 1px solid var(--edge);
+}
+
+.dialog__chips button {
+  padding: 0 0.3rem;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
 .dialog__input:focus {
   border-color: var(--muted);
   outline: none;

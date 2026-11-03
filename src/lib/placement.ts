@@ -2,7 +2,7 @@ import type { Board } from './board'
 
 // Rough size of a box on screen, for placing things before React Flow has measured them.
 // Good enough to stop new ideas landing on top of each other.
-export const BOX = { width: 230, height: 90 }
+export const BOX = { width: 280, height: 105 }
 const NODE_W = BOX.width
 const NODE_H = BOX.height
 

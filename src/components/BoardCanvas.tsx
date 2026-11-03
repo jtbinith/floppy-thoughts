@@ -109,7 +109,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
   function handleKeyDown(event: KeyboardEvent) {
     if (editingId || (event.target as Element).closest('input, textarea')) return
     const allSelected = getNodes().filter((n) => n.selected)
-    // What you wrote yourself can be edited: your ideas and the main theme.
+    // What you wrote yourself can be edited: your ideas and your themes.
     const selected = allSelected.filter((n) => n.data.kind === 'user' || n.data.category === 'theme')
     const plainKey = !event.ctrlKey && !event.metaKey && !event.altKey
     if ((event.key === 'f' || event.key === 'F') && plainKey && allSelected.length === 1) {
