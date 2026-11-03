@@ -9,7 +9,7 @@ import * as THREE from 'three'
 //   - head: a half-moon dome with a flat bottom, and an eye
 //   - body: a thick "C" curling round the back, cut into bands with grooves between
 //   - tail: two lobes at the bottom front
-//   - antennae: two lines that hook up over the front of the head and run straight back
+//   - antennae: two lines from the nose/mouth that curve up in front of the face and run straight back
 //   - legs: three little curls under the head
 
 const COLOURS = {
@@ -98,10 +98,11 @@ export function buildToken({ inked, toon, keep, tube }: Helpers) {
   eye.position.set(-0.24, 0.24, 0)
   token.add(eye)
 
-  // Antennae: from the front of the head, hooking up and over to the left, then straight back.
-  // Fat enough to read as solid, side by side through the middle of the token's thickness.
-  tube([[-0.36, 0.3, 0], [-0.47, 0.4, 0], [-0.43, 0.53, 0], [-0.3, 0.57, 0], [0.1, 0.57, 0], [0.52, 0.57, 0]], 0.04, COLOURS.shrimp, token)
-  tube([[-0.31, 0.3, 0], [-0.39, 0.38, 0], [-0.36, 0.46, 0], [-0.27, 0.48, 0], [0.1, 0.48, 0], [0.46, 0.48, 0]], 0.04, COLOURS.shrimp, token)
+  // Antennae: from the nose/mouth at the front of the head, sweeping forwards and up in front of
+  // the face, then over the top and straight back. Fat enough to read as solid, side by side
+  // through the middle of the token's thickness.
+  tube([[-0.43, 0.18, 0], [-0.56, 0.26, 0], [-0.62, 0.42, 0], [-0.55, 0.56, 0], [-0.38, 0.62, 0], [0.1, 0.62, 0], [0.52, 0.62, 0]], 0.04, COLOURS.shrimp, token)
+  tube([[-0.42, 0.14, 0], [-0.52, 0.21, 0], [-0.56, 0.35, 0], [-0.5, 0.47, 0], [-0.36, 0.53, 0], [0.1, 0.53, 0], [0.46, 0.53, 0]], 0.04, COLOURS.shrimp, token)
 
   // Legs: three short rounded nubs hanging from under the head, leaning forwards, in the gap
   // above the tail. Thinner than the rest, but sturdy enough to read at pixel size.
