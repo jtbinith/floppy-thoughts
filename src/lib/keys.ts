@@ -13,6 +13,8 @@ export const KEYS = {
   boardSort: `${PREFIX}ui:board-sort`,
   // A note picked on the home page, to start the next new board with (session only).
   startNote: `${PREFIX}ui:start-note`,
+  // The page you were on when you clicked "sign in", to come back to (session only).
+  returnTo: `${PREFIX}ui:return-to`,
 }
 
 // The site used to be called HunchHack, and its keys started "hunchhack:". This moves them

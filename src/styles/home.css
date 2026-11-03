@@ -43,7 +43,8 @@
   align-items: center;
 }
 
-.home a.nav__link {
+.home a.nav__link,
+.home .nav__button {
   display: flex;
   gap: 0.35rem;
   align-items: center;
@@ -56,9 +57,31 @@
 }
 
 .home a.nav__link:hover,
-.home a.nav__link:focus-visible {
+.home a.nav__link:focus-visible,
+.home .nav__button:hover,
+.home .nav__button:focus-visible {
   color: var(--spark);
   border-color: var(--spark);
+}
+
+/* Signing in and out */
+.home .nav__button {
+  font: inherit;
+  font-size: 0.85rem;
+  background: none;
+  cursor: pointer;
+}
+
+.nav__account {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.nav__avatar {
+  border-radius: 50%;
+  image-rendering: auto;
 }
 
 /* The page you're on */
