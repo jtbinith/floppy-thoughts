@@ -14,6 +14,7 @@ export function ScreenBar({
   onRename,
   notice,
   onShowIdea,
+  viewOnly,
 }: {
   menus: Menu[]
   board: Board
@@ -22,6 +23,8 @@ export function ScreenBar({
   onRename: (name: string) => void
   notice: string | null
   onShowIdea: () => void
+  // You can see and favourite, but not change, a board shared with you as a viewer.
+  viewOnly: boolean
 }) {
   const favCount = favouriteIdeas(board).length
   return (
@@ -53,6 +56,11 @@ export function ScreenBar({
       </div>
       <div className="screen__end">
         <ThemeToggle className="theme-toggle--bar" />
+        {viewOnly && (
+          <span className="screen__notice screen__view-only" title="The owner gave you view access: you can look and favourite, not change things">
+            view only
+          </span>
+        )}
         {notice && (
           <span className="screen__notice" role="status">
             {notice}

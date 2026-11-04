@@ -19,6 +19,9 @@ import { HeartIcon } from './HeartIcon'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
 import { KeysSheet } from './KeysSheet'
+import { ShareDialog } from './ShareDialog'
+import { useAccount } from '../lib/account/account'
+import { members } from '../lib/account/sharing'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
 import { SidePanel, type PanelTab } from './SidePanel'
@@ -37,6 +40,8 @@ type Props = {
   // A brand-new board asks "got a theme?" first.
   askTheme: boolean
   onThemeAsked: () => void
+  // Your role on a board in your account: owner, editor or viewer (null when signed out).
+  role: string | null
 }
 
 // Whether the drawer is open, and on which tab, is remembered between visits.
@@ -49,12 +54,29 @@ const loadPanel = (): PanelTab | null => {
 // The board plus the terminal. Both edit the same board through the same operations.
 export function Workspace(props: Props) {
   const { board, boards, onChange, onNewBoard, onOpenBoard } = props
-  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked } = props
+  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked, role } = props
+  const leaving = role !== null && role !== 'owner'
   const { getNodes, getEdges, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
   const [renaming, setRenaming] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [showKeys, setShowKeys] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  // On a shared board, everyone's names, so each box can say who added and edited it.
+  const { account } = useAccount()
+  const me = account?.id
+  const [names, setNames] = useState<{ board: string; byId: Map<string, string> } | null>(null)
+  useEffect(() => {
+    if (!role) return
+    let gone = false
+    members(board.id).then(
+      (list) => !gone && setNames(list.length > 1 ? { board: board.id, byId: new Map(list.map((p) => [p.userId, p.userId === me ? 'you' : p.name])) } : null),
+      () => {},
+    )
+    return () => {
+      gone = true
+    }
+  }, [role, board.id, me, showShare])
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false)
   // Box numbers only show while you're typing a command, so the board stays calm otherwise.
   const [showIds, setShowIds] = useState(false)
@@ -141,6 +163,7 @@ export function Workspace(props: Props) {
     addIdea: () => addAndEdit(visibleCentre()),
     say: setNotice,
     showKeys: () => setShowKeys(true),
+    whoIs: (id) => (id && names?.board === board.id ? names.byId.get(id) : undefined),
   }
 
   // What the board on screen does for terminal commands that need more than the board itself.
@@ -204,6 +227,8 @@ export function Workspace(props: Props) {
     panel,
     newBoard: onNewBoard,
     rename: () => setRenaming(true),
+    share: () => setShowShare(true),
+    role,
     openBoard: onOpenBoard,
     favouritesBoard: () => void makeFavouritesBoard(),
     showIdea: () => setShowSummary(true),
@@ -286,6 +311,7 @@ export function Workspace(props: Props) {
             onRename={rename}
             notice={notice}
             onShowIdea={() => setShowSummary(true)}
+            viewOnly={role === 'viewer'}
           />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>
@@ -345,11 +371,20 @@ export function Workspace(props: Props) {
             )}
             {edits.pendingDelete && <ChainPrompt board={board} chains={edits.pendingDelete.chains} onAnswer={edits.finishDelete} onCancel={edits.cancelDelete} />}
             {showKeys && <KeysSheet onClose={() => setShowKeys(false)} />}
+            {showShare && <ShareDialog board={board} onClose={() => setShowShare(false)} />}
             {showSummary && <SummaryPopup board={board} onClose={() => setShowSummary(false)} />}
             {confirmDeleteBoard && (
-              <Dialog label="Delete this board?" onCancel={() => setConfirmDeleteBoard(false)}>
-                <h2 className="dialog__title">Delete &quot;{board.name}&quot;?</h2>
-                <p className="dialog__text">Everything on it goes, and this can&apos;t be undone.</p>
+              <Dialog label={leaving ? 'Leave this board?' : 'Delete this board?'} onCancel={() => setConfirmDeleteBoard(false)}>
+                <h2 className="dialog__title">
+                  {leaving ? 'Leave' : 'Delete'} &quot;{board.name}&quot;?
+                </h2>
+                <p className="dialog__text">
+                  {leaving
+                    ? "It goes from your boards. It stays for everyone else, with the boxes you added, and you can come back with a new invite link."
+                    : role === 'owner'
+                      ? "It goes for everyone on it, and this can't be undone."
+                      : "Everything on it goes, and this can't be undone."}
+                </p>
                 <div className="popup__actions">
                   <button type="button" className="popup__back" onClick={() => setConfirmDeleteBoard(false)} autoFocus>
                     keep it
@@ -362,7 +397,7 @@ export function Workspace(props: Props) {
                       onDeleteBoard(board.id)
                     }}
                   >
-                    delete board
+                    {leaving ? 'leave board' : 'delete board'}
                   </button>
                 </div>
               </Dialog>

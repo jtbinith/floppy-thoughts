@@ -319,3 +319,109 @@
 .keys small {
   color: var(--muted);
 }
+
+/* Board → Share…: the invite link, and who's on the board */
+.share__link,
+.share__people {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.share__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.share__url {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--line);
+}
+
+.share__people h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.share__people ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.share__people li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.share__people img,
+.share__blank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.share__name {
+  flex: 1;
+}
+
+.share__role {
+  color: var(--muted);
+}
+
+.share__people select,
+.share__remove {
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.share__remove:hover,
+.share__remove:focus-visible {
+  border-color: var(--spark);
+}
+
+.share__problem {
+  color: var(--spark);
+}
+
+/* Where an invite link lands */
+.join {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.join__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+}
+
+.join__home {
+  color: var(--spark);
+}
+
+.join__sign-in {
+  padding: 0.7rem 1.2rem;
+}

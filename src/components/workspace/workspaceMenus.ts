@@ -13,6 +13,9 @@ export function workspaceMenus(d: {
   panel: PanelTab | null
   newBoard: () => void
   rename: () => void
+  share: () => void
+  // Your role on a shared board (null on a board only you have).
+  role: string | null
   openBoard: (id: string) => void
   favouritesBoard: () => void
   showIdea: () => void
@@ -39,6 +42,7 @@ export function workspaceMenus(d: {
       items: [
         { label: 'New board', onSelect: d.newBoard },
         { label: 'Rename…', onSelect: d.rename },
+        { label: 'Share…', onSelect: d.share },
         'divider',
         // Recent boards, one click to switch (like VS Code's Open Recent).
         ...recentBoards.map((b): MenuItem => ({ label: b.name, onSelect: () => d.openBoard(b.id) })),
@@ -47,7 +51,7 @@ export function workspaceMenus(d: {
         { label: 'Favourite on a new board', onSelect: d.favouritesBoard, disabled: !hasFavourites },
         { label: 'My favourite ideas', onSelect: d.showIdea, disabled: !favouriteIdeas(board).length },
         'divider',
-        { label: 'Delete this board…', onSelect: d.deleteBoard },
+        { label: d.role && d.role !== 'owner' ? 'Leave this board…' : 'Delete this board…', onSelect: d.deleteBoard },
       ],
     },
     {

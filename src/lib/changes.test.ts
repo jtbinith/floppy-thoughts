@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ME, type Board } from './board'
 import { addLink, addUserNode, deleteNodes, editUserNode, removeLink, toggleFavourite, type OpResult } from './boardOps'
-import { applyChange, changeBetween, isEmpty } from './changes'
+import { applyChange, changeBetween, isEmpty, onlyFavourites } from './changes'
 import { createBoard } from './sparks/newBoard'
 
 const ok = (r: OpResult) => {
@@ -104,5 +104,16 @@ describe('applyChange', () => {
     const merged = applyChange(mine, changeBetween(base, theirs))
     expect(merged.nodes).toHaveLength(3)
     expect(merged.links.every((l) => l.from !== idOf(base, 4) && l.to !== idOf(base, 4))).toBe(true)
+  })
+})
+
+describe('onlyFavourites', () => {
+  it('lets a favourite through, and nothing else', () => {
+    const a = start()
+    expect(onlyFavourites(a, changeBetween(a, ok(toggleFavourite(a, idOf(a, 2)))))).toBe(true)
+    expect(onlyFavourites(a, changeBetween(a, ok(editUserNode(a, idOf(a, 2), 'nope'))))).toBe(false)
+    expect(onlyFavourites(a, changeBetween(a, ok(addUserNode(a, 'nope', { x: 0, y: 0 }))))).toBe(false)
+    expect(onlyFavourites(a, changeBetween(a, ok(removeLink(a, idOf(a, 1), idOf(a, 2)))))).toBe(false)
+    expect(onlyFavourites(a, changeBetween(a, { ...a, name: 'nope' }))).toBe(false)
   })
 })

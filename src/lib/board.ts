@@ -59,6 +59,9 @@ export const boardNodeSchema = z.object({
   nudgeType: z.enum(NUDGE_TYPES).optional(),
   // Who favourited it. Signed out it's only ever you (ME); on a shared board, everyone's account id.
   favouritedBy: z.array(id).optional(),
+  // On boards in an account: who added it and who changed it last (account ids, set by the database).
+  addedBy: id.optional(),
+  editedBy: id.optional(),
 })
 
 export const linkSchema = z.object({

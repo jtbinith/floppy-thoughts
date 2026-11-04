@@ -17,12 +17,15 @@ export type NodeRow = {
   nudge_type: BoardNode['nudgeType'] | null
   x: number
   y: number
+  // Set by the database, never sent.
+  created_by?: string | null
+  updated_by?: string | null
 }
 export type LinkRow = { board_id: string; node_a: string; node_b: string }
 export type FavouriteRow = { board_id: string; node_id: string; user_id: string }
 
 // A box's own fields, as save_nodes takes them (the board is given once, for all of them).
-export const nodeFields = (n: BoardNode): Omit<NodeRow, 'board_id'> => ({
+export const nodeFields = (n: BoardNode): Omit<NodeRow, 'board_id' | 'created_by' | 'updated_by'> => ({
   id: n.id,
   number: n.number,
   text: n.text,
@@ -64,6 +67,8 @@ export function boardFromRows(
         ...(n.locked !== null ? { locked: n.locked } : {}),
         ...(n.nudge_type ? { nudgeType: n.nudge_type } : {}),
         ...(who.has(n.id) ? { favouritedBy: who.get(n.id) } : {}),
+        ...(n.created_by ? { addedBy: n.created_by } : {}),
+        ...(n.updated_by ? { editedBy: n.updated_by } : {}),
       })),
     links: links.map((l) => ({ from: l.node_a, to: l.node_b })),
     createdAt: new Date(b.created_at).toISOString(),

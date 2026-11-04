@@ -50,6 +50,16 @@ export function changeBetween(previous: Board | null, next: Board): BoardChange 
   }
 }
 
+// Whether a change only favourites or unfavourites boxes: all a viewer of a shared board may do.
+export function onlyFavourites(previous: Board, c: BoardChange): boolean {
+  if (c.name !== undefined || c.removedNodes.length || c.links.length || c.removedLinks.length) return false
+  const before = new Map(previous.nodes.map((n) => [n.id, n]))
+  return c.nodes.every((n) => {
+    const old = before.get(n.id)
+    return old !== undefined && sameNode({ ...old, favouritedBy: undefined }, { ...n, favouritedBy: undefined })
+  })
+}
+
 export const isEmpty = (c: BoardChange) =>
   c.name === undefined && !c.nodes.length && !c.removedNodes.length && !c.links.length && !c.removedLinks.length
 

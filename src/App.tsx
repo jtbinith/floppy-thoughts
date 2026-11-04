@@ -7,7 +7,7 @@ import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
-import { changeBetween } from './lib/changes'
+import { changeBetween, onlyFavourites } from './lib/changes'
 import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
@@ -17,6 +17,8 @@ import { useAccount } from './lib/account/account'
 import { supabase } from './lib/account/supabase'
 import { SupabaseStorage } from './lib/account/supabaseStorage'
 import { moveBrowserBoards } from './lib/account/upload'
+import { myRole, type Role } from './lib/account/sharing'
+import { JoinPage } from './components/JoinPage'
 
 // Boards in this browser. Signed in, boards live in your account instead (SupabaseStorage).
 const browser = new LocalStorageAdapter()
@@ -31,9 +33,10 @@ const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) 
 //   #/boards  all your boards: open, rename, delete
 //   #/shrimp  PROTOTYPE: the shrimp token, a chunky spinning pickup
 //   #/palette the colour palette: where it came from, contrast checks, dark and light mode
-type Route = 'home' | 'new' | 'board' | 'boards' | 'shrimp' | 'palette'
+//   #/join/…  an invite link: joins the board it's for (after signing in)
+type Route = 'home' | 'new' | 'board' | 'boards' | 'shrimp' | 'palette' | 'join'
 const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/shrimp': 'shrimp', '#/palette': 'palette' }
-const routeFromHash = (): Route => ROUTES[location.hash] ?? 'home'
+const routeFromHash = (): Route => (location.hash.startsWith('#/join/') ? 'join' : (ROUTES[location.hash] ?? 'home'))
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
 }
@@ -67,6 +70,21 @@ export default function App() {
   const { account, ready: signInKnown } = useAccount()
   const accountId = account?.id
   const storage: StorageAdapter = useMemo(() => (accountId && supabase ? new SupabaseStorage(supabase, accountId) : browser), [accountId])
+  // Your role on the open board, when it's in your account.
+  const [roles, setRoles] = useState<Record<string, Role | null>>({})
+  const role: Role | null = (board && roles[board.id]) ?? null
+  const boardId = board?.id
+  useEffect(() => {
+    if (!accountId || !boardId) return
+    let gone = false
+    myRole(boardId, accountId).then(
+      (r) => !gone && setRoles((all) => ({ ...all, [boardId]: r })),
+      () => {},
+    )
+    return () => {
+      gone = true
+    }
+  }, [accountId, boardId])
 
   useEffect(() => {
     const onHash = () => setRoute(routeFromHash())
@@ -182,10 +200,13 @@ export default function App() {
   const saved = useRef<Board | null>(null)
   function handleChange(next: Board) {
     const before = saved.current?.id === next.id ? saved.current : board?.id === next.id ? board : null
+    const change = changeBetween(before, next)
+    // A viewer can favourite, nothing else (the database would refuse it anyway).
+    if (role === 'viewer' && before && !onlyFavourites(before, change)) return
     saved.current = next
     setBoard(next)
     setBoards((list) => withSummary(list ?? [], next))
-    storage.saveChange(next, changeBetween(before, next)).catch((e: unknown) => setError(String(e)))
+    storage.saveChange(next, change).catch((e: unknown) => setError(String(e)))
   }
 
   if (boards === null && !error) return null
@@ -198,6 +219,18 @@ export default function App() {
       <Suspense fallback={null}>
         <ShrimpPage />
       </Suspense>
+    )
+  if (route === 'join')
+    return (
+      <JoinPage
+        secret={location.hash.slice('#/join/'.length)}
+        signedIn={!!accountId}
+        ready={signInKnown}
+        onJoined={async (id) => {
+          await refreshList()
+          await open(id)
+        }}
+      />
     )
   if (route === 'boards')
     return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} />
@@ -229,6 +262,7 @@ export default function App() {
               onDeleteBoard={deleteBoard}
               askTheme={freshId === board.id}
               onThemeAsked={() => setFreshId(null)}
+              role={role}
             />
           </ReactFlowProvider>
         ) : (

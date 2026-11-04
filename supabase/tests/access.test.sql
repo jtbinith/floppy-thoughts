@@ -55,7 +55,7 @@ grant all on secrets to authenticated;
 select tests.act_as('owner');
 insert into secrets values ('first', public.make_invite('10000000-0000-0000-0000-000000000001'));
 reset role;
-select is((select count(*)::int from public.board_invites where token_hash = (select secret from secrets)), 0, 'the secret itself is never stored');
+select is((select token from public.board_invites), (select secret from secrets), 'the newest link is the live one');
 
 -- The editor joins through the link; the viewer joins and the owner makes them a viewer.
 select tests.act_as('editor');

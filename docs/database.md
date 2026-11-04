@@ -8,7 +8,9 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 |---|---|
 | Accounts | Optional. Everything works without one, with boards saved in the browser as today. Signing in is always there (a "sign in" button in the nav bar) and is asked for when you share a board. With an account, your boards are on every device you sign in on, and backed up. |
 | Sign-in | GitHub, through Supabase Auth. It's a tool for people who code, so a GitHub account is the one they're most likely to have, and it's what project linking will use later. No passwords are stored by Floppy Thoughts at all. |
-| Sharing | By invite link. Anyone signed in who opens the link joins the board. The owner can turn the link off or make a new one. |
+| Sharing | By invite link. Anyone signed in who opens the link joins the board as an editor. The owner and admins can copy the link again any time, reset it (the old one stops working) or turn it off. |
+| Roles | Owner, admin, editor, viewer. Admins share the board and manage people like the owner; a board can have several. Only the owner can delete the board, and the owner can't be changed or removed. |
+| Who did what | Each box records who added it and who edited it last, set by the database so it can't be faked. On a shared board, hovering a box shows both. |
 | Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
 | How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
 | Signing in later | The boards in your browser are uploaded to your account the first time you sign in, so nothing made before is lost. |
@@ -62,6 +64,7 @@ erDiagram
     float x
     float y
     uuid created_by FK
+    uuid updated_by FK
     timestamptz updated_at
   }
   links {
@@ -78,7 +81,7 @@ erDiagram
   }
   board_invites {
     uuid board_id PK, FK
-    text token_hash
+    text token
     uuid created_by FK
     timestamptz created_at
   }
@@ -113,7 +116,7 @@ Who can open a board, and what they can do. The owner is a member too.
 |---|---|---|
 | `board_id` | `uuid` | → `boards`, deleted with the board |
 | `user_id` | `uuid` | → `auth.users` |
-| `role` | `text` | `owner`, `editor` or `viewer` |
+| `role` | `text` | `owner`, `admin`, `editor` or `viewer` |
 | `joined_at` | `timestamptz` | |
 
 Primary key `(board_id, user_id)`: someone can only be on a board once.
@@ -132,6 +135,7 @@ The boxes: themes, notes from the machine, your ideas, nudges.
 | `nudge_type` | `text` | For nudges: `related`, `opposite`, `described`, `perspective`, `scale`, `senses`, `wildcard`, `push` |
 | `x`, `y` | `float` | Where it sits on the board |
 | `created_by` | `uuid` | → `auth.users`, so others can see who added it |
+| `updated_by` | `uuid` | → `auth.users`: who edited it last. Set by the database, whatever the app sends |
 | `updated_at` | `timestamptz` | For merging changes from two people (the later edit wins, box by box) |
 
 Checks: `category` only on sparks, `nudge_type` only on nudges. Themes are locked (only editable, never replaced by the machine), as today.
@@ -163,7 +167,7 @@ One live invite link per board.
 | Column | Type | Notes |
 |---|---|---|
 | `board_id` | `uuid` | Primary key, → `boards` |
-| `token_hash` | `text` | A hash of the secret in the link, never the secret itself. If the database were ever read by someone else, the links still couldn't be used |
+| `token` | `text` | The random secret in the link (48 characters). Kept as it is so owners and admins can copy the link again; no one reads this table directly, only through the functions below |
 | `created_by` | `uuid` | → `auth.users` |
 | `created_at` | `timestamptz` | |
 
@@ -199,24 +203,25 @@ Boards are small (at most 1,000 boxes), so these are enough.
 
 Every table has row-level security on, so the database itself refuses anything not allowed, whatever the app sends.
 
-| | Viewer | Editor | Owner |
-|---|---|---|---|
-| See the board, its boxes, links and favourites | ✓ | ✓ | ✓ |
-| Favourite and unfavourite (their own favourites only) | ✓ | ✓ | ✓ |
-| Add, edit, move, link and delete boxes | | ✓ | ✓ |
-| Rename the board | | ✓ | ✓ |
-| Make or turn off the invite link, change roles, remove people | | | ✓ |
-| Publish the board to the gallery | | | ✓ |
-| Delete the board | | | ✓ |
+| | Viewer | Editor | Admin | Owner |
+|---|---|---|---|---|
+| See the board, its boxes, links and favourites | ✓ | ✓ | ✓ | ✓ |
+| Favourite and unfavourite (their own favourites only) | ✓ | ✓ | ✓ | ✓ |
+| Add, edit, move, link and delete boxes | | ✓ | ✓ | ✓ |
+| Rename the board | | ✓ | ✓ | ✓ |
+| Copy, reset or turn off the invite link, change roles, remove people | | | ✓ | ✓ |
+| Publish the board to the gallery | | | | ✓ |
+| Delete the board | | | | ✓ |
 
-Someone who isn't a member can't see a board exists. Joining through an invite runs in one database function that checks the link's hash and adds the member as an `editor`, so the token is never readable from the app.
+Someone who isn't a member can't see a board exists. Joining through an invite runs in one database function that checks the link and adds the member as an `editor`; only owners and admins can read the link.
 
 Each policy gets a test: as an owner, an editor, a viewer, a stranger and someone signed out.
 
 ## In the repo
 
 - **The tables and rules:** `supabase/migrations/`. The gallery table comes with the gallery feature.
-- **Invite links** are three database functions, the only way to touch `board_invites`: `make_invite(board)` (owner only; returns the secret for the link, keeps only its hash, and replaces any old link), `stop_invite(board)` and `join_board(secret)`.
+- **Invite links** are database functions, the only way to touch `board_invites`: `invite_link(board)` and `make_invite(board)` (owners and admins; making one replaces any old link), `stop_invite(board)` and `join_board(secret)`.
+- **Saving boxes:** `save_nodes(board, rows)` adds and edits boxes in one go, changing only what's allowed. `keep_edited(board, date)` lets an uploaded board keep its "last edited" date; otherwise any change, including a rename, moves it on.
 - **The database also checks** what the app checks: box text length, at most 1,000 boxes, links and favourites on the right board, one owner who can't be demoted, and who added a box can't be changed.
 - **Tests:** `npm run db:test` runs `supabase/tests/` against a throwaway copy of Supabase's Postgres in Docker, with no ports open. (Don't use `supabase start`: it opens the database to the whole network.)
 
@@ -226,7 +231,7 @@ Each policy gets a test: as an owner, an editor, a viewer, a stranger and someon
 - **Live changes:** boxes, links, moves and favourites from others appear as they happen, merged box by box.
 - **Who did what:** every box and link records who made it; favourites show who gave them.
 - **Joining:** an invite link takes a teammate straight onto the board (after signing in, if they haven't).
-- **Roles:** owners can make someone a viewer (see and favourite only) or remove them.
+- **Roles:** owners and admins can make someone an admin, an editor or a viewer (see and favourite only), or remove them.
 
 ## On the device
 
@@ -258,7 +263,7 @@ Signed out, nothing leaves the browser. Everything below applies once someone ha
 |---|---|---|
 | Name, email, profile picture | GitHub, at sign-in | To show who added a box or favourited it, and to sign you in |
 | Boards, boxes, links, favourites | You | They're your boards |
-| Board members and roles, invite links (hashed) | You, when sharing | So the right people can open a board |
+| Board members and roles, invite links | You, when sharing | So the right people can open a board |
 
 The only reason data is held is to provide the service people signed up for. No analytics, no tracking, no ads, nothing sold or shared beyond the services that run the site.
 
@@ -316,7 +321,7 @@ No cookies are set. The browser keeps:
 
 - Row-level security on every table (see above), tested for each role.
 - The database's service key only ever lives in the host's settings, never in the repo.
-- Invite links are stored hashed.
+- Invite links are long random secrets, readable only by a board's owner and admins, and can be reset or turned off any time.
 - No cookie banner is needed while the only storage is what sign-in needs to work.
 
 ### Complaints and changes

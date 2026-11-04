@@ -24,6 +24,8 @@ export type BoardActions = {
   addIdea: () => void
   say: (message: string) => void
   showKeys: () => void
+  // On a shared board, the name of someone on it ("you" for you); otherwise undefined.
+  whoIs: (accountId?: string) => string | undefined
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null)

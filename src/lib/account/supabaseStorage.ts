@@ -50,6 +50,9 @@ export class SupabaseStorage implements StorageAdapter {
     const { add, remove } = rows.favourites
     if (add.length) check(await this.db.from('favourites').upsert(add, { onConflict: 'node_id,user_id', ignoreDuplicates: true }))
     if (remove.length) check(await this.db.from('favourites').delete().eq('user_id', this.me).in('node_id', remove))
+    // Last, as everything above counts as an edit: a board uploaded from the browser keeps the
+    // "last edited" it had there.
+    if (isNew) check(await this.db.rpc('keep_edited', { board: id, edited: board.updatedAt }))
   }
 
   async loadBoard(id: string): Promise<LoadResult> {
@@ -68,9 +71,14 @@ export class SupabaseStorage implements StorageAdapter {
     })
   }
 
-  // Owners delete the board for everyone. (Leaving a board you were invited to comes with sharing.)
+  // Owners delete the board for everyone. Anyone else deleting a board shared with them leaves it
+  // instead: it goes from their list, and stays for everyone else.
   deleteBoard(id: string): Promise<void> {
-    return this.inTurn(async () => check(await this.db.from('boards').delete().eq('id', id)))
+    return this.inTurn(async () => {
+      const { data, error } = await this.db.from('boards').delete().eq('id', id).select('id')
+      if (error) throw new Error(error.message)
+      if (!data.length) check(await this.db.from('board_members').delete().eq('board_id', id).eq('user_id', this.me))
+    })
   }
 
   private toResult(row: Joined): LoadResult {

@@ -8,7 +8,7 @@ import { LockIcon } from './LockIcon'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge, whoIs } = useBoardActions()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -38,6 +38,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
   return (
     <div
       data-number={data.number}
+      title={byWhom(whoIs(data.addedBy), whoIs(data.editedBy))}
       className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${isFav ? ' idea--favourite' : ''}`}
     >
       {/* Drag from either dot to another node to link them. */}
@@ -121,4 +122,10 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
       <Handle type="source" position={Position.Bottom} className="idea__handle" />
     </div>
   )
+}
+
+// On a shared board: "added by edie · edited by you". Nothing on a board only you have.
+function byWhom(added?: string, edited?: string): string | undefined {
+  const parts = [added && `added by ${added}`, edited && edited !== added && `edited by ${edited}`].filter(Boolean)
+  return parts.length ? parts.join(' · ') : undefined
 }

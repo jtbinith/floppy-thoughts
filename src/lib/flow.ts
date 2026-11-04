@@ -9,15 +9,15 @@ import { moveNodes } from './boardOps'
 // the View menu and when a board first opens.
 export const FIT_VIEW = { padding: 0.3, maxZoom: 1.2, duration: 300 }
 
-export type IdeaNodeData = Pick<BoardNode, 'number' | 'text' | 'kind' | 'category' | 'locked' | 'nudgeType' | 'favouritedBy'>
+export type IdeaNodeData = Pick<BoardNode, 'number' | 'text' | 'kind' | 'category' | 'locked' | 'nudgeType' | 'favouritedBy' | 'addedBy' | 'editedBy'>
 export type IdeaFlowNode = Node<IdeaNodeData, 'idea'>
 
 export function toFlowNodes(board: Board): IdeaFlowNode[] {
-  return board.nodes.map(({ id, number, x, y, text, kind, category, locked, nudgeType, favouritedBy }) => ({
+  return board.nodes.map(({ id, number, x, y, text, kind, category, locked, nudgeType, favouritedBy, addedBy, editedBy }) => ({
     id,
     type: 'idea',
     position: { x, y },
-    data: { number, text, kind, category, locked, nudgeType, favouritedBy },
+    data: { number, text, kind, category, locked, nudgeType, favouritedBy, addedBy, editedBy },
   }))
 }
 
