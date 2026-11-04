@@ -88,7 +88,7 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [lines])
 
-  const commandMode = value.trimStart().startsWith('/')
+  const commandMode = /^[/:]/.test(value.trimStart())
   useEffect(() => {
     onCommandMode?.(commandMode)
   }, [commandMode, onCommandMode])
@@ -104,7 +104,7 @@ export function Terminal({ onRun, onComplete, onEscape, onCommandMode, ref }: Pr
       const slash = (e.key === '/' || e.key === ':') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target instanceof Element && e.target.closest('.panel, .popup'))
       if (backtick || slash) {
         e.preventDefault()
-        if (slash) setValue((v) => (v ? v : '/'))
+        if (slash) setValue((v) => (v ? v : e.key))
         inputRef.current?.focus()
       }
     }

@@ -16,7 +16,7 @@ import {
   type NodeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { Board } from '../lib/board'
+import type { Board, BoardNode } from '../lib/board'
 import { FIT_VIEW, toFlowEdges, toFlowNodes, withPositions, type IdeaFlowNode } from '../lib/flow'
 import { nearestInDirection, nearestTo, type Direction } from '../lib/nav'
 import { BOX } from '../lib/placement'
@@ -40,7 +40,9 @@ type Props = {
 
 export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys, fit, paste } = useBoardActions()
+  // y y copies a box's text here; p puts it back as a new idea (like vim's yank and put).
+  const yanked = useRef<string | null>(null)
 
   // React Flow owns positions and selection while you interact; the board is the saved truth.
   const [nodes, setNodes] = useState<IdeaFlowNode[]>(() => toFlowNodes(board))
@@ -252,6 +254,11 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
     } else if (key === 'a') {
       handled()
       addIdea()
+    } else if (key === 'f' && pending.current?.key === 'z' && Date.now() - pending.current.at < 700) {
+      // z f: fit the board on screen (z is vim's key for the view).
+      handled()
+      pending.current = null
+      fit()
     } else if (key === 'f' && one) {
       handled()
       favourite(one.id)
@@ -270,10 +277,32 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
     } else if (key === 'z') {
       handled()
       if (pair('z') && one) centreOn(one.id)
+    } else if (key === 'G') {
+      // G: the last box, the partner of g g.
+      handled()
+      const last = board.nodes.reduce<BoardNode | undefined>((a, n) => (!a || n.number > a.number ? n : a), undefined)
+      if (last) selectOnly(last.id, root)
+    } else if (key === '=') {
+      // =: tidy (in vim, = lays things out neatly).
+      handled()
+      onTidy()
+    } else if (key === 'y') {
+      handled()
+      if (pair('y') && one) {
+        yanked.current = one.data.text
+        say(`copied ${one.data.number}: press p to paste it as a new idea`)
+      }
+    } else if (key === 'p') {
+      handled()
+      if (yanked.current) paste(yanked.current, one?.id)
+      else say('nothing copied yet: y y on a box copies it')
+    } else if (key === 'd' && !pair('d')) {
+      handled()
     } else if (key === '?') {
       handled()
       showKeys()
-    } else if (key === 'x' || key === 'Delete' || key === 'Backspace') {
+    } else if (key === 'x' || key === 'd' || key === 'Delete' || key === 'Backspace') {
+      // x, d d, Delete or Backspace (d d reaches here on its second press).
       // Everything selected goes as one change (asking first if it would break a chain).
       const links = getEdges()
         .filter((e) => e.selected)

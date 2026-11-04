@@ -63,9 +63,9 @@ export function workspaceMenus(d: {
         { label: 'Add an idea', shortcut: 'a / double-click', onSelect: d.addIdea },
         { label: 'Add a theme…', onSelect: d.addTheme },
         { label: 'Nudge the selected idea', shortcut: 'n', onSelect: d.nudge },
-        { label: 'Delete selected', shortcut: 'x / Delete', onSelect: d.deleteSelected },
+        { label: 'Delete selected', shortcut: 'x / d d / Delete', onSelect: d.deleteSelected },
         'divider',
-        { label: 'Tidy the board', onSelect: d.tidy, disabled: board.nodes.length < 2 },
+        { label: 'Tidy the board', shortcut: '=', onSelect: d.tidy, disabled: board.nodes.length < 2 },
       ],
     },
     {
@@ -77,7 +77,7 @@ export function workspaceMenus(d: {
         { label: 'Close the drawer', shortcut: 'Esc', onSelect: () => d.openPanel(null), disabled: !d.panel },
         'divider',
         { label: 'Terminal', shortcut: 'Ctrl+`', onSelect: d.focusTerminal },
-        { label: 'Fit the board to the screen', onSelect: d.fit },
+        { label: 'Fit the board to the screen', shortcut: 'z f', onSelect: d.fit },
       ],
     },
     {

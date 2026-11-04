@@ -22,6 +22,10 @@ export type BoardActions = {
   undo: () => void
   redo: () => void
   addIdea: () => void
+  // Fit the whole board on screen (z f), and put a copied box's text back as a new idea (p),
+  // next to the selected box or in the middle of the view.
+  fit: () => void
+  paste: (text: string, nearId?: string) => void
   say: (message: string) => void
   showKeys: () => void
   // On a shared board, the name of someone on it ("you" for you); otherwise undefined.

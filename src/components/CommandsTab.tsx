@@ -13,10 +13,17 @@ const commandOf = (usage: string) => {
   return first.includes('<') || first.includes('[') ? `${name} ` : name
 }
 
-export function CommandsTab({ onUse }: { onUse: (command: string) => void }) {
+export function CommandsTab({ onUse, onShowKeys }: { onUse: (command: string) => void; onShowKeys: () => void }) {
   return (
     <div className="commands">
-      <p className="commands__intro">Type a thought and press Enter to add it. Commands start with /:</p>
+      <p className="commands__intro">Type a thought and press Enter to add it. Commands start with / (or : like vim):</p>
+      {/* The other way to work: keys on the board itself. */}
+      <button type="button" className="commands__keys" onClick={onShowKeys}>
+        <kbd>?</kbd>
+        <span>
+          <strong>Prefer keys?</strong> Move, edit, link and favourite straight on the board with vim-style keys.
+        </span>
+      </button>
       {GROUPS.map((g) => (
         <section key={g.heading} className="commands__group">
           <h3>{g.heading}</h3>

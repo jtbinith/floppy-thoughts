@@ -36,6 +36,8 @@ type Props = {
   onFavouritesBoard: () => void
   // Put a command in the terminal (from the commands tab).
   onUseCommand: (command: string) => void
+  // Open the keyboard shortcuts sheet.
+  onShowKeys: () => void
 }
 
 const kindLabel = ({ node }: Favourite) =>
@@ -115,7 +117,7 @@ export function SidePanel(props: Props) {
         ) : tab === 'favourites' ? (
           <FavouritesTab {...props} />
         ) : (
-          <CommandsTab onUse={props.onUseCommand} />
+          <CommandsTab onUse={props.onUseCommand} onShowKeys={props.onShowKeys} />
         )}
       </div>
     </aside>

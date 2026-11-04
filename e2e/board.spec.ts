@@ -273,11 +273,11 @@ test.describe('switching boards', () => {
     await expect(cards).toHaveText(['zebra', 'apple'])
   })
 
-  test('the nav bar links to my boards, and the logo goes home', async ({ page }) => {
+  test('the nav bar links to your boards, and the logo goes home', async ({ page }) => {
     await page.goto('#/')
     const nav = page.getByRole('navigation', { name: 'Pages' })
-    await nav.getByRole('link', { name: 'my boards' }).click()
-    await expect(nav.getByRole('link', { name: 'my boards' })).toHaveAttribute('aria-current', 'page')
+    await nav.getByRole('link', { name: 'Boards', exact: true }).click()
+    await expect(nav.getByRole('link', { name: 'Boards', exact: true })).toHaveAttribute('aria-current', 'page')
     await page.getByRole('link', { name: 'Floppy Thoughts' }).click()
     await expect(page.getByRole('heading', { name: /ideas worth/ })).toBeVisible()
   })
@@ -375,6 +375,36 @@ test.describe('keyboard, vim-style', () => {
     await expect(boxes(page)).toHaveCount(1)
     await page.keyboard.press('u')
     await expect(boxes(page)).toHaveCount(2)
+  })
+
+  test('d d deletes; y y and p copy a box as a new idea; G goes to the last box', async ({ page }) => {
+    await twoIdeas(page)
+    await page.keyboard.press('y')
+    await page.keyboard.press('y')
+    await page.keyboard.press('p')
+    await expect(boxes(page)).toHaveCount(3)
+    await expect(box(page, 'n3')).toContainText('second')
+    await page.keyboard.press('g')
+    await page.keyboard.press('g')
+    await page.keyboard.press('G')
+    await expect(box(page, 'n3')).toHaveClass(/selected/)
+    await page.keyboard.press('d')
+    await expect(boxes(page)).toHaveCount(3)
+    await page.keyboard.press('d')
+    await expect(boxes(page)).toHaveCount(2)
+  })
+
+  test('= tidies and z f fits, without touching anything else', async ({ page }) => {
+    await twoIdeas(page)
+    await page.keyboard.press('=')
+    await page.keyboard.press('z')
+    await page.keyboard.press('f')
+    // Still two boxes, and the f of z f didn't favourite the selected one.
+    await expect(boxes(page)).toHaveCount(2)
+    await expect(page.locator('.idea--favourite')).toHaveCount(0)
+    // On its own, f still favourites.
+    await page.keyboard.press('f')
+    await expect(page.locator('.idea--favourite')).toHaveCount(1)
   })
 
   test('o adds a linked idea to type into; ? shows the shortcuts', async ({ page }) => {

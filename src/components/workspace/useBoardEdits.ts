@@ -65,6 +65,20 @@ export function useBoardEdits({
     edit(result.node?.id ?? null)
   }
 
+  // p: a copied box's text as a new idea, beside `nearId` (or at `at`, the middle of the view).
+  function pasteIdea(text: string, at: Spot, nearId?: string) {
+    const near = nearId ? findNode(board, nearId) : undefined
+    const spot = near ? spotNear(board, { x: near.x + PLACE.branch.x, y: near.y + PLACE.branch.y }) : at
+    const result = addUserNode(board, text, spot)
+    if (!result.ok) {
+      say(result.error)
+      return
+    }
+    commit(board, result.board)
+    reveal(spot)
+    say(`pasted as ${result.node?.number}: ${text}`)
+  }
+
   // Tab: add a new idea linked to `fromId`, just below it, and start typing in it.
   function branchFrom(from: Board, fromId: string) {
     const parent = findNode(from, fromId)
@@ -198,6 +212,7 @@ export function useBoardEdits({
 
   return {
     addAndEdit,
+    pasteIdea,
     branchFrom,
     requestNudge,
     nudgeSelected,

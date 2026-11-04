@@ -47,7 +47,7 @@ function candidates(arg: Arg, boardCount: number): string[] {
 
 export function complete(input: string, board: Board, boardCount = 0): Completion {
   // Only commands complete; a thought is just text.
-  if (!input.trimStart().startsWith('/')) return { value: input, options: [] }
+  if (!/^[/:]/.test(input.trimStart())) return { value: input, options: [] }
   // Only the last word is completed; everything before it stays as typed.
   const endsWithSpace = /\s$/.test(input)
   const words = input.trimStart().slice(1).split(/\s+/).filter(Boolean)

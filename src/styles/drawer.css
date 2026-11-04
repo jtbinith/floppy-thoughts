@@ -300,3 +300,36 @@
 .panel__machine {
   overflow: hidden;
 }
+
+/* In the commands tab: the way to the keyboard shortcuts */
+.commands__keys {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--muted);
+  background: var(--screen);
+  border: 1px dashed var(--spark);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.commands__keys strong {
+  color: var(--spark);
+}
+
+.commands__keys:hover,
+.commands__keys:focus-visible {
+  color: var(--text);
+  border-style: solid;
+}
+
+.commands__keys kbd {
+  flex-shrink: 0;
+}

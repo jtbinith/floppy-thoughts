@@ -175,6 +175,8 @@ export function Workspace(props: Props) {
     undo: () => void stepBack(),
     redo: () => void stepForward(),
     addIdea: () => addAndEdit(visibleCentre()),
+    fit: () => void fitView(FIT_VIEW),
+    paste: (text, nearId) => edits.pasteIdea(text, visibleCentre(), nearId),
     say: setNotice,
     showKeys: () => setShowKeys(true),
     whoIs: (id) => (id && names?.board === board.id ? names.byId.get(id) : undefined),
@@ -374,6 +376,7 @@ export function Workspace(props: Props) {
                 onUnfavourite={(f) => favourite(f.node.id)}
                 onFavouritesBoard={() => void makeFavouritesBoard()}
                 onUseCommand={(command) => terminalRef.current?.fill(command)}
+                onShowKeys={() => setShowKeys(true)}
               />
             )}
             {(askTheme || themeAgain) && (

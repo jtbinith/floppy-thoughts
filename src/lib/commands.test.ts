@@ -187,6 +187,12 @@ describe('the command registry', () => {
     for (const c of COMMANDS.filter((c) => !c.hidden)) expect(HELP.filter((l) => l.trim().startsWith(c.usage)), c.name).toHaveLength(1)
   })
 
+  it('takes vim-style commands too: :fav 2 is /fav 2', () => {
+    expect(runCommand(board, ':fav 2', ctx).output).toEqual(runCommand(board, '/fav 2', ctx).output)
+    // A thought that only starts with a colon is still a thought.
+    expect(runCommand(board, ': hello', ctx).output[0]).toMatch(/^added/)
+  })
+
   it('finds commands by their aliases', () => {
     expect(findCommand('rm')?.name).toBe('del')
     expect(findCommand('DELETE')?.name).toBe('del')

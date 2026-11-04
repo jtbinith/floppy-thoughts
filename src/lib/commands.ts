@@ -428,7 +428,8 @@ export const isHelpHeading = (line: string) => /^[A-Z][A-Z ]+$/.test(line)
 // ---------- Reading a line ----------
 
 // A command is any line starting with "/". Everything else is a thought.
-export const looksLikeCommand = (input: string) => /^\/\S/.test(input.trim())
+// Commands start with / (like Slack) or : (like vim): /fav 3 and :fav 3 are the same.
+export const looksLikeCommand = (input: string) => /^[/:]\S/.test(input.trim())
 
 // A box argument, once turned into its id: a random id, an older board's n1, n2…, or a number
 // that isn't on the board (so it gets a clear "nothing numbered" message).
