@@ -240,7 +240,7 @@ The app keeps working the way it feels now: changes show at once and are saved i
 - Signed out, boards are saved only in the browser, exactly as today (no database involved).
 - Signed in, the open board is still kept in the browser (local-first), and the database holds the shared copy. Each change is saved as the boxes and links it touches, not the whole board.
 - Other people's changes arrive through Supabase's live updates and are merged in, box by box.
-- Offline, changes queue up and are sent when the connection is back.
+- Offline, changes queue up in the browser (and survive a reload) and are sent, in order, when the connection is back; then whatever others changed meanwhile is merged in. A copy of each board stays in the browser so it opens without a connection.
 - Undo and redo stay on your device and only undo your own changes.
 
 No server-side cache is needed at this size. The app's files are cached by the host. Word lookups for nudges will be cached by the small proxy in front of Datamuse.
@@ -308,6 +308,7 @@ No cookies are set. The browser keeps:
 | Settings | Light or dark mode, the drawer, the terminal's height, board sort | Until you clear them |
 | Notes seen | So the machine prefers notes you haven't had | Until you clear them |
 | Sign-in session (signed in) | Staying signed in | Until you sign out |
+| Your account's boards and changes not sent yet (signed in) | Opening and saving boards without a connection | Until you sign out (you're asked first if changes are still waiting) |
 | A note to start a board with | From the home page's machine | That browser tab |
 
 ### People's rights, as features

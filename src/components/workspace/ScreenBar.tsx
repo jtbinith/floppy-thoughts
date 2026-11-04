@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { MAX_BOARD_NAME, type Board } from '../../lib/board'
 import { favouriteIdeas } from '../../lib/summary'
 import type { Here } from '../../lib/account/live'
+import type { SyncState } from '../../lib/account/outbox'
 import { MenuBar, type Menu } from '../MenuBar'
 import { ThemeToggle } from '../ThemeToggle'
 
@@ -18,6 +20,7 @@ export function ScreenBar({
   viewOnly,
   here,
   onShare,
+  sync,
 }: {
   menus: Menu[]
   board: Board
@@ -31,6 +34,7 @@ export function ScreenBar({
   // Who else has this board open right now.
   here: Here[]
   onShare: () => void
+  sync: SyncState
 }) {
   const favCount = favouriteIdeas(board).length
   return (
@@ -70,6 +74,7 @@ export function ScreenBar({
             {here.length > 4 && <small>+{here.length - 4}</small>}
           </span>
         )}
+        <SaveStatus sync={sync} />
         {viewOnly && (
           <span className="screen__notice screen__view-only" title="The owner gave you view access: you can look and favourite, not change things">
             view only
@@ -90,5 +95,44 @@ export function ScreenBar({
         )}
       </div>
     </header>
+  )
+}
+
+const changes = (n: number) => `${n} change${n > 1 ? 's' : ''}`
+
+// Saving, said only when it matters. Online, saves take a moment, so nothing shows. Offline, it
+// says your changes are kept here; once you're back it says they're sending, then that they're
+// all saved, for a few seconds.
+function SaveStatus({ sync }: { sync: SyncState }) {
+  // Whether there's a backlog from being offline still going out, and whether it just finished.
+  const [catchingUp, setCatchingUp] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+  const [seen, setSeen] = useState(sync)
+  if (seen.offline !== sync.offline || seen.waiting !== sync.waiting) {
+    setSeen(sync)
+    if (sync.offline) setCatchingUp(true)
+    else if (catchingUp && sync.waiting === 0) {
+      setCatchingUp(false)
+      setJustSaved(true)
+    }
+  }
+  useEffect(() => {
+    if (!justSaved) return
+    const t = setTimeout(() => setJustSaved(false), 4000)
+    return () => clearTimeout(t)
+  }, [justSaved])
+
+  const text = sync.offline
+    ? `offline${sync.waiting ? ` · ${changes(sync.waiting)} kept here` : ''}`
+    : catchingUp && sync.waiting
+      ? `saving ${changes(sync.waiting)}…`
+      : justSaved
+        ? 'all changes saved'
+        : null
+  if (!text) return null
+  return (
+    <span className="screen__notice screen__offline" role="status" title="Changes are kept in this browser until they've reached your account">
+      {text}
+    </span>
   )
 }

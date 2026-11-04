@@ -163,7 +163,7 @@ export function SummaryPopup({ board, onClose }: { board: Board; onClose: () => 
             void navigator.clipboard.writeText(text).then(() => setCopied(true))
           }}
         >
-          {copied ? 'copied ✓' : 'copy summary'}
+          {copied ? 'copied' : 'copy summary'}
         </button>
         <button type="button" className="popup__back" onClick={onClose}>
           keep brainstorming

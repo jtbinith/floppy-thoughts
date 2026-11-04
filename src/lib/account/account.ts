@@ -27,8 +27,22 @@ export async function signIn() {
   })
 }
 
+// Signing out clears your account's boards from this browser (so a shared computer doesn't keep
+// them). If changes made offline haven't reached your account yet, it asks first.
 export async function signOut() {
-  await supabase?.auth.signOut()
+  if (!supabase) return
+  const id = (await supabase.auth.getSession()).data.session?.user.id
+  if (id) {
+    const waiting = (JSON.parse(localStorage.getItem(KEYS.outbox(id)) ?? '[]') as unknown[]).length
+    if (waiting && !confirm(`${waiting} change${waiting > 1 ? 's' : ''} you made offline haven't reached your account yet. Signing out now loses them. Sign out anyway?`)) return
+    const mine: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith(KEYS.account(id))) mine.push(key)
+    }
+    for (const key of mine) localStorage.removeItem(key)
+  }
+  await supabase.auth.signOut()
 }
 
 export function useAccount(): { account: Account | null; ready: boolean } {

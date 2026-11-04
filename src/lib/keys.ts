@@ -17,6 +17,11 @@ export const KEYS = {
   returnTo: `${PREFIX}ui:return-to`,
   // When this browser's boards were moved to an account (once per account).
   uploaded: (accountId: string) => `${PREFIX}account:uploaded:${accountId}`,
+  // Signed in: a copy of each of your account's boards, and changes not sent yet, so boards open
+  // and keep saving without a connection. All of it goes when you sign out.
+  account: (accountId: string) => `${PREFIX}account:${accountId}:`,
+  accountBoard: (accountId: string, boardId: string) => `${PREFIX}account:${accountId}:board:${boardId}`,
+  outbox: (accountId: string) => `${PREFIX}account:${accountId}:outbox`,
 }
 
 // The site used to be called HunchHack, and its keys started "hunchhack:". This moves them

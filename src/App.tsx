@@ -7,7 +7,7 @@ import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME, parseBoard } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
-import { applyChange, changeBetween, onlyFavourites, type BoardChange } from './lib/changes'
+import { applyChange, changeBetween, isEmpty, onlyFavourites, type BoardChange } from './lib/changes'
 import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
@@ -16,6 +16,7 @@ import { LocalStorageAdapter, withSummary, type BoardSummary, type StorageAdapte
 import { useAccount } from './lib/account/account'
 import { supabase } from './lib/account/supabase'
 import { SupabaseStorage } from './lib/account/supabaseStorage'
+import type { SyncState } from './lib/account/outbox'
 import { moveBrowserBoards } from './lib/account/upload'
 import { myRole, type Role } from './lib/account/sharing'
 import { joinLive, type Here, type Live } from './lib/account/live'
@@ -71,6 +72,13 @@ export default function App() {
   const { account, ready: signInKnown } = useAccount()
   const accountId = account?.id
   const storage: StorageAdapter = useMemo(() => (accountId && supabase ? new SupabaseStorage(supabase, accountId) : browser), [accountId])
+  // Signed in: whether changes are waiting to reach your account, and whether you're offline.
+  const [sync, setSync] = useState<SyncState>({ waiting: 0, offline: false })
+  useEffect(() => {
+    if (!(storage instanceof SupabaseStorage)) return
+    setSync(storage.sync)
+    return storage.onSync(setSync)
+  }, [storage])
   // Your role on the open board, when it's in your account.
   const [roles, setRoles] = useState<Record<string, Role | null>>({})
   const role: Role | null = (board && roles[board.id]) ?? null
@@ -200,27 +208,46 @@ export default function App() {
   // `saved` is the board as last saved, so two changes before React re-renders each send only their own.
   const saved = useRef<Board | null>(null)
 
-  // A shared board is live: changes others save arrive here and merge in box by box, and you can
-  // see who else has it open. (In your undo history too, so undo only takes back your own.)
+  // Bringing the open board up to date with the database: when someone else's change is
+  // announced live, and when you're back online. What changed is read from the database (plus
+  // your own changes still on their way) and merged in box by box, into your undo history too, so
+  // undo only takes back your own. Announcements that arrive mid-read lead to one more read.
+  const [remote, setRemote] = useState<{ change: BoardChange; n: number } | null>(null)
+  const reading = useRef<{ busy: boolean; again: boolean }>({ busy: false, again: false })
+  async function catchUp(id: string) {
+    if (reading.current.busy) {
+      reading.current.again = true
+      return
+    }
+    reading.current = { busy: true, again: false }
+    try {
+      const before = saved.current
+      const result = await storage.loadBoard(id)
+      if (result.status !== 'ok' || before?.id !== id) return
+      const theirs = changeBetween(before, result.board)
+      if (isEmpty(theirs)) return
+      // Onto the board as it is now, so anything you did while reading stays.
+      const merge = (b: Board) => {
+        const next = applyChange(b, theirs)
+        return parseBoard(next).ok ? next : b
+      }
+      if (saved.current?.id === id) saved.current = merge(saved.current)
+      setBoard((b) => (b?.id === id ? merge(b) : b))
+      setRemote((r) => ({ change: theirs, n: (r?.n ?? 0) + 1 }))
+    } finally {
+      const again = reading.current.again
+      reading.current = { busy: false, again: false }
+      if (again) void catchUp(id)
+    }
+  }
+
+  // A board in your account is live, and you can see who else has it open.
   const live = useRef<Live | null>(null)
   const [here, setHere] = useState<Here[]>([])
-  const [remote, setRemote] = useState<{ change: BoardChange; n: number } | null>(null)
   const onShared = role !== null
   useEffect(() => {
     if (!account || !boardId || !onShared) return
-    // Whatever arrives is checked like anything else from outside.
-    const merge = (b: Board, c: BoardChange) => {
-      const next = applyChange(b, c)
-      return parseBoard(next).ok ? next : b
-    }
-    const channel = joinLive(boardId, account, {
-      onChange: (c) => {
-        setBoard((b) => (b?.id === c.boardId ? merge(b, c) : b))
-        if (saved.current?.id === c.boardId) saved.current = merge(saved.current, c)
-        setRemote((r) => ({ change: c, n: (r?.n ?? 0) + 1 }))
-      },
-      onHere: setHere,
-    })
+    const channel = joinLive(boardId, account, { onChanged: () => void catchUp(boardId), onHere: setHere })
     live.current = channel
     return () => {
       channel?.leave()
@@ -231,6 +258,16 @@ export default function App() {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId, boardId, onShared])
 
+  // Back online, with everything of yours sent: catch up on what others changed meanwhile.
+  const wasOffline = useRef(false)
+  useEffect(() => {
+    const backOnline = wasOffline.current && !sync.offline && sync.waiting === 0
+    wasOffline.current = sync.offline
+    if (backOnline && boardId) void catchUp(boardId)
+    // When the connection comes back.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [sync.offline, sync.waiting])
+
   function handleChange(next: Board) {
     const before = saved.current?.id === next.id ? saved.current : board?.id === next.id ? board : null
     const change = changeBetween(before, next)
@@ -239,10 +276,10 @@ export default function App() {
     saved.current = next
     setBoard(next)
     setBoards((list) => withSummary(list ?? [], next))
-    // Saved first, then sent, so everyone else only ever sees what's really in the database.
+    // Saved first, then announced, so everyone else reads it from the database.
     storage
       .saveChange(next, change)
-      .then(() => live.current?.send(change))
+      .then(() => live.current?.changed())
       .catch((e: unknown) => setError(String(e)))
   }
 
@@ -302,6 +339,7 @@ export default function App() {
               role={role}
               remote={remote}
               here={here}
+              sync={sync}
             />
           </ReactFlowProvider>
         ) : (

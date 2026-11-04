@@ -23,6 +23,7 @@ import { ShareDialog } from './ShareDialog'
 import { useAccount } from '../lib/account/account'
 import { members } from '../lib/account/sharing'
 import type { Here } from '../lib/account/live'
+import type { SyncState } from '../lib/account/outbox'
 import type { BoardChange } from '../lib/changes'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
@@ -47,6 +48,8 @@ type Props = {
   // Someone else's latest change, arrived live (n counts them), and who else has the board open.
   remote: { change: BoardChange; n: number } | null
   here: Here[]
+  // Signed in: changes waiting to reach your account, and whether you're offline.
+  sync: SyncState
 }
 
 // Whether the drawer is open, and on which tab, is remembered between visits.
@@ -59,7 +62,7 @@ const loadPanel = (): PanelTab | null => {
 // The board plus the terminal. Both edit the same board through the same operations.
 export function Workspace(props: Props) {
   const { board, boards, onChange, onNewBoard, onOpenBoard } = props
-  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked, role, remote, here } = props
+  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked, role, remote, here, sync } = props
   const leaving = role !== null && role !== 'owner'
   const { getNodes, getEdges, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
@@ -325,6 +328,7 @@ export function Workspace(props: Props) {
             viewOnly={role === 'viewer'}
             here={here.filter((p) => p.id !== me)}
             onShare={() => setShowShare(true)}
+            sync={sync}
           />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>

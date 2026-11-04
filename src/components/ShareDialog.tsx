@@ -69,7 +69,7 @@ function People({ board, me, onClose }: { board: Board; me: string; onClose: () 
               <div className="share__row">
                 <input className="share__url" readOnly value={link} aria-label="Invite link" onFocus={(e) => e.currentTarget.select()} />
                 <button type="button" className="popup__stick" onClick={() => copy(link)} autoFocus>
-                  {copied ? 'copied ✓' : 'copy link'}
+                  {copied ? 'copied' : 'copy link'}
                 </button>
               </div>
               <div className="popup__actions">
