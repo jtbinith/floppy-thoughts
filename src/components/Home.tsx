@@ -27,7 +27,7 @@ const EXAMPLES: Record<Row, { note: string; thought: string; nudge: string; idea
   problems: { note: 'my plants die while I’m away', thought: 'plants that ask for help', nudge: 'what if a neighbour could answer?', idea: 'a street map where neighbours offer to water each other’s plants' },
   curiosities: { note: 'octopuses have three hearts', thought: 'one body, three backups', nudge: 'what else needs a backup?', idea: 'a password vault that splits your key between three friends' },
   nature: { note: 'dew on a spider web', thought: 'a web that catches what passes by', nudge: 'what passes you by every day?', idea: 'a browser extension that catches the links you meant to come back to' },
-  constraints: { note: 'one button only', thought: 'a game with a single button', nudge: 'what if you can’t use a keyboard?', idea: 'a one-button controller so anyone can play browser games' },
+  constraints: { note: 'made for someone over 80', thought: 'my gran misses hearing from us', nudge: 'what if it had no screen?', idea: 'a photo frame that glows with a grandchild’s face when they tap “thinking of you”' },
 }
 
 export function Home({ hasBoards }: Props) {
