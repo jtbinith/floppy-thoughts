@@ -15,6 +15,8 @@ export const KEYS = {
   startNote: `${PREFIX}ui:start-note`,
   // The page you were on when you clicked "sign in", to come back to (session only).
   returnTo: `${PREFIX}ui:return-to`,
+  // When this browser's boards were moved to an account (once per account).
+  uploaded: (accountId: string) => `${PREFIX}account:uploaded:${accountId}`,
 }
 
 // The site used to be called HunchHack, and its keys started "hunchhack:". This moves them

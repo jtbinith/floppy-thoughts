@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { BoardsPage } from './components/BoardsPage'
 import { Home } from './components/Home'
@@ -12,9 +12,14 @@ import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
 import { KEYS } from './lib/keys'
-import { LocalStorageAdapter, withSummary, type BoardSummary } from './lib/storage'
+import { LocalStorageAdapter, withSummary, type BoardSummary, type StorageAdapter } from './lib/storage'
+import { useAccount } from './lib/account/account'
+import { supabase } from './lib/account/supabase'
+import { SupabaseStorage } from './lib/account/supabaseStorage'
+import { moveBrowserBoards } from './lib/account/upload'
 
-const storage = new LocalStorageAdapter()
+// Boards in this browser. Signed in, boards live in your account instead (SupabaseStorage).
+const browser = new LocalStorageAdapter()
 
 // The shrimp prototype loads on its own, so its 3D and animation libraries only download on that page.
 const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) => ({ default: m.ShrimpPage })))
@@ -58,6 +63,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // React's StrictMode runs effects twice in development; this stops that making two boards.
   const creating = useRef(false)
+  // Signed in, boards are saved to your account; signed out, in this browser.
+  const { account, ready: signInKnown } = useAccount()
+  const accountId = account?.id
+  const storage: StorageAdapter = useMemo(() => (accountId && supabase ? new SupabaseStorage(supabase, accountId) : browser), [accountId])
 
   useEffect(() => {
     const onHash = () => setRoute(routeFromHash())
@@ -80,14 +89,18 @@ export default function App() {
     } else setError(result.status === 'invalid' ? `That board couldn't be opened: ${result.errors[0]}` : 'Board not found')
   }
 
-  // Load the board list once, and open the last board if the URL asks for it.
+  // Load the board list, and open the last board if the URL asks for it. Again whenever you sign
+  // in or out; the first time you sign in, this browser's boards move to your account first.
   useEffect(() => {
+    if (!signInKnown) return
     let cancelled = false
-    storage.listBoards().then(
+    setBoard(null)
+    const moving = accountId ? moveBrowserBoards(browser, storage, accountId) : Promise.resolve(0)
+    moving.then(() => storage.listBoards()).then(
       async (list) => {
         if (cancelled) return
         setBoards(list)
-            const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
+        const last = list.find((b) => b.id === localStorage.getItem(LAST_BOARD_KEY)) ?? list[0]
         if (!last) return
         const result = await storage.loadBoard(last.id)
         if (!cancelled && result.status === 'ok') setBoard(result.board)
@@ -97,7 +110,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [signInKnown, accountId, storage])
 
   // A new board opens straight away, blank.
   // Boards get a number for a name, so they're easy to tell apart; rename them any time.
