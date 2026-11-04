@@ -1,4 +1,5 @@
 import type { Board } from './board'
+import { applyChange, type BoardChange } from './changes'
 
 // Undo and redo keep whole-board snapshots in memory for this session.
 // Boards are small (15 nodes), so snapshots are cheap and can't get out of step.
@@ -23,4 +24,10 @@ export function redo(state: UndoState, current: Board): { state: UndoState; boar
   const [board, ...future] = state.future
   if (!board) return null
   return { board, state: { past: [...state.past, current].slice(-UNDO_LIMIT), future } }
+}
+
+// Someone else changed the board. Their change goes into every snapshot too, so undo and redo
+// only ever take back your own changes, never theirs.
+export function absorb(state: UndoState, change: BoardChange): UndoState {
+  return { past: state.past.map((b) => applyChange(b, change)), future: state.future.map((b) => applyChange(b, change)) }
 }

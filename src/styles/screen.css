@@ -179,3 +179,23 @@
   margin: 0.3rem 0.2rem;
   background: var(--line);
 }
+
+/* Who else has the board open */
+.screen__here {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.screen__here img,
+.screen__here span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.6rem;
+  border: 2px solid var(--screen-bar);
+  border-radius: 50%;
+  background: var(--line);
+  outline: 1px solid var(--spark);
+}

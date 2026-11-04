@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Board } from '../../lib/board'
-import { emptyUndo, pushChange, redo, undo, type UndoState } from '../../lib/undo'
+import type { BoardChange } from '../../lib/changes'
+import { absorb, emptyUndo, pushChange, redo, undo, type UndoState } from '../../lib/undo'
 import { isTyping } from './isTyping'
 
 // Every change to the board goes through `commit`, so it can be undone (and, later, saved or
@@ -59,5 +60,8 @@ export function useBoardHistory(board: Board, onChange: (board: Board) => void, 
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  return { commit, stepBack, stepForward, latest }
+  // Someone else's change arrived live: it goes into the history too, so undo only takes back yours.
+  const absorbRemote = (change: BoardChange) => setHistory((h) => absorb(h, change))
+
+  return { commit, stepBack, stepForward, latest, absorbRemote }
 }

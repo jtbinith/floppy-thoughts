@@ -5,9 +5,9 @@ import { Home } from './components/Home'
 import { PalettePage } from './components/palette/PalettePage'
 import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
-import { MAX_BOARD_NAME } from './lib/board'
+import { MAX_BOARD_NAME, parseBoard } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
-import { changeBetween, onlyFavourites } from './lib/changes'
+import { applyChange, changeBetween, onlyFavourites, type BoardChange } from './lib/changes'
 import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
@@ -18,6 +18,7 @@ import { supabase } from './lib/account/supabase'
 import { SupabaseStorage } from './lib/account/supabaseStorage'
 import { moveBrowserBoards } from './lib/account/upload'
 import { myRole, type Role } from './lib/account/sharing'
+import { joinLive, type Here, type Live } from './lib/account/live'
 import { JoinPage } from './components/JoinPage'
 
 // Boards in this browser. Signed in, boards live in your account instead (SupabaseStorage).
@@ -198,6 +199,38 @@ export default function App() {
   // Every change to the open board: save what it touched, and update just its line in the board list.
   // `saved` is the board as last saved, so two changes before React re-renders each send only their own.
   const saved = useRef<Board | null>(null)
+
+  // A shared board is live: changes others save arrive here and merge in box by box, and you can
+  // see who else has it open. (In your undo history too, so undo only takes back your own.)
+  const live = useRef<Live | null>(null)
+  const [here, setHere] = useState<Here[]>([])
+  const [remote, setRemote] = useState<{ change: BoardChange; n: number } | null>(null)
+  const onShared = role !== null
+  useEffect(() => {
+    if (!account || !boardId || !onShared) return
+    // Whatever arrives is checked like anything else from outside.
+    const merge = (b: Board, c: BoardChange) => {
+      const next = applyChange(b, c)
+      return parseBoard(next).ok ? next : b
+    }
+    const channel = joinLive(boardId, account, {
+      onChange: (c) => {
+        setBoard((b) => (b?.id === c.boardId ? merge(b, c) : b))
+        if (saved.current?.id === c.boardId) saved.current = merge(saved.current, c)
+        setRemote((r) => ({ change: c, n: (r?.n ?? 0) + 1 }))
+      },
+      onHere: setHere,
+    })
+    live.current = channel
+    return () => {
+      channel?.leave()
+      live.current = null
+      setHere([])
+    }
+    // Once per board, per account.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, boardId, onShared])
+
   function handleChange(next: Board) {
     const before = saved.current?.id === next.id ? saved.current : board?.id === next.id ? board : null
     const change = changeBetween(before, next)
@@ -206,7 +239,11 @@ export default function App() {
     saved.current = next
     setBoard(next)
     setBoards((list) => withSummary(list ?? [], next))
-    storage.saveChange(next, change).catch((e: unknown) => setError(String(e)))
+    // Saved first, then sent, so everyone else only ever sees what's really in the database.
+    storage
+      .saveChange(next, change)
+      .then(() => live.current?.send(change))
+      .catch((e: unknown) => setError(String(e)))
   }
 
   if (boards === null && !error) return null
@@ -263,6 +300,8 @@ export default function App() {
               askTheme={freshId === board.id}
               onThemeAsked={() => setFreshId(null)}
               role={role}
+              remote={remote}
+              here={here}
             />
           </ReactFlowProvider>
         ) : (

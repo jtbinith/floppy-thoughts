@@ -1,5 +1,6 @@
 import { MAX_BOARD_NAME, type Board } from '../../lib/board'
 import { favouriteIdeas } from '../../lib/summary'
+import type { Here } from '../../lib/account/live'
 import { MenuBar, type Menu } from '../MenuBar'
 import { ThemeToggle } from '../ThemeToggle'
 
@@ -15,6 +16,7 @@ export function ScreenBar({
   notice,
   onShowIdea,
   viewOnly,
+  here,
 }: {
   menus: Menu[]
   board: Board
@@ -25,6 +27,8 @@ export function ScreenBar({
   onShowIdea: () => void
   // You can see and favourite, but not change, a board shared with you as a viewer.
   viewOnly: boolean
+  // Who else has this board open right now.
+  here: Here[]
 }) {
   const favCount = favouriteIdeas(board).length
   return (
@@ -56,6 +60,14 @@ export function ScreenBar({
       </div>
       <div className="screen__end">
         <ThemeToggle className="theme-toggle--bar" />
+        {here.length > 0 && (
+          <span className="screen__here" aria-label={`Also here: ${here.map((p) => p.name).join(', ')}`}>
+            {here.slice(0, 4).map((p) =>
+              p.avatarUrl ? <img key={p.id} src={p.avatarUrl} alt="" title={`${p.name} is here`} width={20} height={20} /> : <span key={p.id} title={`${p.name} is here`}>{p.name.slice(0, 2)}</span>,
+            )}
+            {here.length > 4 && <small>+{here.length - 4}</small>}
+          </span>
+        )}
         {viewOnly && (
           <span className="screen__notice screen__view-only" title="The owner gave you view access: you can look and favourite, not change things">
             view only

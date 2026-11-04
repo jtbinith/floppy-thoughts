@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { UNDO_LIMIT, emptyUndo, pushChange, redo, undo } from './undo'
+import { addUserNode, type OpResult } from './boardOps'
+import { changeBetween } from './changes'
+import { UNDO_LIMIT, absorb, emptyUndo, pushChange, redo, undo } from './undo'
 
 const b = (name: string): Board => ({
   version: 4,
@@ -38,5 +40,23 @@ describe('undo and redo', () => {
     for (let i = 0; i < UNDO_LIMIT + 10; i++) s = pushChange(s, b(String(i)))
     expect(s.past).toHaveLength(UNDO_LIMIT)
     expect(s.past[0].name).toBe('10')
+  })
+})
+
+describe("someone else's changes", () => {
+  const ok = (r: OpResult) => {
+    if (!r.ok) throw new Error(r.error)
+    return r.board
+  }
+  it('undo takes back only your own change, keeping theirs', () => {
+    const start = b('time')
+    const mine = ok(addUserNode(start, 'mine', { x: 0, y: 0 }))
+    let s = pushChange(emptyUndo(), start)
+    // Their box arrives live, on top of yours.
+    const theirChange = changeBetween(mine, ok(addUserNode(mine, 'theirs', { x: 9, y: 9 })))
+    s = absorb(s, theirChange)
+    const now = ok(addUserNode(mine, 'theirs', { x: 9, y: 9 }))
+    const back = undo(s, now)!
+    expect(back.board.nodes.map((n) => n.text)).toEqual(['theirs'])
   })
 })

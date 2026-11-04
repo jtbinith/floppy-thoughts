@@ -22,6 +22,8 @@ import { KeysSheet } from './KeysSheet'
 import { ShareDialog } from './ShareDialog'
 import { useAccount } from '../lib/account/account'
 import { members } from '../lib/account/sharing'
+import type { Here } from '../lib/account/live'
+import type { BoardChange } from '../lib/changes'
 import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
 import { SidePanel, type PanelTab } from './SidePanel'
@@ -42,6 +44,9 @@ type Props = {
   onThemeAsked: () => void
   // Your role on a board in your account: owner, editor or viewer (null when signed out).
   role: string | null
+  // Someone else's latest change, arrived live (n counts them), and who else has the board open.
+  remote: { change: BoardChange; n: number } | null
+  here: Here[]
 }
 
 // Whether the drawer is open, and on which tab, is remembered between visits.
@@ -54,7 +59,7 @@ const loadPanel = (): PanelTab | null => {
 // The board plus the terminal. Both edit the same board through the same operations.
 export function Workspace(props: Props) {
   const { board, boards, onChange, onNewBoard, onOpenBoard } = props
-  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked, role } = props
+  const { onOpenNew, onDeleteBoard, askTheme, onThemeAsked, role, remote, here } = props
   const leaving = role !== null && role !== 'owner'
   const { getNodes, getEdges, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
@@ -103,7 +108,13 @@ export function Workspace(props: Props) {
   }, [notice])
 
   // Saving changes, undo and redo.
-  const { commit, stepBack, stepForward, latest } = useBoardHistory(board, onChange, () => setEditingId(null))
+  const { commit, stepBack, stepForward, latest, absorbRemote } = useBoardHistory(board, onChange, () => setEditingId(null))
+  const remoteN = remote?.n
+  useEffect(() => {
+    if (remote) absorbRemote(remote.change)
+    // Once per change that arrives.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteN])
 
   // Where things go on screen: free spots, gliding to a box, tidying, where a note lands.
   const { spotNear, centreOf, reveal, show, noteSpot, noteLanding, tidy } = useBoardView({ board, boardRef, latest, commit })
@@ -312,6 +323,7 @@ export function Workspace(props: Props) {
             notice={notice}
             onShowIdea={() => setShowSummary(true)}
             viewOnly={role === 'viewer'}
+            here={here.filter((p) => p.id !== me)}
           />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>
