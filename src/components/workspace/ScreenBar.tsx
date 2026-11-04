@@ -17,6 +17,7 @@ export function ScreenBar({
   onShowIdea,
   viewOnly,
   here,
+  onShare,
 }: {
   menus: Menu[]
   board: Board
@@ -29,6 +30,7 @@ export function ScreenBar({
   viewOnly: boolean
   // Who else has this board open right now.
   here: Here[]
+  onShare: () => void
 }) {
   const favCount = favouriteIdeas(board).length
   return (
@@ -78,6 +80,9 @@ export function ScreenBar({
             {notice}
           </span>
         )}
+        <button type="button" className="screen__new screen__share" onClick={onShare} title="Invite people to this board">
+          share
+        </button>
         {favCount > 0 && (
           <button type="button" className="screen__new screen__summary" onClick={onShowIdea} title="Your favourite ideas, and how you got to each">
             ♥ {favCount > 1 ? 'my ideas' : 'my idea'}

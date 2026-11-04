@@ -324,6 +324,7 @@ export function Workspace(props: Props) {
             onShowIdea={() => setShowSummary(true)}
             viewOnly={role === 'viewer'}
             here={here.filter((p) => p.id !== me)}
+            onShare={() => setShowShare(true)}
           />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>
