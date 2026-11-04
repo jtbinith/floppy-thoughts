@@ -65,12 +65,12 @@
   margin-left: auto;
 }
 
-/* Your account and the dark/light switch, set well apart from the page links */
+/* Your account and the dark/light switch, the same distance from the page links as they are from each other */
 .nav__end {
   display: flex;
   gap: 0.8rem;
   align-items: center;
-  margin-left: 2rem;
+  margin-left: 0.5rem;
 }
 
 .home__nav a.nav__link {
@@ -90,35 +90,43 @@
 }
 
 /* Signing in: the one filled button in the bar. */
+/* Sign in: a small outlined pill, the same family as the page's buttons, so "start a board"
+   stays the one solid button. Hover fills it in coral and lifts it, like the others. */
 .nav__sign-in {
-  padding: 0.4rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--on-spark);
-  background: var(--spark);
-  border: 0;
-  border-radius: 6px;
+  padding: 0.35rem 1rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--spark);
+  background: transparent;
+  border: 2px solid var(--spark);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--spark) 45%, var(--page));
   cursor: pointer;
-}
-
-.nav__sign-in {
-  transition: background-color 0.12s ease, transform 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .nav__sign-in:hover,
 .nav__sign-in:focus-visible {
-  background: color-mix(in srgb, var(--spark) 78%, #fff);
+  color: var(--on-spark);
+  background: var(--spark);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--spark) 45%, var(--page));
   transform: translateY(-1px);
 }
 
 .nav__sign-in:active {
-  transform: translateY(1px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--spark) 45%, var(--page));
+  transform: translateY(2px);
 }
 
-/* In light mode the button is a deep red with cream text, so it darkens instead (to stay readable). */
-:root[data-theme='light'] .nav__sign-in:hover,
-:root[data-theme='light'] .nav__sign-in:focus-visible {
-  background: color-mix(in srgb, var(--spark) 85%, #000);
+@media (prefers-reduced-motion: reduce) {
+  .nav__sign-in,
+  .nav__sign-in:hover,
+  .nav__sign-in:active {
+    transition: none;
+    transform: none;
+  }
 }
 
 /* Signed in: your picture, which opens a small menu. */
