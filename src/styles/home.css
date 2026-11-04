@@ -9,85 +9,196 @@
 .home__inner,
 .home__footer,
 .home main {
-  box-sizing: content-box;
-  max-width: 1120px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(1120px + 2 * clamp(1.5rem, 8vw, 8rem));
   margin: 0 auto;
   padding: 0 clamp(1.5rem, 8vw, 8rem);
 }
 
 .home__nav {
+  font-family: var(--font-body);
   display: flex;
   justify-content: space-between;
+  gap: 2rem;
   align-items: center;
   padding-top: 1.4rem;
   padding-bottom: 1.4rem;
 }
 
 .home__logo {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  font-size: 1.15rem;
-  color: var(--spark);
-}
-
-/* On other pages the logo is a link home; it should look the same. */
-.home a.home__logo {
-  color: var(--spark);
-  text-decoration: none;
-}
-
-/* The page links in the nav bar */
-.nav {
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 1.15rem;
 }
 
-.home a.nav__link,
-.home .nav__button {
+/* On every page the logo is a link home. */
+.home__nav a.home__logo {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The shrimp on a rounded tile, like an app icon. */
+.home__logo-mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--spark);
+  background: var(--screen-bar);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.home__logo-accent {
+  color: var(--spark);
+}
+
+/* The page links in the nav bar: plain words, brighter on hover and for the page you're on. */
+.nav {
   display: flex;
-  gap: 0.35rem;
+  gap: 2.5rem;
   align-items: center;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+/* Your account and the dark/light switch, set well apart from the page links */
+.nav__end {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-left: 2rem;
+}
+
+.home__nav a.nav__link {
+  font-size: 0.95rem;
   color: var(--muted);
   text-decoration: none;
-  border: 1px solid var(--line);
-  border-radius: 4px;
 }
 
-.home a.nav__link:hover,
-.home a.nav__link:focus-visible,
-.home .nav__button:hover,
-.home .nav__button:focus-visible {
-  color: var(--spark);
-  border-color: var(--spark);
+.home__nav a.nav__link:hover,
+.home__nav a.nav__link:focus-visible,
+.home__nav a.nav__link[aria-current='page'] {
+  color: var(--text);
 }
 
-/* Signing in and out */
-.home .nav__button {
+.nav__theme {
+  border-color: transparent;
+}
+
+/* Signing in: the one filled button in the bar. */
+.nav__sign-in {
+  padding: 0.4rem 0.9rem;
   font: inherit;
-  font-size: 0.85rem;
-  background: none;
+  font-size: 0.9rem;
+  color: var(--on-spark);
+  background: var(--spark);
+  border: 0;
+  border-radius: 6px;
   cursor: pointer;
 }
 
+.nav__sign-in {
+  transition: background-color 0.12s ease, transform 0.12s ease;
+}
+
+.nav__sign-in:hover,
+.nav__sign-in:focus-visible {
+  background: color-mix(in srgb, var(--spark) 78%, #fff);
+  transform: translateY(-1px);
+}
+
+.nav__sign-in:active {
+  transform: translateY(1px);
+}
+
+/* In light mode the button is a deep red with cream text, so it darkens instead (to stay readable). */
+:root[data-theme='light'] .nav__sign-in:hover,
+:root[data-theme='light'] .nav__sign-in:focus-visible {
+  background: color-mix(in srgb, var(--spark) 85%, #000);
+}
+
+/* Signed in: your picture, which opens a small menu. */
 .nav__account {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.85rem;
+  position: relative;
 }
 
 .nav__avatar {
-  border-radius: 50%;
-  image-rendering: auto;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  overflow: hidden;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--screen-bar);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-/* The page you're on */
-.home a.nav__link[aria-current='page'] {
+.nav__avatar img {
+  width: 100%;
+  height: 100%;
+}
+
+.nav__avatar:hover,
+.nav__avatar:focus-visible,
+.nav__avatar[aria-expanded='true'] {
+  border-color: var(--spark);
+}
+
+.nav__menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 13rem;
+  padding: 0.4rem;
+  background: var(--screen-bar);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.nav__menu-name {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav__menu-name strong {
   color: var(--text);
-  border-color: var(--muted);
+}
+
+.home__nav .nav__menu a,
+.nav__menu button {
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.home__nav .nav__menu a:hover,
+.home__nav .nav__menu a:focus-visible,
+.nav__menu button:hover,
+.nav__menu button:focus-visible {
+  background: var(--screen);
 }
 
 /* The hero: words on the left, the live machine on the right */
@@ -153,16 +264,75 @@
   cursor: pointer;
 }
 
-.home__cta:active {
+.home__cta {
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Hover: the button lifts a little, like a key about to be pressed, and lightens in its own
+   colour. Click: it presses down. */
+.home__cta:hover:not(:disabled),
+.home__cta:focus-visible {
+  background: color-mix(in srgb, var(--btn) 78%, #fff);
+  border-color: color-mix(in srgb, var(--btn) 78%, #fff);
+  box-shadow: 0 7px 0 var(--btn-shadow);
+  transform: translateY(-2px);
+}
+
+/* An outlined button fills in with its outline's colour. */
+.home__cta--quiet:hover:not(:disabled),
+.home__cta--quiet:focus-visible {
+  color: var(--page) !important;
+  background: var(--text);
+  border-color: var(--text);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--text) 45%, var(--page));
+}
+
+/* Delete goes a deeper red. */
+.home__cta--danger:hover:not(:disabled),
+.home__cta--danger:focus-visible {
+  background: #9a2e1d;
+  border-color: #9a2e1d;
+  box-shadow: 0 7px 0 #5e1a10;
+}
+
+.home__cta:active:not(:disabled) {
   box-shadow: 0 1px 0 var(--btn-shadow);
   transform: translateY(4px);
 }
+
+.home__cta--quiet:active:not(:disabled) {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 45%, var(--page));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home__cta,
+  .home__cta:hover,
+  .home__cta:active {
+    transition: none;
+    transform: none;
+  }
+}
+
 
 .home__cta--quiet {
   color: var(--text) !important;
   background: transparent;
   border-color: var(--text);
   box-shadow: none;
+}
+
+/* For things that can't be undone. A deeper red than row A's, so the cream text reads at 4.9:1. */
+.home__cta--danger {
+  color: #f6eedd !important;
+  background: #bb3a26;
+  border-color: #bb3a26;
+  box-shadow: 0 5px 0 #7a2416;
+}
+
+.home__cta:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
 }
 
 .home__cta--small {
@@ -425,23 +595,6 @@
   color: var(--muted);
 }
 
-.home__hint {
-  max-width: 30rem;
-  margin: 1rem 0 0;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--muted);
-}
-
-.home__hint kbd,
-.home__try kbd {
-  padding: 0.05rem 0.35rem;
-  font-family: var(--mono);
-  color: var(--text);
-  border: 1px solid var(--muted);
-  border-radius: 4px;
-}
-
 /* Sections: a plain one on the page, and "bands" on a slightly raised panel */
 .home__section,
 .home__band {
@@ -469,8 +622,7 @@
   list-style: none;
 }
 
-.home__steps li,
-.home__example {
+.home__steps li {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -480,86 +632,295 @@
   border-radius: 14px;
 }
 
-.home__steps b {
-  font-family: var(--font-heading);
-  font-size: 2rem;
-  color: var(--heading);
-}
-
 .home__steps strong {
   font-family: var(--font-heading);
   font-size: 1.2rem;
 }
 
-.home__steps span,
-.home__trail {
+.home__steps > li > span {
   color: var(--muted);
   line-height: 1.5;
 }
 
-/* The machine's rows, and capsule codes, in their colours */
-.home__rows {
+/* One reassuring line under a button */
+.home__assure {
+  margin: 0.9rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Small pictures made of the board's own pieces, for how it works and working together */
+.show {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 1.5rem 0 0;
+  flex-direction: column;
+  gap: 0.6rem;
+  justify-content: center;
+  min-height: 9.5rem;
+  margin-bottom: 0.6rem;
+  padding: 1rem;
+  background: var(--screen);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.show__capsules {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.show__capsule {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 25%);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.show__capsule:hover {
+  transform: translateY(-2px);
+}
+
+.show__capsule[aria-pressed='true'],
+.show__capsule:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.show__capsule--words { background: var(--cat-words); }
+.show__capsule--objects { background: var(--cat-objects); }
+.show__capsule--problems { background: var(--cat-problems); }
+.show__capsule--curiosities { background: var(--cat-curiosities); }
+.show__capsule--nature { background: var(--cat-nature); }
+.show__capsule--constraints { background: var(--cat-constraints); }
+
+/* A box, drawn like the ones on the board */
+.mini {
+  display: flex;
+  flex-direction: column;
+  max-width: 15rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.mini__label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.mini__text {
+  padding: 0.4rem 0.5rem;
+  color: var(--text);
+}
+
+/* A note from the machine, in its row's colour */
+.mini--words { --cat: var(--cat-words); --cat-text: var(--cat-words-text); }
+.mini--objects { --cat: var(--cat-objects); --cat-text: var(--cat-objects-text); }
+.mini--problems { --cat: var(--cat-problems); --cat-text: var(--cat-problems-text); }
+.mini--curiosities { --cat: var(--cat-curiosities); --cat-text: var(--cat-curiosities-text); }
+.mini--nature { --cat: var(--cat-nature); --cat-text: var(--cat-nature-text); }
+.mini--constraints { --cat: var(--cat-constraints); --cat-text: var(--cat-constraints-text); }
+
+:is(.mini--words, .mini--objects, .mini--problems, .mini--curiosities, .mini--nature, .mini--constraints) {
+  border-color: var(--cat);
+}
+
+:is(.mini--words, .mini--objects, .mini--problems, .mini--curiosities, .mini--nature, .mini--constraints) .mini__label {
+  color: var(--cat-text);
+  background: var(--cat);
+  border-color: var(--cat);
+}
+
+.mini--nudge {
+  align-self: flex-end;
+  border-style: dashed;
+  border-color: var(--nudge);
+}
+
+.mini--nudge .mini__text {
+  color: var(--nudge);
+}
+
+.mini--picked {
+  border-color: var(--fav);
+}
+
+.mini--picked .mini__label {
+  color: var(--fav);
+}
+
+/* The line linking two boxes */
+.show--chain {
+  gap: 0;
+}
+
+.show__link {
+  width: 1px;
+  height: 0.8rem;
+  margin-left: 1.5rem;
+  background: var(--muted);
+}
+
+.show--chain .mini--nudge {
+  margin-top: 0.5rem;
+}
+
+/* Working together: a few points and a shared board's top bar */
+.home__together {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .home__together {
+    grid-template-columns: 1fr;
+  }
+}
+
+.home__uses {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.home__rows li {
-  padding: 0.35rem 0.9rem;
-  font-weight: 700;
-  border-radius: 999px;
+.home__uses li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-left: 1.2rem;
+  border-left: 3px solid var(--line);
 }
 
-.home__code {
-  padding: 0.05rem 0.35rem;
+.home__uses strong {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+}
+
+.home__uses span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* A few lines of the terminal */
+.show--term {
+  gap: 0.15rem;
   font-family: var(--mono);
-  font-weight: 700;
-  border-radius: 4px;
-}
-
-.home__code--words { color: var(--cat-words-text); background: var(--cat-words); }
-.home__code--objects { color: var(--cat-objects-text); background: var(--cat-objects); }
-.home__code--problems { color: var(--cat-problems-text); background: var(--cat-problems); }
-.home__code--curiosities { color: var(--cat-curiosities-text); background: var(--cat-curiosities); }
-.home__code--nature { color: var(--cat-nature-text); background: var(--cat-nature); }
-.home__code--constraints { color: var(--cat-constraints-text); background: var(--cat-constraints); }
-
-/* Example boards */
-.home__examples {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.home__example p {
-  margin: 0;
-}
-
-.home__note {
-  font-family: var(--mono);
-  font-size: 0.85rem;
-}
-
-.home__trail {
   font-size: 0.9rem;
 }
 
-.home__idea {
-  margin-top: auto !important;
-  font-weight: 700;
+.show--term p {
+  margin: 0;
 }
 
-.home__idea span {
-  margin-right: 0.3rem;
-  padding: 0.05rem 0.4rem;
+.show--term p span {
+  margin-right: 0.5rem;
+  color: var(--spark);
+}
+
+.show__out {
+  margin-bottom: 0.5rem !important;
+  color: var(--muted);
+}
+
+.show__slot {
+  padding: 0 0.3rem;
+  color: var(--cat-text);
+  background: var(--cat);
+  border-radius: 3px;
+}
+
+/* The terminal is drawn on its own, not as a coloured box. */
+.show--term:is(.mini--words, .mini--objects, .mini--problems, .mini--curiosities, .mini--nature, .mini--constraints) {
+  border-color: var(--line);
+}
+
+.show__caret {
+  margin-left: 0.1rem;
+  color: var(--text) !important;
+  animation: typed-blink 1.06s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .show__slot {
+  padding: 0 0.3rem;
+  color: var(--cat-text);
+  background: var(--cat);
+  border-radius: 3px;
+}
+
+/* The terminal is drawn on its own, not as a coloured box. */
+.show--term:is(.mini--words, .mini--objects, .mini--problems, .mini--curiosities, .mini--nature, .mini--constraints) {
+  border-color: var(--line);
+}
+
+.show__caret {
+    animation: none;
+  }
+}
+
+.show--bar {
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  min-height: 0;
+  padding: 0.8rem 1rem;
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
+  background: var(--screen-bar);
+}
+
+.show__menus {
+  color: var(--muted);
+  word-spacing: 0.6rem;
+}
+
+.show__name {
+  flex: 1;
+  font-weight: 700;
+  text-align: center;
+}
+
+.show__faces {
+  display: flex;
+}
+
+.show__faces i {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: -0.35rem;
+  font-size: 0.6rem;
+  font-style: normal;
   color: var(--on-spark);
-  background: var(--spark);
-  border-radius: 4px;
+  border: 2px solid var(--screen-bar);
+  border-radius: 50%;
+}
+
+.show__faces i:nth-child(1) { background: var(--cat-problems); color: var(--cat-problems-text); }
+.show__faces i:nth-child(2) { background: var(--cat-objects); color: var(--cat-objects-text); }
+.show__faces i:nth-child(3) { background: var(--cat-constraints); color: var(--cat-constraints-text); }
+
+.show__share {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line);
 }
 
 /* The closing band */
@@ -586,7 +947,9 @@
   flex-wrap: wrap;
   gap: 1rem 2rem;
   justify-content: space-between;
-  padding-top: 2rem;
+  /* Pushed to the bottom on short pages, with room above it on long ones. */
+  margin-top: auto !important;
+  padding-top: 4rem;
   padding-bottom: 2.5rem;
   font-size: 0.8rem;
   color: var(--muted);
@@ -604,8 +967,15 @@
 }
 
 .home {
-  min-height: 100%;
+  /* A column as tall as the window at least, so the footer always sits at the bottom.
+   (Nothing in it shrinks: the page scrolls instead.) */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
   overflow-y: auto;
+  /* The scrollbar's space is kept on every page, scrolling or not, so nothing shifts between them. */
+  scrollbar-gutter: stable;
   color: var(--text);
   background: var(--page);
   user-select: text;
@@ -620,9 +990,9 @@
   align-items: flex-start;
 }
 
-/* The same centred column as the home page, with a little room top and bottom. */
+/* The same centred column as the home page, with room below the nav bar (as on every page). */
 .home main.boards-page {
-  padding-top: 1rem;
+  padding-top: 3rem;
   padding-bottom: 4rem;
 }
 
@@ -640,3 +1010,12 @@
   font-size: 1rem;
 }
 
+
+.home > * {
+  flex-shrink: 0;
+}
+
+/* On the board's page the nav bar is the same as everywhere else: same width, place and spacing. */
+.page > .home__nav {
+  align-self: stretch;
+}

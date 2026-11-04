@@ -1,8 +1,11 @@
 // The home page, built around the vending machine: what Floppy Thoughts is, the live machine to
-// try, how it works, and example boards. Colours come from the site theme (dark or light mode).
+// try, how it works (shown with small pictures made of the board's own pieces), working on a board
+// together, and a last call to start. Colours come from the site theme (dark or light mode).
 
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
+import { CATEGORY_LABEL, type SparkCategory } from '../lib/board'
 import { CATEGORIES } from './machine/categories'
+import { HeartIcon } from './HeartIcon'
 import { NavBar } from './NavBar'
 import { SiteFooter } from './InfoPages'
 import { TypedHeadline } from './TypedHeadline'
@@ -14,36 +17,34 @@ type Props = {
   hasBoards: boolean
 }
 
-const LETTERS = CATEGORIES.map((_, i) => String.fromCharCode(65 + i))
+type Row = Exclude<SparkCategory, 'theme'>
 
-// Illustrative boards: two capsules each, a trail of thoughts, and where it landed.
-const EXAMPLES = [
-  { notes: ['A2 cassette', 'C1 my plants die while I’m away'], trail: 'mixtapes for plants? → plants that ask for water', idea: 'a plant sensor that blinks like a firefly, faster the thirstier it gets' },
-  { notes: ['B3 pocket sundial', 'E1 dew on a spider web'], trail: 'shadows tell the time → a guessing game', idea: 'a morning-walk game: guess the time from your shadow' },
-  { notes: ['F2 one button only', 'D1 octopuses have three hearts'], trail: 'three reminders a day → no screen at all', idea: 'a pill box that taps a tiny Morse reminder on your wrist' },
-]
-
-// A capsule code like "A2", in its row's colour, like a key on the machine.
-function Code({ code }: { code: string }) {
-  const row = CATEGORIES[LETTERS.indexOf(code[0])]
-  return <span className={`home__code home__code--${row?.name ?? 'words'}`}>{code}</span>
+// One example per row of the machine, followed through all three steps: the note it gives you,
+// a thought it leads to, a nudge, and the idea it lands on.
+const EXAMPLES: Record<Row, { note: string; thought: string; nudge: string; idea: string }> = {
+  words: { note: 'cassette', thought: 'a mixtape you swap with a stranger', nudge: 'what if it was anonymous?', idea: 'an app that swaps playlists with a stranger each week' },
+  objects: { note: 'a pocket sundial', thought: 'shadows that tell the time', nudge: 'what if it ran backwards?', idea: 'a morning-walk game: guess the time from your shadow' },
+  problems: { note: 'my plants die while I’m away', thought: 'plants that ask for help', nudge: 'what if a neighbour could answer?', idea: 'a street map where neighbours offer to water each other’s plants' },
+  curiosities: { note: 'octopuses have three hearts', thought: 'one body, three backups', nudge: 'what else needs a backup?', idea: 'a password vault that splits your key between three friends' },
+  nature: { note: 'dew on a spider web', thought: 'a web that catches what passes by', nudge: 'what passes you by every day?', idea: 'a browser extension that catches the links you meant to come back to' },
+  constraints: { note: 'one button only', thought: 'a game with a single button', nudge: 'what if you can’t use a keyboard?', idea: 'a one-button controller so anyone can play browser games' },
 }
 
 export function Home({ hasBoards }: Props) {
+  // The capsule picked in step 1, followed through steps 2 and 3.
+  const [row, setRow] = useState<Row>('objects')
+  const ex = EXAMPLES[row]
+  const label = `~/${CATEGORY_LABEL[row]}`
   return (
     <div className="home">
-      <NavBar current="home" showBoards={hasBoards} />
+      <NavBar current="home" />
 
       <section className="home__hero">
         <div className="home__inner home__hero-grid">
           <div>
             <TypedHeadline caret="under" />
             <p className="home__lede">
-              A vending machine full of shrimp, each holding a random note to get you thinking. Pick a capsule, then follow the thought somewhere unexpected on your own
-              board. The idea is still yours.
-            </p>
-            <p className="home__hint">
-              Try the machine: type a row letter like <kbd>B</kbd> (or a slot like <kbd>B2</kbd>) and press <kbd>Enter</kbd>, or <kbd>?</kbd> for a surprise. Drag to turn it.
+              Pull a random note from the shrimp machine, follow where it leads and land on a project worth building. On your own or with your team.
             </p>
             <div className="home__ctas">
               <a className="home__cta" href="#/new">
@@ -69,48 +70,138 @@ export function Home({ hasBoards }: Props) {
           <h2>~/how it works</h2>
           <ol className="home__steps">
             <li>
-              <b>1</b>
+              <div className="show">
+                <div className="show__capsules" role="group" aria-label="Pick a capsule to see an example">
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      className={`show__capsule show__capsule--${c.name}`}
+                      aria-label={`${c.name}`}
+                      aria-pressed={row === c.name}
+                      title={c.name}
+                      onClick={() => setRow(c.name as Row)}
+                    />
+                  ))}
+                </div>
+                <div className={`mini mini--${row}`} aria-live="polite">
+                  <span className="mini__label">{label}</span>
+                  <span className="mini__text">{ex.note}</span>
+                </div>
+              </div>
               <strong>pick a capsule</strong>
-              <span>Each row of the machine is a kind of note. Type its code, or press ? for a surprise.</span>
+              <span>Each colour is a different kind of note. Tap one to see.</span>
             </li>
             <li>
-              <b>2</b>
-              <strong>push the thought</strong>
-              <span>Add your own thoughts, link them, and ask for a nudge when you&apos;re stuck: a word or a question, never an answer.</span>
+              <div className="show show--chain" aria-hidden="true">
+                <div className={`mini mini--${row}`}>
+                  <span className="mini__label">{label}</span>
+                  <span className="mini__text">{ex.note}</span>
+                </div>
+                <span className="show__link" />
+                <div className="mini">
+                  <span className="mini__label">~/idea</span>
+                  <span className="mini__text">{ex.thought}</span>
+                </div>
+                <div className="mini mini--nudge">
+                  <span className="mini__text">// {ex.nudge}</span>
+                </div>
+              </div>
+              <strong>follow the thought</strong>
+              <span>Add ideas, link them and ask for a nudge when you&apos;re stuck.</span>
             </li>
             <li>
-              <b>3</b>
+              <div className="show" aria-hidden="true">
+                <div className="mini mini--picked">
+                  <span className="mini__label">
+                    ~/idea <HeartIcon size={9} />
+                  </span>
+                  <span className="mini__text">{ex.idea}</span>
+                </div>
+              </div>
               <strong>land on an idea</strong>
-              <span>Follow one thread somewhere unexpected and mark the one you want to build.</span>
+              <span>Favourite the ones you&apos;d build and see how you got there.</span>
             </li>
           </ol>
-          <ul className="home__rows" aria-label="The rows of the machine">
-            {CATEGORIES.map((c, i) => (
-              <li key={c.name} className={`home__code home__code--${c.name}`}>
-                <b>{LETTERS[i]}</b> {c.name}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
       <section className="home__section">
-        <div className="home__inner">
-          <h2>~/example boards</h2>
-          <div className="home__examples">
-            {EXAMPLES.map((ex) => (
-              <article key={ex.idea} className="home__example">
-                {ex.notes.map((n) => (
-                  <p key={n} className="home__note">
-                    <Code code={n.slice(0, 2)} /> {n.slice(3)}
-                  </p>
-                ))}
-                <p className="home__trail">{ex.trail}</p>
-                <p className="home__idea">
-                  <span>idea</span> {ex.idea}
-                </p>
-              </article>
-            ))}
+        <div className="home__inner home__together">
+          <div>
+            <h2>~/better together</h2>
+            <ul className="home__uses">
+              <li>
+                <strong>kick off a hackathon</strong>
+                <span>Share one link and the whole team brainstorms on the same board, then favourite the idea you&apos;ll build.</span>
+              </li>
+              <li>
+                <strong>run a workshop or a class</strong>
+                <span>Give everyone the link. Let them add ideas or just watch and favourite.</span>
+              </li>
+              <li>
+                <strong>plan a side project with a friend</strong>
+                <span>Keep adding to the same board from wherever you are.</span>
+              </li>
+            </ul>
+            <p className="home__assure">Sign in with GitHub to share a board.</p>
+          </div>
+          <div className="show show--bar" aria-hidden="true">
+            <span className="show__menus">Board Edit View</span>
+            <span className="show__name">hackathon kick-off</span>
+            <span className="show__faces">
+              <i>JT</i>
+              <i>AK</i>
+              <i>RM</i>
+            </span>
+            <span className="show__share">share</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="home__band">
+        <div className="home__inner home__together">
+          <div className={`show show--term mini--${row}`} aria-hidden="true">
+            <p>
+              <span>~ %</span> /vend <b className="show__slot">{row}</b>
+            </p>
+            <p className="show__out">a shrimp is on its way… then /stick, /swap or /back</p>
+            <p>
+              <span>~ %</span> /stick
+            </p>
+            <p className="show__out">stuck on the board: {ex.note}</p>
+            <p>
+              <span>~ %</span> {ex.thought}
+            </p>
+            <p className="show__out">added 2: {ex.thought}</p>
+            <p>
+              <span>~ %</span> /link 1 2
+            </p>
+            <p className="show__out">linked 1 to 2</p>
+            <p>
+              <span>~ %</span> {ex.idea}
+            </p>
+            <p className="show__out">added 3: {ex.idea}</p>
+            <p>
+              <span>~ %</span> /fav 3<span className="show__caret">_</span>
+            </p>
+          </div>
+          <div>
+            <h2>~/hands on the keyboard</h2>
+            <ul className="home__uses">
+              <li>
+                <strong>type a thought, press enter</strong>
+                <span>It&apos;s on the board. No clicking around.</span>
+              </li>
+              <li>
+                <strong>a command for everything</strong>
+                <span>Vend a note, link, favourite and tidy with commands like /vend, /link and /fav. Tab finishes them for you.</span>
+              </li>
+              <li>
+                <strong>move like vim</strong>
+                <span>Hop between boxes with h j k l. Press ? on the board for every shortcut.</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

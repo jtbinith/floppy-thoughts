@@ -3,9 +3,13 @@
 /* The note that came out of the machine, over the board: a card like the note boxes on the
    board, in its row's colour, waiting for you to stick it on or put it back. */
 .popup {
-  position: absolute;
+  /* Over the whole page (the terminal and nav bar too), so it's clearly the one thing to answer. */
+  position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 50;
+  /* Sits over the board, as far from the machine's frame at the bottom as it is at the top
+     (where the board's own bar is in between). */
+  padding: 160px 1rem 106px;
   display: grid;
   place-items: center;
   background: rgb(10 7 5 / 55%);
@@ -14,9 +18,12 @@
 .popup__card {
   --cat: var(--spark);
   --cat-text: var(--on-spark);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  max-height: calc(100vh - 266px);
+  overflow-y: auto;
   width: min(440px, 92%);
   padding: 1.1rem;
   background: var(--screen-bar);
@@ -268,8 +275,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 0.8rem 1.6rem;
-  max-height: 60vh;
-  overflow-y: auto;
 }
 
 .keys h3 {
@@ -300,6 +305,14 @@
   margin: 0;
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+/* Why the key is that letter: what makes it stick */
+.keys__why {
+  display: block;
+  font-size: 0.78rem;
+  font-style: italic;
+  opacity: 0.8;
 }
 
 .keys kbd {
@@ -424,4 +437,29 @@
 
 .join__sign-in {
   padding: 0.7rem 1.2rem;
+}
+
+/* The x in a popup's corner */
+.popup__x {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.popup__x:hover,
+.popup__x:focus-visible {
+  color: var(--text);
+  border-color: var(--line);
 }

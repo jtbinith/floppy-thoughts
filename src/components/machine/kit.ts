@@ -22,19 +22,21 @@ function toonRamp() {
   return tex
 }
 
-export function createKit(): Kit {
+// `ink` and `outlineScale` let a scene draw softer, thinner outlines than the default.
+export function createKit({ ink = INK, outlineScale = 1 }: { ink?: string; outlineScale?: number } = {}): Kit {
   const disposables: { dispose: () => void }[] = []
   const keep = <T extends { dispose: () => void }>(thing: T) => {
     disposables.push(thing)
     return thing
   }
   const ramp = keep(toonRamp())
-  const inkMat = keep(new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide }))
+  const inkMat = keep(new THREE.MeshBasicMaterial({ color: ink, side: THREE.BackSide }))
   const toon = (color: string, extra: THREE.MeshToonMaterialParameters = {}) => keep(new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra }))
 
   // A mesh with an ink outline: a slightly bigger copy, inside out, drawn in ink behind it.
   // It grows from the shape's own centre, and not at all along a very thin side.
   function inked(geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[], outline = 0.03) {
+    outline *= outlineScale
     keep(geometry)
     const mesh = new THREE.Mesh(geometry, material)
     mesh.castShadow = true

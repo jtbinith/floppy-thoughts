@@ -25,7 +25,7 @@ export function SiteFooter() {
 function InfoPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="home">
-      <NavBar current="info" showBoards />
+      <NavBar current="info" />
       <main className="info">
         <h1>{title}</h1>
         <p className="info__date">Last changed {POLICY_DATE}</p>

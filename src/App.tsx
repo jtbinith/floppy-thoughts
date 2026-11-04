@@ -21,6 +21,7 @@ import { moveBrowserBoards } from './lib/account/upload'
 import { myRole, type Role } from './lib/account/sharing'
 import { joinLive, type Here, type Live } from './lib/account/live'
 import { JoinPage } from './components/JoinPage'
+import { NavBar } from './components/NavBar'
 import { PrivacyPage, TermsPage } from './components/InfoPages'
 import { AccountPage } from './components/AccountPage'
 
@@ -327,9 +328,7 @@ export default function App() {
 
   return (
     <div className="page">
-      <a className="device__label" href="#/">
-        Floppy Thoughts<small>ideas worth hacking on</small>
-      </a>
+      <NavBar current="boards" />
       <div className="device">
         {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
           <span key={corner} className={`device__screw device__screw--${corner}`} aria-hidden="true" />

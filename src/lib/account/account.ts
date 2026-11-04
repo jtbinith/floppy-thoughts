@@ -19,7 +19,9 @@ export const accountsOn = supabase !== null
 
 export async function signIn() {
   if (!supabase) return
-  sessionStorage.setItem(RETURN_KEY, location.hash)
+  // Signing in lands on the home page. Invite links are the exception: they come back to the
+  // invite, so you join the board you were invited to.
+  sessionStorage.setItem(RETURN_KEY, location.hash.startsWith('#/join/') ? location.hash : '#/')
   await supabase.auth.signInWithOAuth({
     provider: 'github',
     // Back to this site (the board's own address, without the page), allowed in Supabase's settings.

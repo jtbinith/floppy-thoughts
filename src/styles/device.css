@@ -8,7 +8,10 @@
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 1rem 1.5rem 1.5rem;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  /* No side padding here, so the nav bar lines up with every other page; the machine keeps its margin. */
+  padding: 0 0 1.5rem;
 }
 
 .device__label {
@@ -31,10 +34,10 @@
   display: flex;
   flex: 1;
   gap: 0.8rem;
-  width: 100%;
+  width: calc(100% - 3rem);
   max-width: 1680px;
   min-height: 0;
-  padding: 1.1rem;
+  padding: 0.7rem 1.1rem 1.1rem;
   background: var(--frame);
   border: 4px solid var(--frame-edge);
   /* Hard, stepped shadows give a chunky pixel-art bevel. */

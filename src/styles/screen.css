@@ -47,8 +47,9 @@
 .screen__bar {
   display: flex;
   gap: 1rem;
-  align-items: baseline;
-  padding: 0.45rem 1rem;
+  align-items: center;
+  min-height: 2.9rem;
+  padding: 0.55rem 1rem;
   font-size: 0.92rem;
   background: var(--screen-bar);
   border-bottom: 1px solid var(--line);
@@ -198,4 +199,17 @@
   border-radius: 50%;
   background: var(--line);
   outline: 1px solid var(--spark);
+}
+
+/* Share stands out: the one coloured button in the bar besides your favourite ideas. */
+.screen__share {
+  padding: 0.2rem 0.75rem;
+  color: var(--spark);
+  border-color: var(--spark);
+}
+
+.screen__share:hover,
+.screen__share:focus-visible {
+  color: var(--on-spark);
+  background: var(--spark);
 }

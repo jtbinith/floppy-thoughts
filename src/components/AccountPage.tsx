@@ -11,7 +11,7 @@ export function AccountPage({ storage }: { storage: StorageAdapter }) {
   const { account, ready } = useAccount()
   return (
     <div className="home">
-      <NavBar current="info" showBoards />
+      <NavBar current="info" />
       <main className="info">
         <h1>your account</h1>
         {!ready ? null : account ? (
@@ -20,7 +20,7 @@ export function AccountPage({ storage }: { storage: StorageAdapter }) {
           <>
             <p>You&apos;re not signed in. Your boards are kept in this browser only.</p>
             <p>
-              <button type="button" className="popup__stick" onClick={() => void signIn()}>
+              <button type="button" className="home__cta" onClick={() => void signIn()}>
                 sign in with GitHub
               </button>
             </p>
@@ -98,15 +98,14 @@ function Signed({ account, storage }: { account: Account; storage: StorageAdapte
       <h2>download your data</h2>
       <p>One file with your account details and every board you&apos;re on, with everything on them.</p>
       <p>
-        <button type="button" className="popup__back" onClick={() => void download()} disabled={busy !== null}>
+        <button type="button" className="home__cta home__cta--quiet home__cta--small" onClick={() => void download()} disabled={busy !== null}>
           download my data
         </button>
       </p>
 
       <h2>sign out</h2>
-      <p>Your account&apos;s boards leave this browser. They&apos;re still in your account.</p>
       <p>
-        <button type="button" className="popup__back" onClick={() => void signOut()} disabled={busy !== null}>
+        <button type="button" className="home__cta home__cta--quiet home__cta--small" onClick={() => void signOut()} disabled={busy !== null}>
           sign out
         </button>
       </p>
@@ -124,17 +123,22 @@ function Signed({ account, storage }: { account: Account; storage: StorageAdapte
             <input value={typed} onChange={(e) => setTyped(e.currentTarget.value)} autoFocus />
           </label>
           <div className="popup__actions">
-            <button type="button" className="popup__back" onClick={() => setDeleting(false)}>
+            <button type="button" className="home__cta home__cta--quiet home__cta--small" onClick={() => setDeleting(false)}>
               keep my account
             </button>
-            <button type="button" className="popup__stick popup__danger" disabled={typed !== account.name || busy !== null} onClick={() => void deleteAccount()}>
+            <button
+              type="button"
+              className="home__cta home__cta--danger home__cta--small"
+              disabled={typed !== account.name || busy !== null}
+              onClick={() => void deleteAccount()}
+            >
               delete my account
             </button>
           </div>
         </div>
       ) : (
         <p>
-          <button type="button" className="popup__back" onClick={() => setDeleting(true)} disabled={busy !== null}>
+          <button type="button" className="home__cta home__cta--danger home__cta--small" onClick={() => setDeleting(true)} disabled={busy !== null}>
             delete my account…
           </button>
         </p>

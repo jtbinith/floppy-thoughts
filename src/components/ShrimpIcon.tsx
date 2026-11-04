@@ -16,9 +16,9 @@ export function ShrimpIcon({ size = 22 }: { size?: number }) {
         />
         {/* banded body: the gaps in the stroke are the shell bands */}
         <path d="M40 30.5 C51 30 56 38 53.5 46 C51.5 51 46 53 40 53" fill="none" strokeWidth="11" pathLength="100" strokeDasharray="22 3.5" />
-        {/* fan tail */}
-        <path stroke="none" d="M41 50.5 C36 48 31 46.5 26.5 48 C28 50.5 31 52 35 52.5 Z" />
-        <path stroke="none" d="M41 53.5 C36 54.5 31 56.5 27.5 59.5 C31.5 60.3 36.5 58.5 41 56 Z" />
+        {/* fan tail: two fins, joined at the base */}
+        <path stroke="none" d="M45 50 C37 47 30 46.5 26 48.5 C28 51 30.5 53 33.5 54 L45 54 Z" />
+        <path stroke="none" d="M45 52.5 L33.5 53.5 C30.5 55.3 28.5 57.3 27 59.5 C32 60.5 38 58.5 45 55.5 Z" />
       </g>
       {/* little legs tucked under the head */}
       <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">

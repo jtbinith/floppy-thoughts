@@ -1,13 +1,13 @@
 /* The privacy, terms and account pages: plain reading pages */
 .info {
-  max-width: 46rem;
+  max-width: calc(46rem + 2 * clamp(1.5rem, 8vw, 8rem));
   padding-bottom: 3rem;
   font-family: var(--font-body);
   line-height: 1.6;
 }
 
 .home .info h1 {
-  margin: 2rem 0 0.2rem;
+  margin: 3rem 0 0.2rem;
   font-family: var(--font-heading);
   font-size: 2.2rem;
 }
@@ -95,15 +95,4 @@
 
 .agree a {
   color: inherit;
-}
-
-/* Your name in the nav bar goes to your account */
-.home a.nav__name {
-  color: var(--text);
-  text-decoration: none;
-}
-
-.home a.nav__name:hover,
-.home a.nav__name:focus-visible {
-  color: var(--spark);
 }

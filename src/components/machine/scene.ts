@@ -29,6 +29,9 @@ const SLOTS = 3
 const SIGN = { main: '404: idea not found...yet', idle: 'sit up straight', idleAfter: 45 }
 const LETTERS = CATEGORIES.map((_, i) => String.fromCharCode(65 + i))
 // Dark letters on light keys, cream letters on dark ones: whichever reads better.
+// The machine's outlines: softer than the kit's near-black ink.
+const MACHINE_INK = '#3a2c24'
+
 const labelOn = (bg: string) => bestText(bg, [INK, '#f6e3cc'])
 
 // Text painted onto a canvas. Kept sharp (no smoothing between texels).
@@ -97,7 +100,9 @@ export function createMachineScene(container: HTMLElement, opts: {
 ): MachineScene {
   const theme = opts.theme
   const cats = CATEGORIES.map((c, i) => ({ ...c, colour: opts.categoryColours?.[i] ?? c.colour }))
-  const kit = createKit()
+  // Softer, thinner outlines than the kit's default: a warm dark brown at about 60% of the width,
+  // so the machine reads as drawn without a heavy border (on light pages especially).
+  const kit = createKit({ ink: MACHINE_INK, outlineScale: 0.6 })
   const { toon, inked, box } = kit
   const disposables: { dispose: () => void }[] = [kit]
   const keep = <T extends { dispose: () => void }>(t: T) => (disposables.push(t), t)
@@ -320,11 +325,11 @@ export function createMachineScene(container: HTMLElement, opts: {
 
   // What's inside: the shrimp token, which pops out of the capsule once it stops rolling. Its thin
   // parts (antennae, legs) are tubes, each with a fatter ink tube behind it as an outline.
-  const inkMat = keep(new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide }))
+  const inkMat = keep(new THREE.MeshBasicMaterial({ color: MACHINE_INK, side: THREE.BackSide }))
   const tube = (points: [number, number, number][], radius: number, color: string, parent: THREE.Object3D) => {
     const path = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)))
     const m = new THREE.Mesh(keep(new THREE.TubeGeometry(path, 32, radius, 6)), toon(color))
-    m.add(new THREE.Mesh(keep(new THREE.TubeGeometry(path, 32, radius + 0.02, 6)), inkMat))
+    m.add(new THREE.Mesh(keep(new THREE.TubeGeometry(path, 32, radius + 0.012, 6)), inkMat))
     parent.add(m)
     return m
   }

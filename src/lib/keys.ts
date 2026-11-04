@@ -13,7 +13,7 @@ export const KEYS = {
   boardSort: `${PREFIX}ui:board-sort`,
   // A note picked on the home page, to start the next new board with (session only).
   startNote: `${PREFIX}ui:start-note`,
-  // The page you were on when you clicked "sign in", to come back to (session only).
+  // Where to land after signing in: the home page, or the invite link you came from (session only).
   returnTo: `${PREFIX}ui:return-to`,
   // When this browser's boards were moved to an account (once per account).
   uploaded: (accountId: string) => `${PREFIX}account:uploaded:${accountId}`,

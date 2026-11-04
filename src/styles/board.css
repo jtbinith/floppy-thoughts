@@ -366,12 +366,24 @@
 /* Box numbers (ids) only show while you're typing a command, to keep the board calm. */
 .idea__id {
   margin-left: auto;
+  /* Sized like the chip it becomes while you type a command, so boxes never change size. */
+  padding: 0.05rem 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border-radius: 3px;
   opacity: 0.7;
   visibility: hidden;
 }
 
 .workspace__board--ids .idea__id {
   visibility: visible;
-  font-weight: 700;
+  color: var(--on-spark);
+  background: var(--spark);
   opacity: 1;
+}
+
+/* While you're typing a command the numbers matter most, so a selected box's x steps aside. */
+.workspace__board--ids .idea__delete {
+  display: none;
 }

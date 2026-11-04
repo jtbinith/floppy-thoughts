@@ -75,6 +75,12 @@
   fill: var(--text);
 }
 
+/* In light mode, your ideas are a soft brown, not near-black, so the coloured notes stand out and
+   the little map doesn't look heavy (still 3:1 or more against the card). */
+:root[data-theme='light'] .sketch .sketch__user {
+  fill: #7d6a58;
+}
+
 .sketch text {
   font-size: 9px;
   fill: var(--muted);

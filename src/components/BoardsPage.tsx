@@ -33,7 +33,7 @@ export function BoardsPage(props: Props) {
 
   return (
     <div className="home">
-      <NavBar current="boards" showBoards />
+      <NavBar current="boards" />
       <main className="boards-page">
         <h1>my boards</h1>
         <div className="boards-tools">

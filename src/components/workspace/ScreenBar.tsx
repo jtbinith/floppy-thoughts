@@ -4,7 +4,6 @@ import { favouriteIdeas } from '../../lib/summary'
 import type { Here } from '../../lib/account/live'
 import type { SyncState } from '../../lib/account/outbox'
 import { MenuBar, type Menu } from '../MenuBar'
-import { ThemeToggle } from '../ThemeToggle'
 
 // The strip along the top of the board's screen: the menus, the board's name in the middle like
 // a window title (click to rename), and on the right the sun/moon button, a short notice when
@@ -65,7 +64,6 @@ export function ScreenBar({
         )}
       </div>
       <div className="screen__end">
-        <ThemeToggle className="theme-toggle--bar" />
         {here.length > 0 && (
           <span className="screen__here" aria-label={`Also here: ${here.map((p) => p.name).join(', ')}`}>
             {here.slice(0, 4).map((p) =>

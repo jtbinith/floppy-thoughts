@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { signIn } from '../lib/account/account'
 import { joinBoard } from '../lib/account/sharing'
+import { NavBar } from './NavBar'
 
 // Where an invite link lands. Signed out, it asks you to sign in (and comes back here after);
 // signed in, it joins the board and opens it.
@@ -27,9 +28,7 @@ export function JoinPage({ secret, signedIn, ready, onJoined }: { secret: string
 
   return (
     <div className="page">
-      <a className="device__label" href="#/">
-        Floppy Thoughts<small>ideas worth hacking on</small>
-      </a>
+      <NavBar current="info" />
       <div className="device">
         <div className="device__screen join">
           {!ready ? null : problem ? (
