@@ -40,7 +40,7 @@ export function PrivacyPage() {
   return (
     <InfoPage title="privacy">
       <p>
-        Floppy Thoughts is a free, open-source project run by <a href={RUN_BY_URL}>{RUN_BY}</a>. Questions, requests or takedowns: <Mail />.
+        Floppy Thoughts is a free, not-for-profit, open-source project run by <a href={RUN_BY_URL}>{RUN_BY}</a>. Questions, requests or takedowns: <Mail />.
       </p>
 
       <h2>The short version</h2>
@@ -149,7 +149,7 @@ export function TermsPage() {
       <p>By signing in you agree to these.</p>
       <ul>
         <li>
-          <strong>It&apos;s free and as it is.</strong> It&apos;s run by a volunteer with no promise it&apos;ll always be up or that nothing will
+          <strong>It&apos;s free, not-for-profit and as it is.</strong> It&apos;s run by a volunteer with no promise it&apos;ll always be up or that nothing will
           ever be lost. Download anything you can&apos;t lose.
         </li>
         <li>
