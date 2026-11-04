@@ -4,6 +4,7 @@
 import { lazy, Suspense } from 'react'
 import { CATEGORIES } from './machine/categories'
 import { NavBar } from './NavBar'
+import { SiteFooter } from './InfoPages'
 import { TypedHeadline } from './TypedHeadline'
 
 // The 3D machine loads on its own, so the 3D library only downloads with the home page.
@@ -123,14 +124,7 @@ export function Home({ hasBoards }: Props) {
         </div>
       </section>
 
-      <footer className="home__footer">
-        <span>Floppy Thoughts · ideas worth hacking on</span>
-        <span>
-          built with <a href="https://reactflow.dev">React Flow</a>, <a href="https://threejs.org">three.js</a>, <a href="https://zod.dev">Zod</a> and{' '}
-          <a href="https://www.datamuse.com/api/">Datamuse</a>
-        </span>
-        <span title="Seriously, how is your posture right now?">🦐 sit up straight</span>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

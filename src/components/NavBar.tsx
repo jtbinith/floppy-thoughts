@@ -4,7 +4,7 @@ import { ThemeToggle } from './ThemeToggle'
 // The bar along the top of the home and boards pages: the logo (home), your boards, signing in,
 // and the dark/light switch.
 type Props = {
-  current: 'home' | 'boards'
+  current: 'home' | 'boards' | 'info'
   showBoards: boolean
 }
 
@@ -33,14 +33,16 @@ function AccountButton() {
   if (!ready) return null
   if (!account)
     return (
-      <button type="button" className="nav__link nav__button" onClick={() => void signIn()} title="Sign in with GitHub to share boards and keep them on every device">
+      <button type="button" className="nav__link nav__button" onClick={() => void signIn()} title="Sign in with GitHub to share boards and keep them on every device (you agree to the terms)">
         sign in
       </button>
     )
   return (
     <span className="nav__account">
       {account.avatarUrl && <img className="nav__avatar" src={account.avatarUrl} alt="" width={22} height={22} />}
-      <span className="nav__name">{account.name}</span>
+      <a className="nav__name" href="#/account" title="Your account">
+        {account.name}
+      </a>
       <button type="button" className="nav__link nav__button" onClick={() => void signOut()}>
         sign out
       </button>

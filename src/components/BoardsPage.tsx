@@ -4,6 +4,7 @@ import { KEYS } from '../lib/keys'
 import type { BoardSummary } from '../lib/storage'
 import { BoardList } from './BoardList'
 import { NavBar } from './NavBar'
+import { SiteFooter } from './InfoPages'
 
 // All your boards on their own page, outside the device (like the home page).
 type Props = {
@@ -59,6 +60,7 @@ export function BoardsPage(props: Props) {
         <BoardList {...props} boards={shown} />
         {search && shown.length === 0 && <p className="boards-tools__none">No boards match “{search.trim()}”.</p>}
       </main>
+      <SiteFooter />
     </div>
   )
 }

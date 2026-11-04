@@ -331,6 +331,9 @@ People can complain to the UK Information Commissioner's Office (ICO). If the po
 
 ### Before accounts go live
 
-- A privacy policy page (what's above, in plain words, with a contact address) and short terms of use: free, volunteer-run and as is; 13 and over; what's not allowed on shared boards (impersonation, harassment, sharing others' personal details, spam, trying to get into others' boards); you own what you write; publishing to the gallery lets it be shown there; governed by the laws of England and Wales.
-- Sending email (Supabase's email settings), for the inactive-account warnings and policy changes.
-- Check whether the ICO data protection fee applies (its self-assessment), and choose the Supabase region.
+- [x] Privacy policy (`#/privacy`) and terms (`#/terms`) in plain words, linked from every page's footer and wherever you sign in. Run by `jtbinith`; contact floppythoughts.help@gmail.com (both in `src/lib/site.ts`).
+- [x] Account page (`#/account`): download my data (one JSON file) and delete my account (`delete_my_account()`, confirmed by typing your username).
+- [x] Supabase in London; sign-in by GitHub only (email sign-in off); Realtime public channels off.
+- [ ] Check whether the ICO data protection fee applies (its self-assessment).
+- [ ] Before any account reaches 23 months without a sign-in (November 2028 at the earliest): sending email (Supabase's email settings, or a mail service), the warning emails a month, a week and a day before, and the job that deletes inactive accounts.
+- [ ] When the gallery comes: the gallery table, the claim hash, and its line in the terms (publishing lets it be shown there).

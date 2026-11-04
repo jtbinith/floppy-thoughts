@@ -1,0 +1,109 @@
+/* The privacy, terms and account pages: plain reading pages */
+.info {
+  max-width: 46rem;
+  padding-bottom: 3rem;
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+.home .info h1 {
+  margin: 2rem 0 0.2rem;
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+}
+
+.info h2 {
+  margin: 2rem 0 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+}
+
+.info__date {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.info a {
+  color: var(--spark);
+}
+
+.info table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.info th,
+.info td {
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.info__card {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+}
+
+.info__card img {
+  border-radius: 50%;
+}
+
+.info__card p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.info__danger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--spark);
+}
+
+.info__danger label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.info__danger input {
+  padding: 0.5rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--line);
+}
+
+.info__problem {
+  color: var(--spark);
+}
+
+/* "Signing in means you agree to the terms" */
+.agree {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.agree a {
+  color: inherit;
+}
+
+/* Your name in the nav bar goes to your account */
+.home a.nav__name {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.home a.nav__name:hover,
+.home a.nav__name:focus-visible {
+  color: var(--spark);
+}

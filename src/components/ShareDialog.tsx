@@ -27,6 +27,9 @@ export function ShareDialog({ board, onClose }: { board: Board; onClose: () => v
               not now
             </button>
           </div>
+          <p className="dialog__text agree">
+            Signing in means you agree to the <a href="#/terms">terms</a>; how your data is handled is on the <a href="#/privacy">privacy</a> page.
+          </p>
         </>
       )}
     </Dialog>

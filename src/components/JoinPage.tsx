@@ -50,6 +50,9 @@ export function JoinPage({ secret, signedIn, ready, onJoined }: { secret: string
               <button type="button" className="popup__stick join__sign-in" onClick={() => void signIn()}>
                 sign in with GitHub
               </button>
+              <p className="screen__message agree">
+                Signing in means you agree to the <a href="#/terms">terms</a>; how your data is handled is on the <a href="#/privacy">privacy</a> page.
+              </p>
             </>
           )}
         </div>

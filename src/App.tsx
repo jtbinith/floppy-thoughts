@@ -21,6 +21,8 @@ import { moveBrowserBoards } from './lib/account/upload'
 import { myRole, type Role } from './lib/account/sharing'
 import { joinLive, type Here, type Live } from './lib/account/live'
 import { JoinPage } from './components/JoinPage'
+import { PrivacyPage, TermsPage } from './components/InfoPages'
+import { AccountPage } from './components/AccountPage'
 
 // Boards in this browser. Signed in, boards live in your account instead (SupabaseStorage).
 const browser = new LocalStorageAdapter()
@@ -36,8 +38,19 @@ const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) 
 //   #/shrimp  PROTOTYPE: the shrimp token, a chunky spinning pickup
 //   #/palette the colour palette: where it came from, contrast checks, dark and light mode
 //   #/join/…  an invite link: joins the board it's for (after signing in)
-type Route = 'home' | 'new' | 'board' | 'boards' | 'shrimp' | 'palette' | 'join'
-const ROUTES: Record<string, Route> = { '#/new': 'new', '#/board': 'board', '#/boards': 'boards', '#/shrimp': 'shrimp', '#/palette': 'palette' }
+//   #/account your account: download your data, delete it
+//   #/privacy, #/terms
+type Route = 'home' | 'new' | 'board' | 'boards' | 'shrimp' | 'palette' | 'join' | 'account' | 'privacy' | 'terms'
+const ROUTES: Record<string, Route> = {
+  '#/new': 'new',
+  '#/board': 'board',
+  '#/boards': 'boards',
+  '#/shrimp': 'shrimp',
+  '#/palette': 'palette',
+  '#/account': 'account',
+  '#/privacy': 'privacy',
+  '#/terms': 'terms',
+}
 const routeFromHash = (): Route => (location.hash.startsWith('#/join/') ? 'join' : (ROUTES[location.hash] ?? 'home'))
 const go = (route: Route) => {
   location.hash = route === 'home' ? '/' : `/${route}`
@@ -288,6 +301,9 @@ export default function App() {
 
   if (route === 'home') return <Home hasBoards={hasBoards} />
   if (route === 'palette') return <PalettePage />
+  if (route === 'privacy') return <PrivacyPage />
+  if (route === 'terms') return <TermsPage />
+  if (route === 'account') return <AccountPage storage={storage} />
   if (route === 'shrimp')
     return (
       <Suspense fallback={null}>
