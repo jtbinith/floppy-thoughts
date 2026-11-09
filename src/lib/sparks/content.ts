@@ -1,168 +1,27 @@
-// Hand-picked sparks for the first version. They work offline and cost nothing.
-// Live sources (headlines, Wikipedia) and a daily content drop come later.
-// Rules for adding sparks: concrete, picturable, true, kind. Never a finished idea.
+// The notes in the vending machine, one file per row in src/content/notes/. Rules for adding
+// them are in src/content/notes/README.md: concrete, picturable, true, kind and never a finished
+// idea. Facts (curiosities, and geography in nature) carry a source.
+import constraints from '../../content/notes/constraints.json'
+import curiosities from '../../content/notes/curiosities.json'
+import nature from '../../content/notes/nature.json'
+import objects from '../../content/notes/objects.json'
+import problems from '../../content/notes/problems.json'
+import words from '../../content/notes/words.json'
 
-export const SPARKS = {
-  words: [
-    'cassette', 'lighthouse', 'kettle', 'glacier', 'trumpet', 'magnet', 'umbrella', 'volcano',
-    'telescope', 'pinecone', 'submarine', 'teapot', 'kite', 'beehive', 'mailbox', 'rollercoaster',
-    'chopsticks', 'doorbell', 'scarecrow', 'balloon', 'ladder', 'zip', 'mirror', 'crayon',
-    'igloo', 'treasure map', 'bubble wrap', 'piano', 'raincoat', 'carousel', 'snorkel',
-    'vending machine', 'tortoise', 'rocket', 'sponge', 'campfire', 'postcard', 'satellite',
-    'toothbrush', 'trampoline',
-  ],
-  problems: [
-    '"My houseplants die while I\'m away"',
-    '"I always forget to take my medication"',
-    '"How do I stop my cat waking me at 5am?"',
-    '"I never know what to cook with what\'s in the fridge"',
-    '"I lose my keys every morning"',
-    '"Our group chat can never agree on plans"',
-    '"I can\'t remember people\'s names"',
-    '"The bus never comes when the timetable says"',
-    '"I can\'t find a quiet place to study"',
-    '"My grandparents struggle with video calls"',
-    '"I never drink enough water"',
-    '"Chores in our shared house never get done fairly"',
-    '"I sit hunched over my desk all day"',
-    '"I can\'t tell if the laundry machines are free"',
-    '"Rain always catches me without an umbrella"',
-    '"I forget birthdays until the day itself"',
-    '"Dog walks feel boring for both of us"',
-    '"My library books always end up overdue"',
-    '"Nobody looks after the office plant"',
-    '"I can\'t choose what to watch, so I watch nothing"',
-    '"Parcels get left out in the rain"',
-    '"My phone dies on long days out"',
-    '"I never know which bin things go in"',
-    '"Neighbours on my street don\'t know each other"',
-    '"I lose track of time when I\'m coding"',
-    '"Meeting notes disappear and nobody reads them"',
-    '"I start hobbies and never stick with them"',
-    '"Hackathon teams can\'t decide what to build"',
-  ],
-  objects: [
-    'Victorian brass diving helmet',
-    '1960s Curta mechanical calculator',
-    'Hand-cranked music box',
-    'Hand-painted Edo-period map of Kyoto',
-    'Rotary dial telephone',
-    'Pocket sundial',
-    'Morse code telegraph key',
-    'Wooden abacus',
-    'Magic lantern projector',
-    "Ship's sextant",
-    'Cuckoo clock',
-    'Instant film camera',
-    'Wind-up gramophone',
-    'Penny-farthing bicycle',
-    'Slide rule',
-    'View-Master reel viewer',
-    'Theremin',
-    'Jacquard loom punch cards',
-    'Lava lamp',
-    'Portable cassette player',
-    'Pager',
-    'Floppy disk',
-    'Tin toy robot',
-    'Brass ship barometer',
-    'Weather vane',
-    'Spinning top',
-    'Message in a glass bottle',
-    'Pinhole camera',
-  ],
-  curiosities: [
-    'Octopuses have three hearts',
-    'A day on Venus is longer than its year',
-    'Bananas are slightly radioactive',
-    'Wombat poo is cube-shaped',
-    'Sharks existed before trees',
-    'Some turtles can breathe through their bottoms',
-    'The Eiffel Tower grows taller in summer heat',
-    'Sea otters hold hands while they sleep',
-    'A teaspoon of soil holds more microbes than there are people on Earth',
-    'The first computer "bug" was a real moth, in 1947',
-    'Lightning is several times hotter than the surface of the Sun',
-    'Cats cannot taste sweetness',
-    'There are more possible chess games than atoms in the observable universe',
-    'Butterflies taste with their feet',
-    'A group of flamingos is called a flamboyance',
-    'Wood frogs freeze solid in winter and thaw back to life',
-    'Venice stands on millions of wooden piles',
-    'Saturn is less dense than water',
-    'A pineapple takes about two years to grow',
-    'Tardigrades have survived the vacuum of space',
-    'Koalas sleep for up to 20 hours a day',
-    'The Moon drifts about 3.8 cm further from Earth every year',
-    'Crows can recognise individual human faces',
-    'The Great Wall of China is not visible from space with the naked eye',
-    'Glass frogs have see-through bellies',
-    'Mantis shrimp punch so fast the water around them briefly boils',
-  ],
-  nature: [
-    'Glow-worms in a hedgerow',
-    'A starling murmuration at dusk',
-    'Bioluminescent waves at night',
-    'A fairy ring of mushrooms',
-    'Salmon leaping upstream',
-    'Monarch butterflies migrating',
-    'Bees doing a waggle dance',
-    'Frost patterns on a window',
-    'Dandelion seeds on the wind',
-    'Fireflies flashing in sync',
-    'Coral spawning under a full moon',
-    'The dawn chorus',
-    'A spider web covered in dew',
-    'Leaves turning in autumn',
-    'Ants linking bodies to make a bridge',
-    'Lichen on old stone walls',
-    'A thunderstorm out at sea',
-    'The northern lights',
-    'Hedgehogs hibernating',
-    'Mudskippers walking on land',
-    'A beaver dam',
-    'Cherry blossom season',
-    'Penguins huddling in a blizzard',
-    'Sand dunes that hum',
-    'An octopus changing colour',
-    'Young sunflowers following the sun',
-  ],
-  // Limits to build within. A rule, never an idea.
-  constraints: [
-    'One button only',
-    'Works offline',
-    'For two players',
-    'No screen',
-    'Uses only sound',
-    'Fits on a sticky note',
-    'Made for someone over 80',
-    'Made for a five-year-old',
-    'Works with one hand',
-    'Under 100 lines of code',
-    'Only uses the camera',
-    'Runs on an old phone',
-    'Has to be used outdoors',
-    'Takes ten seconds to use',
-    'Only works at night',
-    'No words, only pictures',
-    'Your body is the controller',
-    'Shared by a whole street',
-    'Has to make someone laugh',
-    'Works for a week without the internet',
-    'Costs nothing to run',
-    'Uses a sensor that costs under £5',
-    'Everything happens in one tap',
-    'Has to be quiet',
-    'Made for a pet',
-    'Talks only in colours',
-    'Built in a weekend',
-    'Has to work in the rain',
-    'Usable without sight',
-    'No accounts, no logins',
-    'Lives in the kitchen',
-    'Only uses your voice',
-  ],
-} as const
+// Where a note came from: written by hand, or picked from an open dataset (and reworded).
+export type NoteOrigin = 'hand' | 'met' | 'wordnet' | 'wikidata'
+export type NoteEntry = { text: string; origin: NoteOrigin; source?: string }
+
+export const NOTES = { words, problems, objects, curiosities, nature, constraints } as Record<
+  'words' | 'problems' | 'objects' | 'curiosities' | 'nature' | 'constraints',
+  NoteEntry[]
+>
+
+// Just the text of each row, which is what the machine deals from.
+export const SPARKS = Object.fromEntries(Object.entries(NOTES).map(([row, notes]) => [row, notes.map((n) => n.text)])) as Record<
+  keyof typeof NOTES,
+  string[]
+>
 
 export type ContentCategory = keyof typeof SPARKS
 export const CONTENT_CATEGORIES = Object.keys(SPARKS) as ContentCategory[]

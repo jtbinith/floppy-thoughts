@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseBoard } from '../board'
-import { SPARKS } from './content'
+import { NOTES, SPARKS } from './content'
+import declined from '../../content/notes/declined.json'
+import { QUESTIONS, fillQuestion } from '../nudges/questions'
 import { createBoard } from './newBoard'
 import { rowEmpty, vendNote } from './vend'
 
@@ -33,6 +35,55 @@ describe('content', () => {
       expect(new Set(items).size, category).toBe(items.length)
       for (const text of items) expect(text.length, text).toBeLessThanOrEqual(80)
     }
+  })
+
+  it('never repeats a note across rows', () => {
+    const all = Object.values(SPARKS).flat().map((t) => t.toLowerCase())
+    const seen = new Set<string>()
+    const repeats = all.filter((t) => (seen.has(t) ? true : (seen.add(t), false)))
+    expect(repeats).toEqual([])
+  })
+
+  it('writes problems as a quote, in the first person', () => {
+    for (const p of SPARKS.problems) expect(p, p).toMatch(/^".+"$/)
+  })
+
+  it('keeps notes plain: no full stop at the end and no serial comma', () => {
+    for (const text of Object.values(SPARKS).flat()) {
+      expect(text, text).not.toMatch(/\.$/)
+      expect(text, text).not.toMatch(/, (and|or) /)
+    }
+  })
+})
+
+describe('note files', () => {
+  it('says where every note came from, with a source for every fact', () => {
+    for (const [row, notes] of Object.entries(NOTES))
+      for (const n of notes) {
+        expect(['hand', 'met', 'wordnet', 'wikidata'], `${row}: ${n.text}`).toContain(n.origin)
+        if (n.source !== undefined) expect(n.source, n.text).toMatch(/^https:\/\//)
+      }
+    for (const n of NOTES.curiosities) expect(n.source, n.text).toBeDefined()
+  })
+
+  it('never brings back a note that was declined', () => {
+    const out = new Set((declined as { text: string }[]).map((d) => d.text.toLowerCase()))
+    expect(Object.values(SPARKS).flat().filter((t) => out.has(t.toLowerCase()))).toEqual([])
+  })
+})
+
+describe('nudge questions', () => {
+  it('has plenty of each kind, all unique', () => {
+    for (const [kind, items] of Object.entries(QUESTIONS)) {
+      expect(items.length, kind).toBeGreaterThanOrEqual(25)
+      expect(new Set(items).size, kind).toBe(items.length)
+    }
+  })
+
+  it('asks a question (or gives a short push), and only perspective, scale and senses name the idea', () => {
+    for (const kind of ['perspective', 'scale', 'senses'] as const) for (const q of QUESTIONS[kind]) expect(q, q).toMatch(/\{x\}.*\?$|\?$/)
+    for (const q of QUESTIONS.push) expect(q, q).toMatch(/[.?]$/)
+    for (const q of Object.values(QUESTIONS).flat()) expect(fillQuestion(q, 'a kite').length, q).toBeLessThanOrEqual(90)
   })
 })
 
