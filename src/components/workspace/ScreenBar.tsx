@@ -39,7 +39,7 @@ export function ScreenBar({
   const favCount = favouriteIdeas(board).length
   // On a phone the four menus don't fit, so they become one, with a line between each group.
   const phone = usePhone()
-  const shown: Menu[] = phone ? [{ label: 'Menu', items: menus.flatMap((m, i) => (i ? ['divider' as const, ...m.items] : m.items)) }] : menus
+  const shown = phone ? [phoneMenu(menus)] : menus
   return (
     <header className="screen__bar">
       <MenuBar menus={shown} />
@@ -98,6 +98,29 @@ export function ScreenBar({
       </div>
     </header>
   )
+}
+
+// The phone's one Menu: every group in turn with a line between, leaving out what needs a keyboard
+// (the shortcuts sheet), with "Commands" as "Help" (it opens the touch tips there), each item once.
+function phoneMenu(menus: Menu[]): Menu {
+  const items: Menu['items'] = []
+  const seen = new Set<string>()
+  for (const menu of menus) {
+    if (items.length && items.at(-1) !== 'divider') items.push('divider')
+    for (const item of menu.items) {
+      if (item === 'divider') {
+        if (items.length && items.at(-1) !== 'divider') items.push(item)
+        continue
+      }
+      if (item.label === 'Keyboard shortcuts') continue
+      const label = item.label === 'Commands' ? 'Help' : item.label
+      if (seen.has(label)) continue
+      seen.add(label)
+      items.push({ ...item, label })
+    }
+  }
+  if (items.at(-1) === 'divider') items.pop()
+  return { label: 'Menu', items }
 }
 
 const changes = (n: number) => `${n} change${n > 1 ? 's' : ''}`

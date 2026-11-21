@@ -16,6 +16,7 @@ import { isTyping } from './workspace/isTyping'
 import { BoardActionsContext, type BoardActions } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
+import { usePhone } from '../lib/usePhone'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
 import { KeysSheet } from './KeysSheet'
@@ -233,6 +234,7 @@ export function Workspace(props: Props) {
   // On a phone the terminal stays tucked away until you ask for it (the >_ button), so the board
   // gets the room. Everywhere else it's always there and this does nothing to the layout.
   const [terminalOpen, setTerminalOpen] = useState(false)
+  const phone = usePhone()
   function focusTerminal() {
     setTerminalOpen(true)
     // Once it's on screen.
@@ -285,7 +287,7 @@ export function Workspace(props: Props) {
 
   return (
     <BoardActionsContext.Provider value={actions}>
-      <div className={`workspace${terminalOpen ? ' workspace--terminal' : ''}`}>
+      <div className={`workspace${terminalOpen ? ' workspace--terminal' : ''}${panel ? ' workspace--panel' : ''}`}>
         {/* In the order you work: add a thought, get a note, look back at what you favourited, then help. */}
         <nav className="device__rail" aria-label="Device buttons">
           <button type="button" className="device__button" aria-label="Add an idea" title="Add an idea" onClick={() => addAndEdit(visibleCentre())}>
@@ -362,11 +364,17 @@ export function Workspace(props: Props) {
               />
               {board.nodes.length === 0 && !askTheme && (
                 <div className="board__empty">
-                  <p>Start typing your first thoughts, or get a note from the vending machine.</p>
+                  <p>{phone ? 'Add your first thoughts, or get a note from the vending machine.' : 'Start typing your first thoughts, or get a note from the vending machine.'}</p>
                   <div className="board__empty-actions">
-                    <button type="button" className="popup__stick" onClick={focusTerminal}>
-                      start typing
-                    </button>
+                    {phone ? (
+                      <button type="button" className="popup__stick" onClick={() => addAndEdit(visibleCentre())}>
+                        add an idea
+                      </button>
+                    ) : (
+                      <button type="button" className="popup__stick" onClick={focusTerminal}>
+                        start typing
+                      </button>
+                    )}
                     <button type="button" className="popup__back" onClick={() => setPanel('machine')}>
                       open the machine
                     </button>
