@@ -6,6 +6,7 @@ import { loadSeen, rememberSeen } from '../../lib/sparks/seen'
 import { vendNote, type VendRow } from '../../lib/sparks/vend'
 import { CATEGORIES } from './categories'
 import { createMachineScene, type MachineScene } from './scene'
+import { PHONE_QUERY } from '../../lib/usePhone'
 import { THEMES } from './themes'
 
 // The live 3D vending machine: circuit teal, on a see-through background so it sits on the page in
@@ -101,6 +102,8 @@ export default function HomeMachine({ onBoard, className = '' }: Props) {
           // One note at a time: the screen says WAIT while one is out.
           vendGate: (category: string) => (noteOut.current ? 'WAIT' : (board.current?.vendGate(category) ?? null)),
           ...(onABoard ? { keyTarget: el } : {}),
+          // On a phone's board it starts close up on the keypad, so the keys are big enough to tap.
+          startAt: onABoard && window.matchMedia?.(PHONE_QUERY).matches ? 'keypad' : 'home',
         })
         setMachine(scene)
       })

@@ -1,8 +1,9 @@
 /* Phones: the board's touch-first layout. Same width as lib/usePhone.ts.
    The device keeps its chunky top and bottom with the screws but has thin sides, so the board
-   gets the width. The rail of buttons moves into the bottom of the frame (where your thumb is),
-   "add an idea" floats over the board, and the terminal and the drawer open in a strip under
-   the board, so the board stays in view. Desktop and tablets keep the full device. */
+   gets the width. The page scrolls: the board fills the screen at its normal size (so nothing's
+   too small to read), and the terminal and the drawer open below it, scrolled into view. The
+   buttons sit in the bottom of the frame and stay stuck to the bottom of the screen; "add an
+   idea" floats over the board. Desktop and tablets keep the full device. */
 
 /* The terminal button is only for phones. */
 .device__button--terminal {
@@ -10,12 +11,49 @@
 }
 
 @media (max-width: 700px) {
+  /* The page scrolls, instead of everything squeezing into one screen. */
   .page {
+    overflow-y: auto;
     padding-bottom: 0;
+  }
+
+  .device,
+  .workspace,
+  .device__screen,
+  .screen__main {
+    flex: none;
+    min-height: 0;
+  }
+
+  .device__screen {
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .workspace,
+  .device__screen,
+  .screen__main {
+    width: 100%;
+  }
+
+  /* When the page scrolls to the drawer or the terminal, it stops above the stuck button bar
+     instead of under it. */
+  .panel,
+  .terminal {
+    scroll-margin-bottom: 5rem;
+  }
+
+  /* The board alone fills the screen under the nav bar (with the frame's top, its strip and the
+     buttons), at least 22rem tall. */
+  .workspace__board {
+    flex: none;
+    height: max(22rem, calc(100svh - 14.5rem));
   }
 
   /* Chunky top and bottom (with the screws), thin sides, edge to edge. */
   .device {
+    /* Stacked top to bottom, so everything in it is the screen's width (not its contents'). */
+    flex-direction: column;
     width: 100%;
     gap: 0;
     padding: 18px 4px 0;
@@ -54,8 +92,11 @@
 
   /* The bottom of the frame holds the buttons, with room for the screws at its corners. */
   .device__rail {
-    position: relative;
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
     order: 2;
+    background: var(--frame);
     flex-direction: row;
     justify-content: space-around;
     gap: 0;
@@ -106,10 +147,10 @@
     left: 0;
   }
 
-  /* The terminal opens in a strip under the board: the last few lines and the input. */
+  /* The terminal opens under the board (and under the drawer, if that's open too): the last few
+     lines and the input. */
   .terminal {
-    height: auto !important;
-    max-height: 9.5rem;
+    height: 12rem !important;
   }
 
   .terminal__resize,
@@ -153,14 +194,14 @@
     display: none;
   }
 
-  /* The drawer (machine, favourites, help) opens under the board too, taking a bit over half
-     the height so the machine is big enough to tap, with the board still showing above it. */
+  /* The drawer (machine, favourites, help) opens under the board, as tall as it needs (the machine
+     gets a good-sized box), and the page scrolls down to it. */
   .screen__main {
     flex-direction: column;
   }
 
   .panel {
-    flex: 0 0 62%;
+    flex: none;
     width: auto !important;
     border-top: 2px solid var(--frame-edge);
     border-left: 0;
@@ -178,44 +219,18 @@
   /* The machine fills what's left of the drawer above its one line of help, instead of its
      desktop height (which would push it out of the strip). */
   .panel__body {
-    flex: 1;
-    min-height: 0;
     gap: 0.5rem;
-    padding: 0.6rem 0.8rem;
-  }
-
-  .panel__machine {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .panel__machine,
-  .panel__machine .home__machine-stage {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .panel__machine .home__machine-stage {
-    flex: 1;
-    min-height: 0;
+    padding: 0.6rem 0.8rem 1rem;
+    overflow: visible;
   }
 
   .panel__machine .home__machine {
-    flex: 1;
-    height: auto;
-    min-height: 0;
+    height: min(26rem, 70svh);
   }
 
   .panel__hint {
     font-size: 0.8rem;
     line-height: 1.5;
-  }
-
-  /* With the drawer or the terminal open, the empty board's welcome steps aside (there's no room
-     for it, and you're already doing one of the things it suggests). */
-  .workspace--panel .board__empty,
-  .workspace--terminal .board__empty {
-    display: none;
   }
 
   /* The note from the machine: no keycaps on its buttons, there's no keyboard. */

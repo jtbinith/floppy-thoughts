@@ -79,6 +79,9 @@ export function createMachineScene(container: HTMLElement, opts: {
     // Sitting inside a page: see-through background with just the machine's shadow, and no scroll-to-zoom
     // (so scrolling the page still scrolls the page).
     embedded?: boolean
+    // Where the camera starts: the whole machine (the default), or close up on the keypad (on a
+    // phone's board, so the keys are big enough to tap). A vend still flies out to show the roll.
+    startAt?: 'home' | 'keypad'
     // Other colours for the six rows, in order (to try palettes).
     categoryColours?: string[]
     // On a board: asked before each vend whether that row can give one now. Return a short word for
@@ -465,6 +468,8 @@ export function createMachineScene(container: HTMLElement, opts: {
     }
     move = gsap.to(p, { k: 1, duration, ease: 'power2.inOut', onUpdate: apply, onComplete: () => void (move = null) })
   }
+  if (opts.startAt === 'keypad') fly('keypad', 0)
+
   // Before a vend, make sure the drop and roll will be in view. From the keypad close-up, go back to
   // the start view. If you've turned the machine yourself, keep your angle as far as possible: just
   // move and zoom out to fit the floor in front, and if the chute is hidden (you're at the side or

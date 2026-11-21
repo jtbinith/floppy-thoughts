@@ -235,6 +235,14 @@ export function Workspace(props: Props) {
   // gets the room. Everywhere else it's always there and this does nothing to the layout.
   const [terminalOpen, setTerminalOpen] = useState(false)
   const phone = usePhone()
+  // On a phone the drawer and the terminal open below the board, so the page scrolls down to
+  // whichever just opened (the bottom of it, so its input or keypad is in reach).
+  useEffect(() => {
+    if (!phone || !(panel || terminalOpen)) return
+    const target = document.querySelector(terminalOpen ? '.terminal' : '.panel')
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    requestAnimationFrame(() => target?.scrollIntoView({ block: 'end', behavior: smooth ? 'smooth' : 'auto' }))
+  }, [phone, panel, terminalOpen])
   function focusTerminal() {
     setTerminalOpen(true)
     // Once it's on screen.
