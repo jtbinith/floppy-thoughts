@@ -678,8 +678,9 @@
 }
 
 .show__capsule {
-  width: 1.4rem;
-  height: 1.4rem;
+  /* 24px at least: the smallest size for something you click (WCAG AA). */
+  width: 1.5rem;
+  height: 1.5rem;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -795,7 +796,7 @@
 
 @media (max-width: 760px) {
   .home__together {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -965,7 +966,8 @@
 
 @media (max-width: 860px) {
   .home__hero-grid {
-    grid-template-columns: 1fr;
+    /* minmax(0, …) so the column can't grow wider than the page to fit the headline. */
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
   }
 
@@ -1026,4 +1028,139 @@
 /* On the board's page the nav bar is the same as everywhere else: same width, place and spacing. */
 .page > .home__nav {
   align-self: stretch;
+}
+
+/* Phones: the nav bar fits on one row. The logo shrinks to the shrimp tile (its words stay
+   for screen readers), and the gaps tighten so Home, Boards, Sign In and the dark/light
+   switch all stay on screen, down to 320px wide. */
+@media (max-width: 560px) {
+  .home__nav {
+    gap: 0.5rem;
+  }
+
+  /* The headline never wraps (it types itself out), so it shrinks with the screen instead:
+     "IDEAS WORTH" fits on one line down to 320px wide. */
+  .home h1 {
+    font-size: clamp(2rem, 11vw, 2.6rem);
+  }
+
+  .home__logo-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .nav {
+    gap: 0.25rem;
+  }
+
+  .nav__end {
+    gap: 0.25rem;
+    margin-left: 0.25rem;
+  }
+
+  .nav__sign-in {
+    padding: 0.35rem 0.8rem;
+  }
+}
+
+/* Touch screens: everything you tap is at least 44px, the comfortable size for a finger.
+   Mice and trackpads keep the tighter desktop look. */
+@media (pointer: coarse) {
+  .home__nav a.home__logo,
+  .home__nav a.nav__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .home__nav a.home__logo {
+    justify-content: center;
+    min-width: 44px;
+  }
+
+  /* Never squeezed narrower than a finger, however tight the row gets. */
+  .home__nav a.home__logo,
+  .nav__theme,
+  .nav__avatar,
+  .nav__sign-in {
+    flex: none;
+  }
+
+  .home__nav a.nav__link {
+    padding: 0 0.5rem;
+  }
+
+  .nav__theme,
+  .nav__avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav__sign-in {
+    min-height: 44px;
+  }
+
+  .home__nav .nav__menu a,
+  .nav__menu button {
+    min-height: 44px;
+  }
+
+  /* Footer links: taller hit areas without changing how the text sits. */
+  .home__footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .home__footer {
+    gap: 0 2rem;
+  }
+
+  .show__capsules {
+    gap: 0.5rem;
+  }
+
+  /* Up to 36px each, sharing the row on narrow phones (still 24px or more at 320px wide). */
+  .show__capsule {
+    flex: 1 1 0;
+    width: auto;
+    max-width: 2.25rem;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  /* The home machine's zoom buttons and its "use my keypad!" bubble. */
+  .home__zoom button,
+  .home__bubble {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* The narrowest phones (320–360px): a little less room at the sides of the page and between
+   the nav bar's items, so its 44px targets still fit on one row. */
+@media (max-width: 360px) {
+  .home__nav,
+  .home__inner,
+  .home__footer,
+  .home main {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .home__nav a.nav__link {
+    padding: 0 0.35rem;
+  }
+
+  .nav__sign-in {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .nav__end {
+    margin-left: 0;
+  }
 }

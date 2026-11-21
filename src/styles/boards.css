@@ -214,3 +214,22 @@
   margin: 0;
   color: var(--muted);
 }
+
+/* Touch screens: rename, delete, yes and no, search and sort are big enough for a finger. */
+@media (pointer: coarse) {
+  .boards-tools__search,
+  .boards-tools__sort select {
+    min-height: 44px;
+  }
+
+  .boards__actions,
+  .boards__confirm {
+    gap: 0.5rem;
+  }
+
+  .boards__actions button,
+  .boards__confirm button {
+    min-height: 44px;
+    padding: 0 0.9rem;
+  }
+}

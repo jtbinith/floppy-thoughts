@@ -17,7 +17,7 @@ export function NavBar({ current }: Props) {
         <span className="home__logo-mark" aria-hidden="true">
           <ShrimpIcon size={20} />
         </span>
-        <span>
+        <span className="home__logo-text">
           Floppy <span className="home__logo-accent">Thoughts</span>
         </span>
       </a>
