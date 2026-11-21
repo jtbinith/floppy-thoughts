@@ -4,6 +4,7 @@ import { favouriteIdeas } from '../../lib/summary'
 import type { Here } from '../../lib/account/live'
 import type { SyncState } from '../../lib/account/outbox'
 import { MenuBar, type Menu } from '../MenuBar'
+import { usePhone } from '../../lib/usePhone'
 
 // The strip along the top of the board's screen: the menus, the board's name in the middle like
 // a window title (click to rename), and on the right the sun/moon button, a short notice when
@@ -36,9 +37,12 @@ export function ScreenBar({
   sync: SyncState
 }) {
   const favCount = favouriteIdeas(board).length
+  // On a phone the four menus don't fit, so they become one, with a line between each group.
+  const phone = usePhone()
+  const shown: Menu[] = phone ? [{ label: 'Menu', items: menus.flatMap((m, i) => (i ? ['divider' as const, ...m.items] : m.items)) }] : menus
   return (
     <header className="screen__bar">
-      <MenuBar menus={menus} />
+      <MenuBar menus={shown} />
       <div className="screen__name">
         {renaming ? (
           <input

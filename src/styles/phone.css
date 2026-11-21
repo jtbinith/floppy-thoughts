@@ -1,0 +1,137 @@
+/* Phones: the board's touch-first layout. Same width as lib/usePhone.ts.
+   The device frame becomes a thin border so the board gets the whole screen, the rail of
+   buttons moves to a bar along the bottom (where your thumb is), "add an idea" floats over the
+   board, the terminal waits behind its >_ button, and the drawer covers the board instead of
+   squeezing in beside it. Desktop and tablets keep the full device. */
+
+/* The terminal button is only for phones. */
+.device__button--terminal {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding-bottom: 0;
+  }
+
+  /* A thin border instead of the chunky frame, edge to edge. */
+  .device {
+    width: 100%;
+    gap: 0;
+    padding: 0;
+    border-width: 2px 0 0;
+    box-shadow: none;
+  }
+
+  .device__screw {
+    display: none;
+  }
+
+  .device__screen {
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* The board on top, the button bar under it. */
+  .workspace {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .device__rail {
+    position: relative;
+    order: 2;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 0;
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
+    background: var(--frame);
+    border-top: 2px solid var(--frame-edge);
+  }
+
+  .device__button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .device__button--terminal {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+  }
+
+  /* "Add an idea": a big round button floating over the bottom corner of the board. */
+  .device__rail > .device__button:first-child {
+    position: absolute;
+    right: 1rem;
+    bottom: calc(100% + 1rem);
+    z-index: 6;
+    width: 56px;
+    height: 56px;
+    font-size: 1.7rem;
+    color: var(--on-spark);
+    background: var(--spark);
+    border: 3px solid var(--frame-edge);
+    border-radius: 50%;
+    box-shadow: 0 4px 0 var(--frame-edge);
+  }
+
+  .device__rail > .device__button:first-child:active {
+    box-shadow: 0 1px 0 var(--frame-edge);
+    transform: translateY(3px);
+  }
+
+  /* While typing in the terminal it would sit over the input, so it steps aside. */
+  .workspace--terminal .device__rail > .device__button:first-child {
+    display: none;
+  }
+
+  /* The terminal only shows once you open it. */
+  .workspace:not(.workspace--terminal) .terminal {
+    display: none;
+  }
+
+  /* The top strip: one Menu, the board's name and share, each big enough to tap. */
+  .screen__bar {
+    gap: 0.4rem;
+    min-height: 0;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .menubar__title,
+  .screen__name-button,
+  .screen__end button {
+    min-height: 44px;
+  }
+
+  .screen__name-button {
+    max-width: 40vw;
+  }
+
+  .menubar__item {
+    min-height: 44px;
+  }
+
+  /* No keyboard on a phone, so no keyboard shortcuts in the menu. */
+  .menubar__item kbd {
+    display: none;
+  }
+
+  /* Pinch zooms and drags pan, so the zoom buttons go. ("Tidy the board" is in the Menu.) */
+  .workspace .react-flow__controls {
+    display: none;
+  }
+
+  /* The drawer (machine, favourites, commands) covers the whole board, so nothing's cut off. */
+  .panel {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    width: auto !important;
+    border-left: 0;
+  }
+
+  .panel__resize {
+    display: none;
+  }
+}

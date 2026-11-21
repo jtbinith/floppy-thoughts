@@ -230,8 +230,13 @@ export function Workspace(props: Props) {
     else setNotice('Select something on the board first.')
   }
 
+  // On a phone the terminal stays tucked away until you ask for it (the >_ button), so the board
+  // gets the room. Everywhere else it's always there and this does nothing to the layout.
+  const [terminalOpen, setTerminalOpen] = useState(false)
   function focusTerminal() {
-    terminalRef.current?.focus()
+    setTerminalOpen(true)
+    // Once it's on screen.
+    setTimeout(() => terminalRef.current?.focus(), 0)
   }
 
   // The linter can't tell these handlers only run on a click (some reach into the terminal), so
@@ -280,7 +285,7 @@ export function Workspace(props: Props) {
 
   return (
     <BoardActionsContext.Provider value={actions}>
-      <div className="workspace">
+      <div className={`workspace${terminalOpen ? ' workspace--terminal' : ''}`}>
         {/* In the order you work: add a thought, get a note, look back at what you favourited, then help. */}
         <nav className="device__rail" aria-label="Device buttons">
           <button type="button" className="device__button" aria-label="Add an idea" title="Add an idea" onClick={() => addAndEdit(visibleCentre())}>
@@ -305,6 +310,17 @@ export function Workspace(props: Props) {
             onClick={() => setPanel(panel === 'favourites' ? null : 'favourites')}
           >
             <HeartIcon size={14} />
+          </button>
+          {/* Only on phones (see phone.css): shows or hides the terminal. */}
+          <button
+            type="button"
+            className={`device__button device__button--terminal${terminalOpen ? ' device__button--on' : ''}`}
+            aria-label="Terminal"
+            aria-pressed={terminalOpen}
+            title="Terminal"
+            onClick={() => (terminalOpen ? setTerminalOpen(false) : focusTerminal())}
+          >
+            &gt;_
           </button>
           <button
             type="button"
@@ -348,7 +364,7 @@ export function Workspace(props: Props) {
                 <div className="board__empty">
                   <p>Start typing your first thoughts, or get a note from the vending machine.</p>
                   <div className="board__empty-actions">
-                    <button type="button" className="popup__stick" onClick={() => terminalRef.current?.focus()}>
+                    <button type="button" className="popup__stick" onClick={focusTerminal}>
                       start typing
                     </button>
                     <button type="button" className="popup__back" onClick={() => setPanel('machine')}>
