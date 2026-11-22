@@ -12,6 +12,7 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | Roles | Owner, admin, editor, viewer. Admins share the board and manage people like the owner; a board can have several. Only the owner can delete the board, and the owner can't be changed or removed. |
 | Who did what | Each box records who added it and who edited it last, set by the database so it can't be faked. On a shared board, hovering a box shows both. |
 | Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
+| Down-votes | The opposite of a favourite, for an idea you wouldn't build. Each person favourites or down-votes an idea, never both. On a shared board the two counts show apart ("♥ 3 · ▼ 1"), never one combined score; on a board only you have, just your own heart or down-vote. The summary leaves them out. |
 | How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
 | Signing in later | The boards in your browser are uploaded to your account the first time you sign in, so nothing made before is lost. |
 | Collaboration | The heart of the tool: a board can be worked on by a team at the same time. You see who's on the board right now, their changes appear live, every box shows who added it, and favourites show who liked what. |
@@ -30,6 +31,8 @@ erDiagram
   nodes ||--o{ links : "from / to"
   nodes ||--o{ favourites : gets
   users ||--o{ favourites : gives
+  nodes ||--o{ downvotes : gets
+  users ||--o{ downvotes : gives
   boards ||--o| board_invites : "shared by"
   users ||--o{ nodes : "created"
   boards ||--o{ gallery_entries : "published as"
@@ -74,6 +77,12 @@ erDiagram
     uuid created_by FK
   }
   favourites {
+    uuid board_id FK
+    uuid node_id PK, FK
+    uuid user_id PK, FK
+    timestamptz created_at
+  }
+  downvotes {
     uuid board_id FK
     uuid node_id PK, FK
     uuid user_id PK, FK
@@ -161,6 +170,9 @@ Primary key `(node_a, node_b)`; both boxes must be on `board_id`.
 
 Primary key `(node_id, user_id)`: one favourite per person per box. The summary puts the box with the most rows here first (ties: the earliest on the board).
 
+### downvotes
+The same columns and rules as `favourites`. Primary key `(node_id, user_id)`: one down-vote per person per box. A favourite and a down-vote by the same person on the same box can't both exist: adding either one deletes the other (triggers on both tables), whichever app or device adds it.
+
 ### board_invites
 One live invite link per board.
 
@@ -196,6 +208,7 @@ Beyond the primary keys:
 - `nodes (board_id, number)`, unique: finding a box by its number, and keeping numbers unique.
 - `board_members (user_id)`: "my boards".
 - `favourites (node_id)`: counting favourites on a board's boxes.
+- `downvotes (board_id)`: reading a board's down-votes.
 
 Boards are small (at most 1,000 boxes), so these are enough.
 
@@ -207,6 +220,7 @@ Every table has row-level security on, so the database itself refuses anything n
 |---|---|---|---|---|
 | See the board, its boxes, links and favourites | ✓ | ✓ | ✓ | ✓ |
 | Favourite and unfavourite (their own favourites only) | ✓ | ✓ | ✓ | ✓ |
+| Down-vote and take it back (their own only) | ✓ | ✓ | ✓ | ✓ |
 | Add, edit, move, link and delete boxes | | ✓ | ✓ | ✓ |
 | Rename the board | | ✓ | ✓ | ✓ |
 | Copy, reset or turn off the invite link, change roles, remove people | | | ✓ | ✓ |
