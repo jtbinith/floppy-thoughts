@@ -115,7 +115,7 @@ export function Workspace(props: Props) {
   }, [notice])
 
   // Saving changes, undo and redo.
-  const { commit, stepBack, stepForward, latest, absorbRemote } = useBoardHistory(board, onChange, () => setEditingId(null))
+  const { commit, stepBack, stepForward, latest, absorbRemote, canUndo, canRedo } = useBoardHistory(board, onChange, () => setEditingId(null))
   const remoteN = remote?.n
   useEffect(() => {
     if (remote) absorbRemote(remote.change)
@@ -380,6 +380,7 @@ export function Workspace(props: Props) {
             here={here.filter((p) => p.id !== me)}
             onShare={() => setShowShare(true)}
             sync={sync}
+            history={{ undo: () => void stepBack(), redo: () => void stepForward(), canUndo, canRedo }}
           />
           <div className="screen__main">
             <div className={`workspace__board${showIds ? ' workspace__board--ids' : ''}`} ref={boardRef}>

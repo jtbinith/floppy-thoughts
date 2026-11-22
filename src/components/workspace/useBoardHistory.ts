@@ -63,5 +63,9 @@ export function useBoardHistory(board: Board, onChange: (board: Board) => void, 
   // Someone else's change arrived live: it goes into the history too, so undo only takes back yours.
   const absorbRemote = (change: BoardChange) => setHistory((h) => absorb(h, change))
 
-  return { commit, stepBack, stepForward, latest, absorbRemote }
+  // Whether there's anything to take back or put back (for the undo and redo buttons).
+  const canUndo = history.past.length > 0
+  const canRedo = history.future.length > 0
+
+  return { commit, stepBack, stepForward, latest, absorbRemote, canUndo, canRedo }
 }

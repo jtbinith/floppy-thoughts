@@ -165,9 +165,15 @@
 
   /* The top strip: one Menu, the board's name and share, each big enough to tap. */
   .screen__bar {
+    /* One row: Menu, undo and redo, the name (taking what's left, cut short if long), share. */
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     gap: 0.4rem;
     min-height: 0;
     padding: 0.2rem 0.5rem;
+  }
+
+  .screen__name {
+    overflow: hidden;
   }
 
   .menubar__title,
@@ -177,7 +183,31 @@
   }
 
   .screen__name-button {
-    max-width: 40vw;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Undo and redo, right by the Menu. Faded out when there's nothing to take back or put back. */
+  .screen__history {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  .screen__step {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+
+  .screen__step:disabled {
+    opacity: 0.35;
   }
 
   .menubar__item {
@@ -325,5 +355,25 @@
 
   .panel__resize {
     display: none;
+  }
+}
+
+/* The narrowest phones: a little less padding in the top strip, so the board's name keeps room. */
+@media (max-width: 360px) {
+  .screen__bar {
+    gap: 0.25rem;
+    padding: 0.2rem 0.35rem;
+  }
+
+  .screen__bar .menubar__title {
+    padding: 0.45rem 0.4rem;
+  }
+
+  .screen__bar .screen__share {
+    padding: 0 0.45rem;
+  }
+
+  .screen__history {
+    gap: 0;
   }
 }

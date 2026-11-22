@@ -21,6 +21,7 @@ export function ScreenBar({
   here,
   onShare,
   sync,
+  history,
 }: {
   menus: Menu[]
   board: Board
@@ -35,6 +36,8 @@ export function ScreenBar({
   here: Here[]
   onShare: () => void
   sync: SyncState
+  // Undo and redo, as buttons in the strip on a phone (with no keyboard for Ctrl+Z).
+  history: { undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean }
 }) {
   const favCount = favouriteIdeas(board).length
   // On a phone the four menus don't fit, so they become one, with a line between each group.
@@ -43,6 +46,16 @@ export function ScreenBar({
   return (
     <header className="screen__bar">
       <MenuBar menus={shown} />
+      {phone && (
+        <span className="screen__history">
+          <button type="button" className="screen__step" aria-label="Undo" title="Undo" disabled={!history.canUndo} onClick={history.undo}>
+            ↶
+          </button>
+          <button type="button" className="screen__step" aria-label="Redo" title="Redo" disabled={!history.canRedo} onClick={history.redo}>
+            ↷
+          </button>
+        </span>
+      )}
       <div className="screen__name">
         {renaming ? (
           <input

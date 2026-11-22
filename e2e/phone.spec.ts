@@ -99,3 +99,16 @@ test('the drawer opens below the board, with touch help instead of commands', as
   expect(gap).toBeGreaterThanOrEqual(-1)
   expect(await nothingSideways(page)).toBe(true)
 })
+
+test('undo and redo are buttons by the Menu', async ({ page }) => {
+  await newBoard(page)
+  const undo = page.getByRole('button', { name: 'Undo', exact: true })
+  const redo = page.getByRole('button', { name: 'Redo', exact: true })
+  await expect(undo).toBeDisabled()
+  await addIdea(page, 'a pocket sundial')
+  await undo.tap()
+  await expect(boxes(page)).toHaveCount(0)
+  await expect(redo).toBeEnabled()
+  await redo.tap()
+  await expect(boxes(page)).toHaveCount(1)
+})
