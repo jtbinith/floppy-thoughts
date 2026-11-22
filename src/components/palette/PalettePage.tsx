@@ -161,7 +161,7 @@ export function PalettePage() {
         <div className="pal-light">
           <h3>light section</h3>
           <p>
-            Terminal paper with ink text, for paper-like parts such as notes and the summary, even in dark mode. <a href="#/palette">A link</a> and a{' '}
+            Terminal paper with ink text, for paper-like parts such as notes, even in dark mode. <a href="#/palette">A link</a> and a{' '}
             <mark>highlight</mark>.
           </p>
           <div className="pal-buttons">

@@ -54,11 +54,6 @@
   position: relative;
 }
 
-.screen__summary {
-  color: var(--nudge);
-  border-color: var(--nudge);
-}
-
 .screen__bar {
   display: flex;
   gap: 1rem;

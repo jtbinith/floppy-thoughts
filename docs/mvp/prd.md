@@ -18,7 +18,7 @@ Help people come up with their own unique, fun coding project ideas (especially 
 - As someone in flow, I can type thoughts without thinking about commands, and link them quickly.
 - As someone stuck, I can ask for a nudge on any thought.
 - As someone with a messy board, I can tidy it in one click and undo if I don't like it.
-- As someone who's found an idea, I can mark it and get a summary of how I got there to share with my team.
+- As someone who's found an idea, I can favourite it and put my favourites on a board of their own.
 - As someone who liked certain thoughts, I can favourite them and copy them onto a board of their own.
 
 ## Functional requirements
@@ -28,7 +28,7 @@ Help people come up with their own unique, fun coding project ideas (especially 
 - Nudges: words and questions that fit what's selected; works offline with question fallbacks.
 - Terminal: commands start with `/`; Tab completion by name, number or words; grouped help.
 - Tidy, fit to screen, undo/redo.
-- Favourites, a favourites board, and a copyable summary of each favourite idea.
+- Favourites and down-votes, and a board made from your favourites.
 
 ## Non-functional requirements
 - **Accessibility:** keyboard-only use, visible focus, readable fonts, WCAG AA contrast, reduced-motion support.

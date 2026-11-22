@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { MAX_NODE_TEXT, type Board } from '../lib/board'
 import { findNode } from '../lib/boardOps'
-import { summarise, summaryText } from '../lib/summary'
 import { Dialog } from './Dialog'
 
 // The small questions the board asks: a theme for a new board, whether to keep a chain
-// connected when you delete from the middle of it, and the summary once you've found your idea.
+// connected when you delete from the middle of it.
 
 // Asks for themes: type one and press Enter to add it, as many as you like (a hackathon often has
 // a few), then start. `first` is a new board; otherwise you're adding to the ones it has.
@@ -103,70 +102,6 @@ export function ChainPrompt({
         </button>
         <button type="button" className="popup__back" onClick={() => onAnswer(false)}>
           just delete
-        </button>
-      </div>
-    </Dialog>
-  )
-}
-
-export function SummaryPopup({ board, onClose }: { board: Board; onClose: () => void }) {
-  const [copied, setCopied] = useState(false)
-  const summary = summarise(board)
-  if (!summary) return null
-  const text = summaryText(board, summary)
-  const one = summary.ideas.length === 1
-  return (
-    <Dialog label={one ? 'Your idea' : 'Your favourite ideas'} onCancel={onClose} wide>
-      <h2 className="dialog__title">{one ? 'you found your idea' : 'your favourite ideas'}</h2>
-      <div className="summary__body">
-        {summary.ideas.map(({ idea, trails }) => (
-          <section key={idea.id} className="summary__entry">
-            <p className="summary__idea">♥ {idea.text}</p>
-            {trails.length > 0 ? (
-              <div className="summary__trails">
-                <h3>how you got there</h3>
-                <ol>
-                  {trails.map((trail) => (
-                    <li key={trail[0].id}>
-                      {trail.map((n, i) => (
-                        <span key={n.id}>
-                          {i > 0 && <span className="summary__arrow"> → </span>}
-                          <span className={`summary__step summary__step--${n.kind}`}>{n.text}</span>
-                        </span>
-                      ))}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : (
-              <p className="dialog__text">Link it to the notes that led you here to see the trail.</p>
-            )}
-          </section>
-        ))}
-        {summary.liked.length > 0 && (
-          <section className="summary__liked">
-            <h3>other thoughts you liked</h3>
-            <ul>
-              {summary.liked.map((n) => (
-                <li key={n.id}>♥ {n.text}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-      </div>
-      <div className="popup__actions">
-        <button
-          type="button"
-          className="popup__stick"
-          autoFocus
-          onClick={() => {
-            void navigator.clipboard.writeText(text).then(() => setCopied(true))
-          }}
-        >
-          {copied ? 'copied' : 'copy summary'}
-        </button>
-        <button type="button" className="popup__back" onClick={onClose}>
-          keep brainstorming
         </button>
       </div>
     </Dialog>

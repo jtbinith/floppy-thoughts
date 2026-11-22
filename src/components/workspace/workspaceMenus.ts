@@ -1,5 +1,4 @@
 import { isFavourite, type Board } from '../../lib/board'
-import { favouriteIdeas } from '../../lib/summary'
 import type { BoardSummary } from '../../lib/storage'
 import type { Menu, MenuItem } from '../MenuBar'
 import type { PanelTab } from '../SidePanel'
@@ -18,7 +17,6 @@ export function workspaceMenus(d: {
   role: string | null
   openBoard: (id: string) => void
   favouritesBoard: () => void
-  showIdea: () => void
   deleteBoard: () => void
   undo: () => void
   redo: () => void
@@ -52,7 +50,6 @@ export function workspaceMenus(d: {
         { label: 'All boards…', onSelect: () => (location.hash = '/boards') },
         'divider',
         { label: 'Favourite on a new board', onSelect: d.favouritesBoard, disabled: !hasFavourites },
-        { label: 'My favourite ideas', onSelect: d.showIdea, disabled: !favouriteIdeas(board).length },
         'divider',
         { label: d.role && d.role !== 'owner' ? 'Leave this board…' : 'Delete this board…', onSelect: d.deleteBoard },
       ],

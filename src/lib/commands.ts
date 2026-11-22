@@ -1,5 +1,4 @@
 import { MAX_BOARD_NAME, ME, isMine, isMyDownvote, idOf, isFavourite, numberOf, type Board } from './board'
-import { favouriteIdeas } from './summary'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
 import { addLink, addUserNode, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleDownvote, toggleFavourite, touch, type OpResult } from './boardOps'
@@ -35,7 +34,6 @@ export type BoardUi = {
   openBoard: (index: number) => string | null
   // Deleting may stop to ask whether to keep a chain connected.
   remove: (id: string) => string
-  showSummary: () => boolean
   // All the favourites, or just these ones (by id).
   favouritesBoard: (ids?: string[]) => string
   vend: (row: string | undefined) => { text: string; error?: boolean }
@@ -50,7 +48,7 @@ export type CommandResult = {
   output: string[]
   clear?: boolean
   error?: boolean
-  // Something to do on screen once the change is saved, like showing the summary.
+  // Something to do on screen once the change is saved.
   then?: () => void
 }
 
@@ -263,19 +261,6 @@ export const COMMANDS: Command[] = [
     does: 'copy what you favourited onto a new board (or just the favourites you name)',
     args: [{ kind: 'node', optional: true, repeats: true }],
     run: ({ args, ctx }) => (ctx.ui ? { output: [ctx.ui.favouritesBoard(args.length ? args : undefined)] } : needsBoard('favboard')),
-  },
-  {
-    name: 'summary',
-    group: 'FAVOURITES AND YOUR IDEAS',
-    usage: '/summary',
-    does: 'your favourite ideas, and how you got to each',
-    args: [],
-    run: ({ board, ctx }) => {
-      if (!favouriteIdeas(board).length) return fail('no favourite ideas yet. try /fav <id> on one of your ideas')
-      if (!ctx.ui) return needsBoard('summary')
-      ctx.ui.showSummary()
-      return { output: ['showing your summary'] }
-    },
   },
 
   // VIEW

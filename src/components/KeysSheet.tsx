@@ -95,7 +95,7 @@ export function KeysSheet({ onClose }: { onClose: () => void }) {
       </div>
       <p className="dialog__text keys__more">
         Anything without a key is a command: press <kbd>:</kbd> and type it, like <code>:theme Time</code>, <code>:unlink 3</code> or{' '}
-        <code>:summary</code>. Tab finishes them. The commands tab in the drawer lists them all.
+        <code>:favboard</code>. Tab finishes them. The commands tab in the drawer lists them all.
       </p>
     </Dialog>
   )

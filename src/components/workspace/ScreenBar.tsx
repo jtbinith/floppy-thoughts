@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { MAX_BOARD_NAME, type Board } from '../../lib/board'
-import { favouriteIdeas } from '../../lib/summary'
 import type { Here } from '../../lib/account/live'
 import type { SyncState } from '../../lib/account/outbox'
 import { MenuBar, type Menu } from '../MenuBar'
@@ -16,7 +15,6 @@ export function ScreenBar({
   onRenaming,
   onRename,
   notice,
-  onShowIdea,
   viewOnly,
   here,
   onShare,
@@ -29,7 +27,6 @@ export function ScreenBar({
   onRenaming: (renaming: boolean) => void
   onRename: (name: string) => void
   notice: string | null
-  onShowIdea: () => void
   // You can see and favourite, but not change, a board shared with you as a viewer.
   viewOnly: boolean
   // Who else has this board open right now.
@@ -39,7 +36,6 @@ export function ScreenBar({
   // Undo and redo, as buttons in the strip on a phone (with no keyboard for Ctrl+Z).
   history: { undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean }
 }) {
-  const favCount = favouriteIdeas(board).length
   // On a touch screen the menus leave out what needs a keyboard; on a phone the four of them don't
   // fit either, so they become one, with a line between each group.
   const phone = usePhone()
@@ -105,11 +101,6 @@ export function ScreenBar({
         <button type="button" className="screen__new screen__share" onClick={onShare} title="Invite people to this board">
           share
         </button>
-        {favCount > 0 && (
-          <button type="button" className="screen__new screen__summary" onClick={onShowIdea} title="Your favourite ideas, and how you got to each">
-            ♥ {favCount > 1 ? 'my ideas' : 'my idea'}
-          </button>
-        )}
       </div>
     </header>
   )

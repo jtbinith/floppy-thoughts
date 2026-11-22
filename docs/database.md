@@ -11,7 +11,7 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | Sharing | By invite link. Anyone signed in who opens the link joins the board as an editor. The owner and admins can copy the link again any time, reset it (the old one stops working) or turn it off. |
 | Roles | Owner, admin, editor, viewer. Admins share the board and manage people like the owner; a board can have several. Only the owner can delete the board, and the owner can't be changed or removed. |
 | Who did what | Each box records who added it and who edited it last, set by the database so it can't be faked. On a shared board, hovering a box shows both. |
-| Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
+| Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. There is no separate "chosen idea". |
 | Down-votes | The opposite of a favourite, for an idea you wouldn't build. Each person favourites or down-votes an idea, never both. On a shared board the two counts show apart ("♥ 3 · ▼ 1"), never one combined score; on a board only you have, just your own heart or down-vote. The summary leaves them out. |
 | Folders | Your own way of grouping boards on the boards page (one per hackathon, class or project). Folders hold boards and other folders, as deep as you like. They're personal: nobody else sees them, and on a shared board everyone files it in their own folders (or none). Deleting a folder asks whether to keep what's inside (it moves up a level) or delete it all. |
 | How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
@@ -185,7 +185,7 @@ Primary key `(node_a, node_b)`; both boxes must be on `board_id`.
 | `user_id` | `uuid` | → `auth.users` |
 | `created_at` | `timestamptz` | |
 
-Primary key `(node_id, user_id)`: one favourite per person per box. The summary puts the box with the most rows here first (ties: the earliest on the board).
+Primary key `(node_id, user_id)`: one favourite per person per box.
 
 ### downvotes
 The same columns and rules as `favourites`. Primary key `(node_id, user_id)`: one down-vote per person per box. A favourite and a down-vote by the same person on the same box can't both exist: adding either one deletes the other (triggers on both tables), whichever app or device adds it.

@@ -29,7 +29,7 @@ import { unknownPeople } from '../lib/reactors'
 import type { Here } from '../lib/account/live'
 import type { SyncState } from '../lib/account/outbox'
 import type { BoardChange } from '../lib/changes'
-import { ChainPrompt, SummaryPopup, ThemePrompt } from './Prompts'
+import { ChainPrompt, ThemePrompt } from './Prompts'
 import { ShrimpIcon } from './ShrimpIcon'
 import { SidePanel, type PanelTab } from './SidePanel'
 import { Terminal, type TerminalHandle } from './Terminal'
@@ -71,7 +71,6 @@ export function Workspace(props: Props) {
   const { getNodes, getEdges, fitView } = useReactFlow()
   const [panel, setPanelState] = useState<PanelTab | null>(loadPanel)
   const [renaming, setRenaming] = useState(false)
-  const [showSummary, setShowSummary] = useState(false)
   const [showKeys, setShowKeys] = useState(false)
   const [showShare, setShowShare] = useState(false)
   // On a shared board, everyone on it (name and picture), so each box can say who added and
@@ -234,7 +233,6 @@ export function Workspace(props: Props) {
     onNewBoard,
     onOpenBoard,
     requestDelete,
-    showSummary: () => setShowSummary(true),
     makeFavouritesBoard,
     machine: () => machineControl.current,
     requestNudge,
@@ -306,7 +304,6 @@ export function Workspace(props: Props) {
     role,
     openBoard: onOpenBoard,
     favouritesBoard: () => void makeFavouritesBoard(),
-    showIdea: () => setShowSummary(true),
     deleteBoard: () => setConfirmDeleteBoard(true),
     undo: () => void stepBack(),
     redo: () => void stepForward(),
@@ -401,7 +398,6 @@ export function Workspace(props: Props) {
             onRenaming={setRenaming}
             onRename={rename}
             notice={notice}
-            onShowIdea={() => setShowSummary(true)}
             viewOnly={role === 'viewer'}
             here={here.filter((p) => p.id !== me)}
             onShare={() => setShowShare(true)}
@@ -477,7 +473,6 @@ export function Workspace(props: Props) {
             {edits.pendingDelete && <ChainPrompt board={board} chains={edits.pendingDelete.chains} onAnswer={edits.finishDelete} onCancel={edits.cancelDelete} />}
             {showKeys && <KeysSheet onClose={() => setShowKeys(false)} />}
             {showShare && <ShareDialog board={board} onClose={() => setShowShare(false)} />}
-            {showSummary && <SummaryPopup board={board} onClose={() => setShowSummary(false)} />}
             {confirmDeleteBoard && (
               <Dialog label={leaving ? 'Leave this board?' : 'Delete this board?'} onCancel={() => setConfirmDeleteBoard(false)}>
                 <h2 className="dialog__title">

@@ -10,7 +10,7 @@ import type { PanelTab } from '../SidePanel'
 type Result = { text: string; error?: boolean }
 
 // What the board on screen does for terminal commands that need more than the board itself:
-// undo, tidy, fit, the boards list, deleting (which may ask first), the summary, and the
+// undo, tidy, fit, the boards list, deleting (which may ask first) and the
 // vending machine in the drawer (/vend runs it, then /swap, /stick and /back).
 export function terminalUi(deps: {
   board: Board
@@ -25,7 +25,6 @@ export function terminalUi(deps: {
   onOpenBoard: (id: string) => void
   // Deleting may stop to ask whether to keep a chain connected (then it returns false).
   requestDelete: (ids: string[]) => boolean
-  showSummary: () => void
   makeFavouritesBoard: (ids?: string[]) => string
   // The machine in the drawer, once it's loaded.
   machine: () => MachineControl | null
@@ -70,10 +69,6 @@ export function terminalUi(deps: {
     remove: (id) => {
       const text = findNode(board, id)?.text
       return deps.requestDelete([id]) ? `deleted ${numberOf(board, id)}: ${text}` : `${numberOf(board, id)} is in the middle of a chain: answer on the board`
-    },
-    showSummary: () => {
-      deps.showSummary()
-      return true
     },
     favouritesBoard: deps.makeFavouritesBoard,
     vend: (row) => {

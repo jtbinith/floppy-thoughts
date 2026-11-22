@@ -10,7 +10,7 @@ A calm, playful brainstorming board for coming up with your own fun, unique codi
 - **Get starting notes** from the vending machine: words, objects, problems, curiosities and nature.
 - **Ask for nudges** that fit what you've selected, such as a related word, a change of perspective or scale, or a push.
 - **Tidy** a messy board in one click: groups of linked thoughts get their own space, with as few crossing lines as possible.
-- **Favourite** the thoughts you like, copy them onto a board of their own, and copy a summary of how you got to each favourite idea.
+- **Favourite** the thoughts you like (or down-vote the ones you wouldn't build) and copy them onto a board of their own.
 - **Work from the keyboard:** commands start with `/`, Tab completes them (and finds thoughts by their words), and `/help` opens the full list.
 
 Boards are saved in your browser. There are no accounts and no tracking.

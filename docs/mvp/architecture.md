@@ -192,11 +192,11 @@ The four-squares button under the zoom controls, Edit → Tidy, or `/tidy`. It o
 3. Place the groups side by side with space between them, biggest first; single unlinked boxes go last.
 4. Keep the main theme where it is; boxes glide to their new places.
 
-## Favourites and the summary
+## Favourites
 
 - **Favourite** anything (the heart, **F**, `/fav 4`). The favourites tab and `/favs` show this board's favourites.
 - **Favourites on a new board** copies them, with the links between them, onto a fresh board.
-- **The summary** (`/summary`, or "my idea" at the top) lists every favourite idea with the shortest trail from each note or theme to it, and can be copied. On a shared board the most favourited comes first, and each box shows who favourited it and how many.
+- On a shared board each box shows how many favourited and down-voted it, and who.
 
 ## Boards and routes
 
@@ -215,7 +215,7 @@ Recent boards are also in the Board menu.
 
 | Kind | Command | Covers |
 |---|---|---|
-| Unit (Vitest) | `npm test` | The board model, operations, commands registry, completion, tidy, placement, storage, nudges, summary |
+| Unit (Vitest) | `npm test` | The board model, operations, commands registry, completion, tidy, placement, storage, nudges, folders, mini-map |
 | Browser (Playwright) | `npm run test:e2e` | Real flows in Chromium: adding, selecting, deleting, chain prompt, links by drag and command, tidy and undo, fit, the machine popup, the commands tab, ids, keyboard shortcuts |
 
 Browser tests start their own dev server on `127.0.0.1:5181`.

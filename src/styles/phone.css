@@ -246,11 +246,6 @@
     min-height: 44px;
   }
 
-  /* "My idea" is in the Menu (My favourite ideas): in the strip it would push out the name. */
-  .screen__summary {
-    display: none;
-  }
-
 }
 
 /* Touch screens (phones and tablets, any way up): no keyboard and fingers, not a mouse. Whatever the
