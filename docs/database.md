@@ -347,7 +347,7 @@ The only reason data is held is to provide the service people signed up for. No 
 
 | Data | Kept for |
 |---|---|
-| Your account and boards | Until you delete them, or 24 months with no sign-in (see below) |
+| Your account and boards | Until you delete them, or 24 months unused (see below) |
 | Favourites | As long as the box and your account |
 | Folders | Until you delete them or your account |
 | Invite links | Until turned off or replaced |
@@ -355,7 +355,7 @@ The only reason data is held is to provide the service people signed up for. No 
 | A deleted account's claim hash | As long as the gallery entry it belongs to |
 | The host's request logs | The host's own period (usually days to weeks) |
 
-**Inactive accounts:** after 24 months with no sign-in, the account, its name and email and the boards it owns are deleted. You're emailed three times before: a month before, a week before, and on the day. Each says: sign in to keep it, or remove your gallery entries first. Gallery entries stay, as "a past member", with the claim hash described above. Anyone can ask for an entry to be taken down through the contact address; the repo link, or describing it, usually shows it's theirs.
+**Inactive accounts:** after 24 months unused (the app records a "last active" date whenever a signed-in person opens it, at most once a day; Supabase's last sign-in isn't enough, as people stay signed in for months, so just opening the site counts), the account, its name and email and the boards it owns are deleted. You're emailed three times before: a month before, a week before, and on the day, from the site's contact address, to the email your GitHub account had when you last signed in. Each says: use the site to keep it, or remove your gallery entries first. Gallery entries stay, as "a past member", with the claim hash described above. Anyone can ask for an entry to be taken down through the contact address; the repo link, or describing it, usually shows it's theirs.
 
 ### Browser storage
 

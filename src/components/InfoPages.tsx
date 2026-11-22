@@ -105,8 +105,9 @@ export function PrivacyPage() {
       <ul>
         <li>Your account and boards: until you delete them.</li>
         <li>
-          If you don&apos;t sign in for 24 months, your account and the boards you own are deleted. You&apos;ll be emailed a month before, a week before and
-          on the day. Signing in keeps it.
+          If your account isn&apos;t used for 24 months, it&apos;s deleted, along with the boards you own. You&apos;ll be emailed a month before, a
+          week before and on the day, from <Mail />, at the email address your GitHub account had when you last signed in. Just opening Floppy
+          Thoughts keeps it.
         </li>
         <li>Invite links: until they&apos;re reset or turned off.</li>
       </ul>
