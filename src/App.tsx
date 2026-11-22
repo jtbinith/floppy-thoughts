@@ -16,6 +16,8 @@ import { LocalStorageAdapter, withSummary, type BoardSummary, type StorageAdapte
 import { useAccount } from './lib/account/account'
 import { supabase } from './lib/account/supabase'
 import { SupabaseStorage } from './lib/account/supabaseStorage'
+import { AccountFolders, LocalFolders, type FolderStore } from './lib/folderStore'
+import { placeBoard } from './lib/folders'
 import type { SyncState } from './lib/account/outbox'
 import { moveBrowserBoards } from './lib/account/upload'
 import { myRole, type Role } from './lib/account/sharing'
@@ -27,6 +29,8 @@ import { AccountPage } from './components/AccountPage'
 
 // Boards in this browser. Signed in, boards live in your account instead (SupabaseStorage).
 const browser = new LocalStorageAdapter()
+// Your folders on the boards page: in this browser, or in your account.
+const browserFolders = new LocalFolders()
 
 // The shrimp prototype loads on its own, so its 3D and animation libraries only download on that page.
 const ShrimpPage = lazy(() => import('./components/shrimp/ShrimpPage').then((m) => ({ default: m.ShrimpPage })))
@@ -86,6 +90,7 @@ export default function App() {
   const { account, ready: signInKnown } = useAccount()
   const accountId = account?.id
   const storage: StorageAdapter = useMemo(() => (accountId && supabase ? new SupabaseStorage(supabase, accountId) : browser), [accountId])
+  const folderStore: FolderStore = useMemo(() => (accountId && supabase ? new AccountFolders(supabase, accountId) : browserFolders), [accountId])
   // Signed in: whether changes are waiting to reach your account, and whether you're offline.
   const [sync, setSync] = useState<SyncState>({ waiting: 0, offline: false })
   useEffect(() => {
@@ -136,7 +141,7 @@ export default function App() {
     if (!signInKnown) return
     let cancelled = false
     setBoard(null)
-    const moving = accountId ? moveBrowserBoards(browser, storage, accountId) : Promise.resolve(0)
+    const moving = accountId ? moveBrowserBoards(browser, storage, accountId, { from: browserFolders, to: folderStore }) : Promise.resolve(0)
     moving.then(() => storage.listBoards()).then(
       async (list) => {
         if (cancelled) return
@@ -151,7 +156,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [signInKnown, accountId, storage])
+  }, [signInKnown, accountId, storage, folderStore])
 
   // A new board opens straight away, blank.
   // Boards get a number for a name, so they're easy to tell apart; rename them any time.
@@ -162,6 +167,7 @@ export default function App() {
     const created = createBoard({ sparks: takeStartNote(), name: `board ${list.length + 1}` })
     try {
       await storage.saveBoard(created)
+      await fileNewBoard(created.id)
       rememberOpen(created.id)
       await refreshList()
       setFreshId(created.id)
@@ -173,6 +179,21 @@ export default function App() {
       setError(String(e))
     } finally {
       creating.current = false
+    }
+  }
+
+  // Started inside a folder on the boards page: the new board goes in that folder. (If that
+  // doesn't save, the board's still made, just loose.)
+  async function fileNewBoard(id: string) {
+    const into = sessionStorage.getItem(KEYS.newBoardFolder)
+    sessionStorage.removeItem(KEYS.newBoardFolder)
+    if (!into) return
+    try {
+      const before = await folderStore.load()
+      const after = placeBoard(before, id, into)
+      if (after) await folderStore.save(before, after)
+    } catch {
+      // Loose is fine.
     }
   }
 
@@ -301,7 +322,7 @@ export default function App() {
   if (route === 'palette') return <PalettePage />
   if (route === 'privacy') return <PrivacyPage />
   if (route === 'terms') return <TermsPage />
-  if (route === 'account') return <AccountPage storage={storage} />
+  if (route === 'account') return <AccountPage storage={storage} folderStore={folderStore} />
   if (route === 'shrimp')
     return (
       <Suspense fallback={null}>
@@ -321,7 +342,7 @@ export default function App() {
       />
     )
   if (route === 'boards')
-    return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} />
+    return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} folderStore={folderStore} />
 
   return (
     <div className="page">

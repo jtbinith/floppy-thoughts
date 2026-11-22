@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { MAX_BOARD_NAME } from '../lib/board'
 import type { BoardSummary } from '../lib/storage'
 import { BoardSketch } from './BoardSketch'
+import { DRAGGED, type Dragged } from './folderDrag'
 
-// Your boards as cards, newest first: open, rename or delete.
+// Your boards as cards, newest first: open, rename, move to a folder or delete. With a mouse, a
+// card can also be dragged onto a folder.
 
 type Props = {
   boards: BoardSummary[]
@@ -11,6 +13,11 @@ type Props = {
   onOpen: (id: string) => void
   onRename: (id: string, name: string) => void
   onDelete: (id: string) => void
+  onMove?: (id: string) => void
+  // Which folder a board is in, shown on its card (when searching every folder).
+  where?: (id: string) => string | undefined
+  // The link that starts a new board (it goes in the folder you're looking at).
+  onNew?: () => void
 }
 
 const edited = (iso: string) => {
@@ -21,20 +28,28 @@ const edited = (iso: string) => {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function BoardList({ boards, openId, onOpen, onRename, onDelete }: Props) {
+export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, where, onNew }: Props) {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
   return (
     <ul className="boards">
       <li>
-        <a className="boards__new" href="#/new">
+        <a className="boards__new" href="#/new" onClick={onNew}>
           <span aria-hidden="true">+</span>
           new board
         </a>
       </li>
       {boards.map((b) => (
-        <li key={b.id} className={`boards__card${b.id === openId ? ' boards__card--open' : ''}`}>
+        <li
+          key={b.id}
+          className={`boards__card${b.id === openId ? ' boards__card--open' : ''}`}
+          draggable={!!onMove && renaming !== b.id}
+          onDragStart={(e) => {
+            e.dataTransfer.setData(DRAGGED, JSON.stringify({ kind: 'board', id: b.id } satisfies Dragged))
+            e.dataTransfer.effectAllowed = 'move'
+          }}
+        >
           {renaming === b.id ? (
             <div className="boards__open">
               <BoardSketch sketch={b.sketch} />
@@ -59,6 +74,7 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete }: Props)
             <button type="button" className="boards__open" onClick={() => onOpen(b.id)}>
               <BoardSketch sketch={b.sketch} />
               <strong>{b.name}</strong>
+              {where?.(b.id) && <small className="boards__where">in {where(b.id)}</small>}
             </button>
           )}
 
@@ -80,6 +96,11 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete }: Props)
                   <button type="button" aria-label={`Rename ${b.name}`} onClick={() => setRenaming(b.id)}>
                     rename
                   </button>
+                  {onMove && (
+                    <button type="button" aria-label={`Move ${b.name}`} onClick={() => onMove(b.id)}>
+                      move
+                    </button>
+                  )}
                   <button type="button" aria-label={`Delete ${b.name}`} onClick={() => setDeleting(b.id)}>
                     delete
                   </button>

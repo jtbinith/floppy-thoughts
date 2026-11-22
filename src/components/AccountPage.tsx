@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { signIn, signOut, useAccount, type Account } from '../lib/account/account'
 import { supabase } from '../lib/account/supabase'
 import type { StorageAdapter } from '../lib/storage'
+import type { FolderStore } from '../lib/folderStore'
 import { KEYS } from '../lib/keys'
 import { SiteFooter } from './InfoPages'
 import { NavBar } from './NavBar'
 
 // Your account: who you're signed in as, a copy of everything and deleting it all.
-export function AccountPage({ storage }: { storage: StorageAdapter }) {
+export function AccountPage({ storage, folderStore }: { storage: StorageAdapter; folderStore: FolderStore }) {
   const { account, ready } = useAccount()
   return (
     <div className="home">
@@ -15,7 +16,7 @@ export function AccountPage({ storage }: { storage: StorageAdapter }) {
       <main className="info">
         <h1>your account</h1>
         {!ready ? null : account ? (
-          <Signed account={account} storage={storage} />
+          <Signed account={account} storage={storage} folderStore={folderStore} />
         ) : (
           <>
             <p>You&apos;re not signed in. Your boards are kept in this browser only.</p>
@@ -32,13 +33,13 @@ export function AccountPage({ storage }: { storage: StorageAdapter }) {
   )
 }
 
-function Signed({ account, storage }: { account: Account; storage: StorageAdapter }) {
+function Signed({ account, storage, folderStore }: { account: Account; storage: StorageAdapter; folderStore: FolderStore }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [typed, setTyped] = useState('')
 
-  // Everything of yours, as one file: your account details and every board you're on.
+  // Everything of yours, as one file: your account details, every board you're on and your folders.
   async function download() {
     setBusy('putting it together…')
     setProblem(null)
@@ -55,6 +56,7 @@ function Signed({ account, storage }: { account: Account; storage: StorageAdapte
         downloaded: new Date().toISOString(),
         account: { id: account.id, github: account.name, email: user?.email ?? null, picture: account.avatarUrl, since: user?.created_at ?? null },
         boards,
+        folders: await folderStore.load(),
       }
       const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
       const a = document.createElement('a')

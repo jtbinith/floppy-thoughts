@@ -233,3 +233,199 @@
     padding: 0 0.9rem;
   }
 }
+
+/* Folders: compact cards above the boards, each a way into the folder. */
+.folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.folders__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.55rem 0.6rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.folders__card:hover {
+  border-color: var(--muted);
+}
+
+/* Something dragged over a folder (or a step of the path): it'll go in there. */
+.folders__card--over,
+.boards-path__crumb--over {
+  color: var(--spark) !important;
+  border-color: var(--spark) !important;
+  outline: 1px dashed var(--spark);
+}
+
+.folders__open {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.5rem;
+  align-items: center;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.folders__open .folder-icon {
+  grid-row: span 2;
+  color: var(--spark);
+}
+
+.folders__open strong {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folders__open small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.folders__actions {
+  margin-left: 0;
+}
+
+.boards__where {
+  overflow: hidden;
+  margin-top: -0.4rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The way down to the folder you're in: my boards / Hacks / OxHack */
+.boards-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.boards-path__step {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.boards-path__crumb {
+  padding: 0.15rem 0.4rem;
+  font: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.boards-path__crumb:hover {
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.boards-path__crumb[aria-current='page'] {
+  font-weight: 700;
+  color: var(--text);
+  cursor: default;
+}
+
+.boards-tools__folder {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.4rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--screen);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.boards-tools__folder:hover {
+  border-color: var(--muted);
+}
+
+/* Moving: every folder as a tree to tap */
+.move-to {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: min(50vh, 24rem);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.move-to__button {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  width: 100%;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.move-to__button .folder-icon {
+  color: var(--spark);
+}
+
+.move-to__button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.move-to__button:disabled {
+  color: var(--muted);
+  cursor: default;
+  border-style: dashed;
+}
+
+.move-to__button small {
+  color: var(--muted);
+}
+
+.boards-delete {
+  flex-wrap: wrap;
+}
+
+@media (pointer: coarse) {
+  .boards-tools__folder,
+  .boards-path__crumb,
+  .move-to__button {
+    min-height: 44px;
+  }
+
+  .folders__open {
+    min-height: 44px;
+  }
+}

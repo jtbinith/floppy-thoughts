@@ -11,6 +11,11 @@ export const KEYS = {
   seenNotes: `${PREFIX}seen-sparks`,
   theme: `${PREFIX}ui:theme`,
   boardSort: `${PREFIX}ui:board-sort`,
+  // Your folders on the boards page, and which folder each board is in.
+  folders: `${PREFIX}folders`,
+  // The folder you're looking at on the boards page, and the one a new board started there goes in (session only).
+  boardsFolder: `${PREFIX}ui:boards-folder`,
+  newBoardFolder: `${PREFIX}ui:new-board-folder`,
   // A note picked on the home page, to start the next new board with (session only).
   startNote: `${PREFIX}ui:start-note`,
   // Where to land after signing in: the home page, or the invite link you came from (session only).
@@ -22,6 +27,7 @@ export const KEYS = {
   account: (accountId: string) => `${PREFIX}account:${accountId}:`,
   accountBoard: (accountId: string, boardId: string) => `${PREFIX}account:${accountId}:board:${boardId}`,
   outbox: (accountId: string) => `${PREFIX}account:${accountId}:outbox`,
+  accountFolders: (accountId: string) => `${PREFIX}account:${accountId}:folders`,
 }
 
 // The site used to be called HunchHack, and its keys started "hunchhack:". This moves them

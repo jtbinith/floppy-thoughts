@@ -13,6 +13,7 @@ The plan for accounts and shared boards, on [Supabase](https://supabase.com) (Po
 | Who did what | Each box records who added it and who edited it last, set by the database so it can't be faked. On a shared board, hovering a box shows both. |
 | Favourites | Each person favourites what they like (shown as a heart); everyone on the board sees who favourited what, and how many. The summary lists the favourite ideas, most favourited first. There is no separate "chosen idea". |
 | Down-votes | The opposite of a favourite, for an idea you wouldn't build. Each person favourites or down-votes an idea, never both. On a shared board the two counts show apart ("♥ 3 · ▼ 1"), never one combined score; on a board only you have, just your own heart or down-vote. The summary leaves them out. |
+| Folders | Your own way of grouping boards on the boards page (one per hackathon, class or project). Folders hold boards and other folders, as deep as you like. They're personal: nobody else sees them, and on a shared board everyone files it in their own folders (or none). Deleting a folder asks whether to keep what's inside (it moves up a level) or delete it all. |
 | How we got there | The trail from the notes to an idea can be opened from any favourite idea. |
 | Signing in later | The boards in your browser are uploaded to your account the first time you sign in, so nothing made before is lost. |
 | Collaboration | The heart of the tool: a board can be worked on by a team at the same time. You see who's on the board right now, their changes appear live, every box shows who added it, and favourites show who liked what. |
@@ -33,6 +34,10 @@ erDiagram
   users ||--o{ favourites : gives
   nodes ||--o{ downvotes : gets
   users ||--o{ downvotes : gives
+  users ||--o{ folders : keeps
+  folders ||--o{ folders : holds
+  folders ||--o{ board_folders : holds
+  boards ||--o{ board_folders : "filed as"
   boards ||--o| board_invites : "shared by"
   users ||--o{ nodes : "created"
   boards ||--o{ gallery_entries : "published as"
@@ -87,6 +92,18 @@ erDiagram
     uuid node_id PK, FK
     uuid user_id PK, FK
     timestamptz created_at
+  }
+  folders {
+    uuid id PK
+    uuid user_id FK
+    text name
+    uuid parent_id FK
+    timestamptz created_at
+  }
+  board_folders {
+    uuid user_id PK, FK
+    uuid board_id PK, FK
+    uuid folder_id FK
   }
   board_invites {
     uuid board_id PK, FK
@@ -173,6 +190,30 @@ Primary key `(node_id, user_id)`: one favourite per person per box. The summary 
 ### downvotes
 The same columns and rules as `favourites`. Primary key `(node_id, user_id)`: one down-vote per person per box. A favourite and a down-vote by the same person on the same box can't both exist: adding either one deletes the other (triggers on both tables), whichever app or device adds it.
 
+### folders
+Your folders. Only you can see or change yours.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | Primary key (made on the device, so folders made before signing in keep theirs) |
+| `user_id` | `uuid` | → `auth.users`, whose folder it is |
+| `name` | `text` | 1–80 characters |
+| `parent_id` | `uuid` | The folder it's in, or empty at the top. Always one of your own folders (the foreign key is `(parent_id, user_id)`); deleting a folder deletes the folders inside it |
+| `created_at` | `timestamptz` | |
+
+A trigger stops a folder going inside itself, however deep (and more than 50 deep).
+
+### board_folders
+Which of your folders each board is in. A board in no folder has no row.
+
+| Column | Type | Notes |
+|---|---|---|
+| `user_id` | `uuid` | → `auth.users` |
+| `board_id` | `uuid` | → `boards`, deleted with the board. Only boards you're on |
+| `folder_id` | `uuid` | → `folders`, one of yours (foreign key `(folder_id, user_id)`), deleted with the folder |
+
+Primary key `(user_id, board_id)`: each person files a board in one place, their own way. Leaving a board (or being removed) takes it out of your folders.
+
 ### board_invites
 One live invite link per board.
 
@@ -209,6 +250,7 @@ Beyond the primary keys:
 - `board_members (user_id)`: "my boards".
 - `favourites (node_id)`: counting favourites on a board's boxes.
 - `downvotes (board_id)`: reading a board's down-votes.
+- `folders (user_id)`, `board_folders (folder_id)`: your folders, and what's in one.
 
 Boards are small (at most 1,000 boxes), so these are enough.
 
@@ -226,6 +268,8 @@ Every table has row-level security on, so the database itself refuses anything n
 | Copy, reset or turn off the invite link, change roles, remove people | | | ✓ | ✓ |
 | Publish the board to the gallery | | | | ✓ |
 | Delete the board | | | | ✓ |
+
+Folders aren't part of a board: everyone signed in has their own, and only they can see, make, change or delete them, or file boards they're on in them.
 
 Someone who isn't a member can't see a board exists. Joining through an invite runs in one database function that checks the link and adds the member as an `editor`; only owners and admins can read the link.
 
@@ -261,7 +305,7 @@ No server-side cache is needed at this size. The app's files are cached by the h
 
 ## Signing in for the first time
 
-Boards saved in the browser use box ids `n1, n2, …`. On first sign-in each one is uploaded with new random ids, keeping the short numbers and the links, and you become its owner. Favourites become yours, under your account. The browser copy is kept until the upload is confirmed.
+Boards saved in the browser use box ids `n1, n2, …`. On first sign-in each one is uploaded with new random ids, keeping the short numbers and the links, and you become its owner. Favourites become yours, under your account, and your folders come too, with each board still in its folder. The browser copy is kept until the upload is confirmed.
 
 From then on, signed in, new boards go to your account. Signing out removes your account's boards from that browser (so a shared computer doesn't keep them), and the app goes back to browser-only boards.
 
@@ -305,6 +349,7 @@ The only reason data is held is to provide the service people signed up for. No 
 |---|---|
 | Your account and boards | Until you delete them, or 24 months with no sign-in (see below) |
 | Favourites | As long as the box and your account |
+| Folders | Until you delete them or your account |
 | Invite links | Until turned off or replaced |
 | A deleted account's gallery entries | Kept, as "a past member", until removed |
 | A deleted account's claim hash | As long as the gallery entry it belongs to |
@@ -318,7 +363,7 @@ No cookies are set. The browser keeps:
 
 | Item | What for | How long |
 |---|---|---|
-| Boards (signed out) | Your boards | Until you delete them |
+| Boards and folders (signed out) | Your boards, and how you've grouped them | Until you delete them |
 | Settings | Light or dark mode, the drawer, the terminal's height, board sort | Until you clear them |
 | Notes seen | So the machine prefers notes you haven't had | Until you clear them |
 | Sign-in session (signed in) | Staying signed in | Until you sign out |
@@ -327,7 +372,7 @@ No cookies are set. The browser keeps:
 
 ### People's rights, as features
 
-- **Download my data:** a file of all your boards (and your favourites), from your account page.
+- **Download my data:** a file of all your boards (and your favourites) and your folders, from your account page.
 - **Delete my account:** removes your account, your profile, your favourites, and the boards you own (with everything on them). On boards someone else owns, the boxes you added stay, so the team doesn't lose its work, but your name is removed from them. Your gallery entries: you choose to remove them, or leave them up as "a past member" (with the claim hash, so you can take them back if you return).
 - **Leave a board:** removes you from it; your boxes stay, without your name.
 - Correcting your name or picture happens on GitHub and updates at the next sign-in.

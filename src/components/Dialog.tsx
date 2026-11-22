@@ -12,7 +12,7 @@ type Props = {
 export function Dialog({ label, onCancel, children, wide = false }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const first = ref.current?.querySelector<HTMLElement>('[autofocus], input, button')
+    const first = ref.current?.querySelector<HTMLElement>('[autofocus], input, button:not(:disabled)')
     ;(first ?? ref.current)?.focus()
   }, [])
   return (

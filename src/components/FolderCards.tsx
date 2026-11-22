@@ -1,0 +1,130 @@
+import { useState } from 'react'
+import { MAX_FOLDER_NAME, foldersIn, withEverythingInside, type Folder, type Folders } from '../lib/folders'
+import { FolderIcon } from './FolderIcon'
+import { DRAGGED, countOf, dragData, type Dragged } from './folderDrag'
+
+// The folders in the folder you're looking at, as cards above its boards: open, rename, move or
+// delete. Boards and folders can be dragged onto a folder to put them in it (with a mouse; on a
+// touch screen, "move" does the same by tapping).
+
+type Props = {
+  folders: Folders
+  at: string | null
+  // How many boards are in a folder, counting folders inside it (only boards still on your list).
+  boardCount: (id: string) => number
+  onOpen: (id: string) => void
+  onRename: (id: string, name: string) => void
+  onMove: (id: string) => void
+  onDelete: (id: string) => void
+  onDrop: (thing: Dragged, into: string) => void
+}
+
+export function FolderCards({ folders, at, boardCount, onOpen, onRename, onMove, onDelete, onDrop }: Props) {
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  const shown = foldersIn(folders, at)
+  if (!shown.length) return null
+
+  return (
+    <ul className="folders" aria-label="Folders">
+      {shown.map((f) => {
+        const inner = foldersIn(folders, f.id).length
+        const boards = boardCount(f.id)
+        return (
+          <li
+            key={f.id}
+            className={`folders__card${over === f.id ? ' folders__card--over' : ''}`}
+            draggable={renaming !== f.id}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DRAGGED, JSON.stringify({ kind: 'folder', id: f.id } satisfies Dragged))
+              e.dataTransfer.effectAllowed = 'move'
+            }}
+            onDragOver={(e) => {
+              if (!e.dataTransfer.types.includes(DRAGGED)) return
+              e.preventDefault()
+              setOver(f.id)
+            }}
+            onDragLeave={() => setOver(null)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setOver(null)
+              const thing = dragData(e)
+              if (thing && thing.id !== f.id) onDrop(thing, f.id)
+            }}
+          >
+            {renaming === f.id ? (
+              <div className="folders__open">
+                <FolderIcon />
+                <input
+                  className="boards__rename"
+                  aria-label="Folder name"
+                  defaultValue={f.name}
+                  maxLength={MAX_FOLDER_NAME}
+                  autoFocus
+                  onFocus={(e) => e.currentTarget.select()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur()
+                    if (e.key === 'Escape') setRenaming(null)
+                  }}
+                  onBlur={(e) => {
+                    onRename(f.id, e.currentTarget.value)
+                    setRenaming(null)
+                  }}
+                />
+              </div>
+            ) : (
+              <button type="button" className="folders__open" onClick={() => onOpen(f.id)}>
+                <FolderIcon />
+                <strong>{f.name}</strong>
+                <small>{countOf(boards, inner)}</small>
+              </button>
+            )}
+            <span className="boards__actions folders__actions">
+              <button type="button" aria-label={`Rename folder ${f.name}`} onClick={() => setRenaming(f.id)}>
+                rename
+              </button>
+              <button type="button" aria-label={`Move folder ${f.name}`} onClick={() => onMove(f.id)}>
+                move
+              </button>
+              <button type="button" aria-label={`Delete folder ${f.name}`} onClick={() => onDelete(f.id)}>
+                delete
+              </button>
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+// Where to move a board or folder to: every folder, as a tree you tap, and the top of the page.
+// A folder can't go into itself or anything inside it, so those aren't offered.
+export function MoveTargets({ folders, moving, current, onPick }: { folders: Folders; moving: Dragged; current: string | null; onPick: (into: string | null) => void }) {
+  const blocked = moving.kind === 'folder' ? withEverythingInside(folders, moving.id) : new Set<string>()
+  const rows: { folder: Folder; depth: number }[] = []
+  const walk = (parent: string | null, depth: number) => {
+    for (const f of foldersIn(folders, parent)) {
+      if (blocked.has(f.id)) continue
+      rows.push({ folder: f, depth })
+      walk(f.id, depth + 1)
+    }
+  }
+  walk(null, 0)
+  return (
+    <ul className="move-to" aria-label="Move to">
+      <li>
+        <button type="button" className="move-to__button" aria-current={current === null || undefined} disabled={current === null} onClick={() => onPick(null)}>
+          my boards <small>(no folder)</small>
+        </button>
+      </li>
+      {rows.map(({ folder, depth }) => (
+        <li key={folder.id} style={{ paddingLeft: `${depth * 1.1}rem` }}>
+          <button type="button" className="move-to__button" aria-current={current === folder.id || undefined} disabled={current === folder.id} onClick={() => onPick(folder.id)}>
+            <FolderIcon size={12} /> {folder.name}
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
