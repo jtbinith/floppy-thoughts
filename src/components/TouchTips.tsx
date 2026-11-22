@@ -1,12 +1,12 @@
 import { HeartIcon } from './HeartIcon'
 import { ShrimpIcon } from './ShrimpIcon'
 
-// The help tab on a phone: how to do everything by touch, in place of the terminal commands and
+// The help tab on a touch screen (phone or tablet): how to do everything by touch, in place of the terminal commands and
 // keyboard shortcuts (which need a keyboard). The terminal is still there behind >_ for anyone
 // who'd rather type.
 
 const TIPS: { title: string; how: React.ReactNode }[] = [
-  { title: 'Add an idea', how: <>Tap the round + button, type it, then tap anywhere on the board (or return) to put it down.</> },
+  { title: 'Add an idea', how: <>Tap +, type it, then tap anywhere on the board (or return) to put it down.</> },
   { title: 'Do things with a box', how: <>Tap it: a bar along the bottom of the board has ♥, nudge, edit, link, + next and the bin.</> },
   { title: 'Change an idea', how: <>Tap the box, then edit (or double-tap it).</> },
   { title: 'Link two ideas', how: <>Tap a box, then link, then the box to link it to. Or drag from the dot on a box&apos;s edge onto another box.</> },
@@ -30,7 +30,7 @@ const TIPS: { title: string; how: React.ReactNode }[] = [
   },
   { title: 'Move around', how: <>Drag the board to look around and pinch to zoom. Tidy the board is in the Menu.</> },
   { title: 'Delete', how: <>Tap a box, then the bin. Changed your mind? Undo (↶) is at the top.</> },
-  { title: 'Rather type?', how: <>Tap &gt;_ for the terminal: type a thought and press return, or a command starting with /.</> },
+  { title: 'Rather type?', how: <>Use the terminal (behind &gt;_ on a phone): type a thought and press return, or a command starting with /.</> },
 ]
 
 export function TouchTips() {

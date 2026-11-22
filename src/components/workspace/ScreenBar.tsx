@@ -4,7 +4,7 @@ import { favouriteIdeas } from '../../lib/summary'
 import type { Here } from '../../lib/account/live'
 import type { SyncState } from '../../lib/account/outbox'
 import { MenuBar, type Menu } from '../MenuBar'
-import { usePhone } from '../../lib/usePhone'
+import { usePhone, useTouch } from '../../lib/usePhone'
 
 // The strip along the top of the board's screen: the menus, the board's name in the middle like
 // a window title (click to rename), and on the right the sun/moon button, a short notice when
@@ -40,13 +40,15 @@ export function ScreenBar({
   history: { undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean }
 }) {
   const favCount = favouriteIdeas(board).length
-  // On a phone the four menus don't fit, so they become one, with a line between each group.
+  // On a touch screen the menus leave out what needs a keyboard; on a phone the four of them don't
+  // fit either, so they become one, with a line between each group.
   const phone = usePhone()
-  const shown = phone ? [phoneMenu(menus)] : menus
+  const touch = useTouch()
+  const shown = phone ? [phoneMenu(menus)] : touch ? menus.map(touchMenu) : menus
   return (
     <header className="screen__bar">
       <MenuBar menus={shown} />
-      {phone && (
+      {touch && (
         <span className="screen__history">
           <button type="button" className="screen__step" aria-label="Undo" title="Undo" disabled={!history.canUndo} onClick={history.undo}>
             ↶
@@ -113,28 +115,29 @@ export function ScreenBar({
   )
 }
 
-// The phone's one Menu: every group in turn with a line between, leaving out what needs a keyboard
-// (the shortcuts sheet), with "Commands" as "Help" (it opens the touch tips there), each item once.
-function phoneMenu(menus: Menu[]): Menu {
+// A menu for a touch screen: without the keyboard shortcuts sheet (no keyboard), with "Commands" as
+// "Help" (it opens the touch tips there), each item once, and no stray lines.
+function touchMenu(menu: Menu): Menu {
   const items: Menu['items'] = []
   const seen = new Set<string>()
-  for (const menu of menus) {
-    if (items.length && items.at(-1) !== 'divider') items.push('divider')
-    for (const item of menu.items) {
-      if (item === 'divider') {
-        if (items.length && items.at(-1) !== 'divider') items.push(item)
-        continue
-      }
-      if (item.label === 'Keyboard shortcuts') continue
-      const label = item.label === 'Commands' ? 'Help' : item.label
-      if (seen.has(label)) continue
-      seen.add(label)
-      items.push({ ...item, label })
+  for (const item of menu.items) {
+    if (item === 'divider') {
+      if (items.length && items.at(-1) !== 'divider') items.push(item)
+      continue
     }
+    if (item.label === 'Keyboard shortcuts') continue
+    const label = item.label === 'Commands' ? 'Help' : item.label
+    if (seen.has(label)) continue
+    seen.add(label)
+    items.push({ ...item, label })
   }
   if (items.at(-1) === 'divider') items.pop()
-  return { label: 'Menu', items }
+  return { ...menu, items }
 }
+
+// The phone's one Menu: every group in turn, with a line between, as a touch menu.
+const phoneMenu = (menus: Menu[]): Menu =>
+  touchMenu({ label: 'Menu', items: menus.flatMap((m, i) => (i ? ['divider' as const, ...m.items] : m.items)) })
 
 const changes = (n: number) => `${n} change${n > 1 ? 's' : ''}`
 

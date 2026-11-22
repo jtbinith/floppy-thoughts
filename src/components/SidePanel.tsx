@@ -4,7 +4,7 @@ import type { Spark } from '../lib/sparks/deal'
 import type { Favourite } from '../lib/storage'
 import { CommandsTab } from './CommandsTab'
 import { TouchTips } from './TouchTips'
-import { usePhone } from '../lib/usePhone'
+import { useTouch } from '../lib/usePhone'
 import { HeartIcon } from './HeartIcon'
 import { loadSeen } from '../lib/sparks/seen'
 import { rowEmpty, vendNote, type VendRow } from '../lib/sparks/vend'
@@ -59,7 +59,7 @@ const savedWidth = () => {
 export function SidePanel(props: Props) {
   const { tab, onTab, onClose } = props
   const [width, setWidth] = useState(savedWidth)
-  const phone = usePhone()
+  const touch = useTouch()
 
   function resizeTo(next: number) {
     const w = clampWidth(next)
@@ -108,7 +108,7 @@ export function SidePanel(props: Props) {
           <HeartIcon /> favourites
         </button>
         <button type="button" role="tab" aria-selected={tab === 'commands'} className="panel__tab" onClick={() => onTab('commands')}>
-          {phone ? 'help' : 'commands'}
+          {touch ? 'help' : 'commands'}
         </button>
         <button type="button" className="panel__close" aria-label="Close the drawer" title="Close (Esc)" onClick={onClose}>
           ×
@@ -119,7 +119,7 @@ export function SidePanel(props: Props) {
           <MachineTab {...props} />
         ) : tab === 'favourites' ? (
           <FavouritesTab {...props} />
-        ) : phone ? (
+        ) : touch ? (
           <TouchTips />
         ) : (
           <CommandsTab onUse={props.onUseCommand} onShowKeys={props.onShowKeys} />
@@ -133,7 +133,7 @@ export function SidePanel(props: Props) {
 // little screen says WAIT while a note is still out, and EMPTY once all of a row's notes are on
 // the board. The note comes out on a scroll by the machine: stick it on the board, or put it back.
 function MachineTab({ onBoard, onStick, onMachineControl, noteLanding }: Props) {
-  const phone = usePhone()
+  const touch = useTouch()
   const machine = {
     vendGate: (category: string) => (rowEmpty(category as VendRow, onBoard) ? 'EMPTY' : null),
     pickNote: (category: string) => vendNote(category as VendRow, onBoard, { seen: loadSeen() }),
@@ -148,7 +148,7 @@ function MachineTab({ onBoard, onStick, onMachineControl, noteLanding }: Props) 
         <Machine className="panel__machine" onBoard={machine} />
       </Suspense>
       <p className="panel__hint">
-        {phone ? (
+        {touch ? (
           <>
             Tap a letter on the keypad, then <kbd>OK</kbd>. Or <kbd>?</kbd> for a surprise.
           </>

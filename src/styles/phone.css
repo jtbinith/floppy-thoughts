@@ -1,4 +1,5 @@
-/* Phones: the board's touch-first layout. Same width as lib/usePhone.ts.
+/* Small screens: phones, upright or turned sideways (narrow, or short and touch). The board's
+   touch-first layout; same test as usePhone in lib/usePhone.ts.
    The device keeps its chunky top and bottom with the screws but has thin sides, so the board
    gets the width. The page scrolls: the board fills the screen at its normal size (so nothing's
    too small to read), and the terminal and the drawer open below it, scrolled into view. The
@@ -10,7 +11,7 @@
   display: none;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
   /* The page scrolls, instead of everything squeezing into one screen. */
   .page {
     overflow-y: auto;
@@ -176,16 +177,117 @@
     overflow: hidden;
   }
 
-  .menubar__title,
-  .screen__name-button,
-  .screen__end button {
-    min-height: 44px;
-  }
-
   .screen__name-button {
     max-width: 100%;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* The drawer (machine, favourites, help) opens under the board, as tall as it needs (the machine
+     gets a good-sized box), and the page scrolls down to it. */
+  .screen__main {
+    flex-direction: column;
+  }
+
+  .panel {
+    flex: none;
+    width: auto !important;
+    border-top: 2px solid var(--frame-edge);
+    border-left: 0;
+  }
+
+  /* The machine fills what's left of the drawer above its one line of help, instead of its
+     desktop height (which would push it out of the strip). */
+  .panel__body {
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem 1rem;
+    overflow: visible;
+  }
+
+  .panel__machine .home__machine {
+    height: min(26rem, 70svh);
+  }
+
+  .panel__hint {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  /* With a box selected its bar is along the bottom, so the + button floats up above it. */
+  .workspace:has(.selection-bar) .device__rail > .device__button:first-child {
+    bottom: calc(100% + 1rem + 3.6rem);
+  }
+
+  /* Popups (theme, share, your ideas, deleting): as tall as the screen allows, scrolling inside
+     if they're long, with their buttons stacked full width so none runs off the edge. */
+  .popup__card {
+    max-height: calc(100svh - 2rem);
+  }
+
+  .popup__actions {
+    flex-direction: column;
+  }
+
+  .popup__stick,
+  .popup__back {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  /* Buttons outside a popup (the join page, the empty board page) keep their own width. */
+  .join .popup__stick,
+  .screen__start .popup__stick {
+    width: auto;
+  }
+
+  .popup__card input,
+  .popup__card textarea {
+    min-height: 44px;
+  }
+
+  /* "My idea" is in the Menu (My favourite ideas): in the strip it would push out the name. */
+  .screen__summary {
+    display: none;
+  }
+
+}
+
+/* Touch screens (phones and tablets, any way up): no keyboard and fingers, not a mouse. Whatever the
+   layout, a tapped box gets a bar of buttons, undo and redo are buttons, and there are no keycaps
+   or keyboard shortcuts on show. Same test as useTouch in lib/usePhone.ts. */
+@media (pointer: coarse) {
+  /* The strip has undo and redo too: Menu (or the menus), undo, redo, the name, then share. */
+  .screen__bar {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+  }
+
+  /* The rail's buttons, big enough for a finger (on a phone they're in the bottom bar). */
+  .device__button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Everything you tap is at least 44px: the menus and their items, the name, share, the drawer's
+     tabs and close, and popup buttons. */
+  .menubar__title,
+  .menubar__item,
+  .screen__name-button,
+  .screen__end button,
+  .panel__tab,
+  .popup__stick,
+  .popup__back {
+    min-height: 44px;
+  }
+
+  .panel__close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Pinch zooms and drags pan, so the zoom buttons go. ("Tidy the board" is in the menus.) */
+  .workspace .react-flow__controls {
+    display: none;
   }
 
   /* Undo and redo, right by the Menu. Faded out when there's nothing to take back or put back. */
@@ -210,57 +312,9 @@
     opacity: 0.35;
   }
 
-  .menubar__item {
-    min-height: 44px;
-  }
-
-  /* No keyboard on a phone, so no keyboard shortcuts in the menu. */
+  /* No keyboard on a phone or tablet, so no keyboard shortcuts in the menu. */
   .menubar__item kbd {
     display: none;
-  }
-
-  /* Pinch zooms and drags pan, so the zoom buttons go. ("Tidy the board" is in the Menu.) */
-  .workspace .react-flow__controls {
-    display: none;
-  }
-
-  /* The drawer (machine, favourites, help) opens under the board, as tall as it needs (the machine
-     gets a good-sized box), and the page scrolls down to it. */
-  .screen__main {
-    flex-direction: column;
-  }
-
-  .panel {
-    flex: none;
-    width: auto !important;
-    border-top: 2px solid var(--frame-edge);
-    border-left: 0;
-  }
-
-  .panel__tab,
-  .panel__close {
-    min-height: 44px;
-  }
-
-  .panel__close {
-    min-width: 44px;
-  }
-
-  /* The machine fills what's left of the drawer above its one line of help, instead of its
-     desktop height (which would push it out of the strip). */
-  .panel__body {
-    gap: 0.5rem;
-    padding: 0.6rem 0.8rem 1rem;
-    overflow: visible;
-  }
-
-  .panel__machine .home__machine {
-    height: min(26rem, 70svh);
-  }
-
-  .panel__hint {
-    font-size: 0.8rem;
-    line-height: 1.5;
   }
 
   /* The note from the machine: no keycaps on its buttons (there's no keyboard), and each button
@@ -323,48 +377,10 @@
     place-items: center;
   }
 
-  /* With a box selected its bar is along the bottom, so the + button floats up above it. */
-  .workspace:has(.selection-bar) .device__rail > .device__button:first-child {
-    bottom: calc(100% + 1rem + 3.6rem);
-  }
-
   /* The box waiting for the other end of a link. */
   .idea--linking {
     outline: 3px dashed var(--spark);
     outline-offset: 4px;
-  }
-
-  /* Popups (theme, share, your ideas, deleting): as tall as the screen allows, scrolling inside
-     if they're long, with their buttons stacked full width so none runs off the edge. */
-  .popup__card {
-    max-height: calc(100svh - 2rem);
-  }
-
-  .popup__actions {
-    flex-direction: column;
-  }
-
-  .popup__stick,
-  .popup__back {
-    width: 100%;
-    min-height: 44px;
-    white-space: normal;
-  }
-
-  /* Buttons outside a popup (the join page, the empty board page) keep their own width. */
-  .join .popup__stick,
-  .screen__start .popup__stick {
-    width: auto;
-  }
-
-  .popup__card input,
-  .popup__card textarea {
-    min-height: 44px;
-  }
-
-  /* "My idea" is in the Menu (My favourite ideas): in the strip it would push out the name. */
-  .screen__summary {
-    display: none;
   }
 
   /* Touch tips in the help tab. */
@@ -414,5 +430,13 @@
 
   .screen__history {
     gap: 0;
+  }
+}
+
+/* A phone turned sideways: the screen is short, so the board is sized to fill it once the nav bar
+   has scrolled off (with the strip above it and the button bar below). */
+@media (pointer: coarse) and (max-height: 500px) {
+  .workspace__board {
+    height: max(13rem, calc(100svh - 8.5rem));
   }
 }

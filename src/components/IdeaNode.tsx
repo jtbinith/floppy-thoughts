@@ -6,14 +6,14 @@ import { useBoardActions } from './boardActions'
 import { BinIcon } from './BinIcon'
 import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
-import { usePhone } from '../lib/usePhone'
+import { useTouch } from '../lib/usePhone'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
   const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge, whoIs, linkingFrom } = useBoardActions()
-  // On a phone the selected box's actions are in the bar along the bottom of the board instead
-  // (see SelectionBar); here it only keeps the box in view while you type.
-  const phone = usePhone()
+  // On a touch screen the selected box's actions are in the bar along the bottom of the board
+  // instead (see SelectionBar); here it only keeps the box in view above the on-screen keyboard.
+  const touch = useTouch()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -31,13 +31,13 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
       input?.focus()
       if (input && document.activeElement === input) {
         input.select()
-        // On a phone the keyboard comes up over the bottom of the screen: keep the box in view.
-        if (phone) setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+        // The on-screen keyboard comes up over the bottom of the screen: keep the box in view.
+        if (touch) setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
       } else if (tries++ < 30) frame = requestAnimationFrame(tryFocus)
     }
     frame = requestAnimationFrame(tryFocus)
     return () => cancelAnimationFrame(frame)
-  }, [editing, phone])
+  }, [editing, touch])
   const isTheme = data.category === 'theme'
   const isFav = isFavourite(data)
   const mine = isMine(data)

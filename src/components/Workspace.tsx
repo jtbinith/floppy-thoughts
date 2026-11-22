@@ -16,7 +16,7 @@ import { isTyping } from './workspace/isTyping'
 import { BoardActionsContext, type BoardActions } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
-import { usePhone } from '../lib/usePhone'
+import { usePhone, useTouch } from '../lib/usePhone'
 import { SelectionBar } from './SelectionBar'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
@@ -104,7 +104,7 @@ export function Workspace(props: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<TerminalHandle>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  // The box waiting for the other end of a link (after its link button on a phone).
+  // The box waiting for the other end of a link (after its link button on a touch screen).
   const [linkingFrom, setLinkingFrom] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   // Notices fade after a few seconds.
@@ -258,6 +258,7 @@ export function Workspace(props: Props) {
   // gets the room. Everywhere else it's always there and this does nothing to the layout.
   const [terminalOpen, setTerminalOpen] = useState(false)
   const phone = usePhone()
+  const touch = useTouch()
   // On a phone the drawer and the terminal open below the board, so the page scrolls down to
   // whichever just opened (the bottom of it, so its input or keypad is in reach).
   useEffect(() => {
@@ -394,12 +395,12 @@ export function Workspace(props: Props) {
                   if (result.ok) commit(board, result.board)
                 }}
               />
-              {phone && <SelectionBar board={board} />}
+              {touch && <SelectionBar board={board} />}
               {board.nodes.length === 0 && !askTheme && (
                 <div className="board__empty">
-                  <p>{phone ? 'Add your first thoughts, or get a note from the vending machine.' : 'Start typing your first thoughts, or get a note from the vending machine.'}</p>
+                  <p>{touch ? 'Add your first thoughts, or get a note from the vending machine.' : 'Start typing your first thoughts, or get a note from the vending machine.'}</p>
                   <div className="board__empty-actions">
-                    {phone ? (
+                    {touch ? (
                       <button type="button" className="popup__stick" onClick={() => addAndEdit(visibleCentre())}>
                         add an idea
                       </button>

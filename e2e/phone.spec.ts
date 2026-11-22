@@ -112,3 +112,30 @@ test('undo and redo are buttons by the Menu', async ({ page }) => {
   await redo.tap()
   await expect(boxes(page)).toHaveCount(1)
 })
+
+// Other touch screens: a tablet keeps the roomy layout but works by touch; a phone turned sideways
+// is wide but short, so it gets the phone layout.
+test.describe('a tablet, upright', () => {
+  test.use({ viewport: { width: 820, height: 1180 }, isMobile: true, hasTouch: true })
+
+  test('keeps the side rail, four menus and the terminal, with touch buttons', async ({ page }) => {
+    await newBoard(page)
+    await expect(page.getByRole('menuitem', { name: 'Edit', exact: true })).toBeVisible()
+    await expect(page.locator('.terminal')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeVisible()
+    await addIdea(page, 'a pocket sundial')
+    await expect(page.getByRole('toolbar', { name: 'Box 1' })).toBeVisible()
+    await expect(page.locator('.react-flow__controls')).toBeHidden()
+  })
+})
+
+test.describe('a phone turned sideways', () => {
+  test.use({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true })
+
+  test('gets the phone layout: one Menu and the terminal behind >_', async ({ page }) => {
+    await newBoard(page)
+    await expect(page.getByRole('menuitem', { name: 'Menu' })).toBeVisible()
+    await expect(page.locator('.terminal')).toBeHidden()
+    expect(await nothingSideways(page)).toBe(true)
+  })
+})
