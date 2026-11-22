@@ -50,10 +50,13 @@ test('new ideas stack down the screen in the order you add them', async ({ page 
   const tops = await Promise.all(['1', '2', '3'].map(async (n) => (await box(page, n).boundingBox())!.y))
   expect(tops[0]).toBeLessThan(tops[1])
   expect(tops[1]).toBeLessThan(tops[2])
-  // The newest is on screen, clear of the bar along the bottom.
-  const newest = await box(page, '3').boundingBox()
-  const bar = await page.locator('.selection-bar').boundingBox()
-  expect(newest!.y + newest!.height).toBeLessThanOrEqual(bar!.y)
+  // The newest is on screen, clear of the bar along the bottom (once the board has finished gliding
+  // to show it, which takes longer on a busy computer).
+  const bar = (await page.locator('.selection-bar').boundingBox())!
+  await expect.poll(async () => {
+    const newest = (await box(page, '3').boundingBox())!
+    return newest.y + newest.height <= bar.y
+  }).toBe(true)
 })
 
 test('a tapped box has its actions in a bar: link, next, edit, favourite and delete', async ({ page }) => {
