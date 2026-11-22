@@ -355,6 +355,14 @@
   align-items: center;
 }
 
+/* The machine's box takes the column's full width. Centred items size to their contents, and the
+   machine's contents size to the box ("100% of it"), which some browsers (Safari) resolve to zero,
+   so the machine vanished on iPhones. */
+.home__machine-wrap > .home__machine-stage,
+.home__machine-wrap > .home__machine {
+  align-self: stretch;
+}
+
 .home__machine {
   position: relative;
   width: 100%;
