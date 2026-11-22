@@ -20,7 +20,8 @@ async function newFolder(page: Page, name: string) {
 }
 
 async function moveTo(page: Page, what: string, folder: string) {
-  await page.getByRole('button', { name: `Move ${what}` }).click()
+  await page.getByRole('button', { name: `Board options for ${what}` }).click()
+  await page.getByRole('menuitem', { name: 'move' }).click()
   await page.getByRole('dialog').getByRole('button', { name: folder }).click()
 }
 
@@ -187,7 +188,8 @@ test.describe('on a phone', () => {
     await page.getByRole('button', { name: 'skip' }).click()
     await page.goto('#/boards')
     await newFolder(page, 'Hackathons')
-    await page.getByRole('button', { name: /^Move board/ }).tap()
+    await page.getByRole('button', { name: /^Board options for board/ }).tap()
+    await page.getByRole('menuitem', { name: 'move' }).tap()
     await page.getByRole('dialog').getByRole('button', { name: 'Hackathons' }).tap()
     await expect(page.locator('.folders__card', { hasText: 'Hackathons' })).toContainText('1 board')
     // Press and hold a board, drag it onto a folder, let go.

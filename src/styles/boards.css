@@ -491,13 +491,13 @@
   position: relative;
 }
 
-.folder-menu {
+.card-menu {
   position: absolute;
   top: 0.3rem;
   right: 0.3rem;
 }
 
-.folder-menu__button {
+.card-menu__button {
   display: grid;
   place-items: center;
   width: 1.9rem;
@@ -513,13 +513,13 @@
   cursor: pointer;
 }
 
-.folder-menu__button:hover,
-.folder-menu__button[aria-expanded='true'] {
+.card-menu__button:hover,
+.card-menu__button[aria-expanded='true'] {
   color: var(--text);
   border-color: var(--line);
 }
 
-.folder-menu__list {
+.card-menu__list {
   position: absolute;
   top: calc(100% + 0.2rem);
   right: 0;
@@ -534,7 +534,7 @@
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
 }
 
-.folder-menu__list button {
+.card-menu__list button {
   padding: 0.4rem 0.6rem;
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -546,13 +546,13 @@
   cursor: pointer;
 }
 
-.folder-menu__list button:hover,
-.folder-menu__list button:focus-visible {
+.card-menu__list button:hover,
+.card-menu__list button:focus-visible {
   background: var(--line);
   outline: none;
 }
 
-.folder-menu__list .folder-menu__danger {
+.card-menu__list .card-menu__danger {
   color: var(--error);
 }
 
@@ -571,16 +571,28 @@
 }
 
 @media (pointer: coarse) {
-  .folder-menu__button {
+  .card-menu__button {
     width: 44px;
     height: 44px;
   }
 
-  .folder-menu__list button {
+  .card-menu__list button {
     min-height: 44px;
   }
 
   .folders__open {
     padding-right: 3rem;
   }
+}
+
+/* On a board card the ⋯ sits at the end of its bottom row, by "edited today". */
+.boards__card {
+  overflow: visible;
+}
+
+.boards__foot .card-menu {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin-left: auto;
 }

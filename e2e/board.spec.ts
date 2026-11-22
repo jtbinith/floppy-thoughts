@@ -282,7 +282,8 @@ test.describe('switching boards', () => {
     const cards = page.locator('.boards__card strong')
     await expect(cards).toHaveText(['apple', 'zebra'])
 
-    await page.getByRole('button', { name: 'Delete apple' }).click()
+    await page.getByRole('button', { name: 'Board options for apple' }).click()
+    await page.getByRole('menuitem', { name: 'delete' }).click()
     await page.getByRole('group', { name: 'Delete apple?' }).getByRole('button', { name: 'yes' }).click()
     await expect(cards).toHaveText(['zebra'])
     await expect(page.getByRole('heading', { name: 'my boards' })).toBeVisible()

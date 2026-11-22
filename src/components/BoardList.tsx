@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { MAX_BOARD_NAME } from '../lib/board'
 import type { BoardSummary } from '../lib/storage'
 import { BoardSketch } from './BoardSketch'
+import { CardMenu } from './CardMenu'
 import { DRAGGED, dragEnded, dragStarted, holdToDrag, type Dragged } from './folderDrag'
 
-// Your boards as cards, newest first: open, rename, move to a folder or delete. With a mouse, a
+// Your boards as cards, newest first: tap to open, and the ⋯ menu to rename, move to a folder or
+// delete. With a mouse, a
 // card can also be dragged onto a folder.
 
 type Props = {
@@ -33,6 +35,8 @@ const edited = (iso: string) => {
 export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, where, onNew, onDropInto }: Props) {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  // The board whose ⋯ menu is open.
+  const [menu, setMenu] = useState<string | null>(null)
 
   return (
     <ul className="boards">
@@ -97,19 +101,15 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, 
             ) : (
               <>
                 <small>edited {edited(b.updatedAt)}</small>
-                <span className="boards__actions">
-                  <button type="button" aria-label={`Rename ${b.name}`} onClick={() => setRenaming(b.id)}>
-                    rename
-                  </button>
-                  {onMove && (
-                    <button type="button" aria-label={`Move ${b.name}`} onClick={() => onMove(b.id)}>
-                      move
-                    </button>
-                  )}
-                  <button type="button" aria-label={`Delete ${b.name}`} onClick={() => setDeleting(b.id)}>
-                    delete
-                  </button>
-                </span>
+                <CardMenu
+                  label={`Board options for ${b.name}`}
+                  name={b.name}
+                  open={menu === b.id}
+                  onToggle={(open) => setMenu(open ? b.id : null)}
+                  onRename={() => setRenaming(b.id)}
+                  onMove={onMove ? () => onMove(b.id) : undefined}
+                  onDelete={() => setDeleting(b.id)}
+                />
               </>
             )}
           </div>

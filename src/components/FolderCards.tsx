@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { MAX_FOLDER_NAME, foldersIn, withEverythingInside, type Folder, type Folders } from '../lib/folders'
+import { CardMenu } from './CardMenu'
 import { FolderIcon } from './FolderIcon'
 import { DRAGGED, countOf, dragData, dragEnded, dragStarted, holdToDrag, type Dragged } from './folderDrag'
 
@@ -86,7 +87,7 @@ export function FolderCards({ folders, at, boardCount, onOpen, onRename, onMove,
                 <small>{countOf(boards, inner)}</small>
               </button>
             )}
-            <FolderMenu name={f.name} open={menu === f.id} onToggle={(open) => setMenu(open ? f.id : null)} onRename={() => setRenaming(f.id)} onMove={() => onMove(f.id)} onDelete={() => onDelete(f.id)} />
+            <CardMenu label={`Folder options for ${f.name}`} name={f.name} open={menu === f.id} onToggle={(open) => setMenu(open ? f.id : null)} onRename={() => setRenaming(f.id)} onMove={() => onMove(f.id)} onDelete={() => onDelete(f.id)} />
           </li>
         )
       })}
@@ -122,47 +123,5 @@ export function MoveTargets({ folders, moving, current, onPick }: { folders: Fol
         </li>
       ))}
     </ul>
-  )
-}
-
-
-// A folder's ⋯ menu: rename, move and delete, kept off the card until you ask. Esc, or a tap
-// anywhere else, closes it.
-function FolderMenu({ name, open, onToggle, onRename, onMove, onDelete }: { name: string; open: boolean; onToggle: (open: boolean) => void; onRename: () => void; onMove: () => void; onDelete: () => void }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const toggle = useRef(onToggle)
-  useEffect(() => {
-    toggle.current = onToggle
-  })
-  useEffect(() => {
-    if (!open) return
-    ref.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
-    const away = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && toggle.current(false)
-    document.addEventListener('pointerdown', away)
-    return () => document.removeEventListener('pointerdown', away)
-  }, [open])
-  const pick = (action: () => void) => () => {
-    onToggle(false)
-    action()
-  }
-  return (
-    <span className="folder-menu" ref={ref} onKeyDown={(e) => e.key === 'Escape' && onToggle(false)} onTouchStart={(e) => e.stopPropagation()}>
-      <button type="button" className="folder-menu__button" aria-label={`Folder options for ${name}`} aria-haspopup="menu" aria-expanded={open} onClick={() => onToggle(!open)}>
-        <span aria-hidden="true">⋯</span>
-      </button>
-      {open && (
-        <span className="folder-menu__list" role="menu" aria-label={`${name} options`}>
-          <button type="button" role="menuitem" onClick={pick(onRename)}>
-            rename
-          </button>
-          <button type="button" role="menuitem" onClick={pick(onMove)}>
-            move
-          </button>
-          <button type="button" role="menuitem" className="folder-menu__danger" onClick={pick(onDelete)}>
-            delete
-          </button>
-        </span>
-      )}
-    </span>
   )
 }
