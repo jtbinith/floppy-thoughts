@@ -205,17 +205,14 @@ export default function App() {
     await refreshList()
   }
 
-  // Deleting the open board moves you to your most recent other board, or the boards page.
+  // Deleting a board always leaves you on the boards page, whether you deleted it there or from
+  // inside it.
   async function deleteBoard(id: string) {
     await storage.deleteBoard(id)
-    const list = await refreshList()
+    await refreshList()
     if (board?.id !== id) return
-    const next = list[0]
-    if (next) await open(next.id)
-    else {
-      setBoard(null)
-      go('boards')
-    }
+    setBoard(null)
+    go('boards')
   }
 
   // Every change to the open board: save what it touched, and update just its line in the board list.

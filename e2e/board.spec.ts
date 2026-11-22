@@ -273,6 +273,22 @@ test.describe('switching boards', () => {
     await expect(cards).toHaveText(['zebra', 'apple'])
   })
 
+  test('deleting a board on the boards page keeps you there, even the open one', async ({ page }) => {
+    await type(page, '/rename zebra')
+    await type(page, '/new')
+    await page.getByRole('button', { name: 'skip' }).click()
+    await type(page, '/rename apple')
+    await page.goto('#/boards')
+    const cards = page.locator('.boards__card strong')
+    await expect(cards).toHaveText(['apple', 'zebra'])
+
+    await page.getByRole('button', { name: 'Delete apple' }).click()
+    await page.getByRole('group', { name: 'Delete apple?' }).getByRole('button', { name: 'yes' }).click()
+    await expect(cards).toHaveText(['zebra'])
+    await expect(page.getByRole('heading', { name: 'my boards' })).toBeVisible()
+    await expect(page).toHaveURL(/#\/boards$/)
+  })
+
   test('the nav bar links to your boards, and the logo goes home', async ({ page }) => {
     await page.goto('#/')
     const nav = page.getByRole('navigation', { name: 'Pages' })

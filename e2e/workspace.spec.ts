@@ -152,6 +152,18 @@ test('deleting a board asks first, then it goes', async ({ page }) => {
   await expect(page.getByText('short-lived')).toHaveCount(0)
 })
 
+test('deleting the board you are in takes you to the boards page, even with other boards', async ({ page }) => {
+  await type(page, '/rename keeper')
+  await type(page, '/new')
+  await page.getByRole('button', { name: 'skip' }).click()
+  await type(page, '/rename short-lived')
+  await page.getByRole('menuitem', { name: 'Board' }).click()
+  await page.getByRole('menuitem', { name: 'Delete this board…' }).click()
+  await page.getByRole('button', { name: 'delete board' }).click()
+  await expect(page).toHaveURL(/#\/boards$/)
+  await expect(page.locator('.boards__card strong')).toHaveText(['keeper'])
+})
+
 test('everything is still there after a reload', async ({ page }) => {
   await type(page, '/theme Time')
   await type(page, 'clocks that grow')
