@@ -120,7 +120,7 @@ export function Home({ hasBoards }: Props) {
                 </div>
               </div>
               <strong>land on an idea</strong>
-              <span>Favourite the ones you&apos;d build and see how you got there.</span>
+              <span>Favourite the ones you&apos;d build and down-vote the ones you wouldn&apos;t.</span>
             </li>
           </ol>
         </div>
@@ -133,7 +133,7 @@ export function Home({ hasBoards }: Props) {
             <ul className="home__uses">
               <li>
                 <strong>kick off a hackathon</strong>
-                <span>Share one link and the whole team brainstorms on the same board, then favourite the idea you&apos;ll build.</span>
+                <span>Share one link and the whole team brainstorms on the same board, then favourite the idea you&apos;ll build and see who picked what.</span>
               </li>
               <li>
                 <strong>run a workshop or a class</strong>
@@ -141,7 +141,7 @@ export function Home({ hasBoards }: Props) {
               </li>
               <li>
                 <strong>plan a side project with a friend</strong>
-                <span>Keep adding to the same board from wherever you are.</span>
+                <span>Keep adding to the same board from wherever you are, on any device.</span>
               </li>
             </ul>
             <p className="home__assure">Sign in with GitHub to share a board.</p>
