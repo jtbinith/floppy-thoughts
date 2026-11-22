@@ -7,7 +7,7 @@ import { Workspace } from './components/Workspace'
 import type { Board } from './lib/board'
 import { MAX_BOARD_NAME, parseBoard } from './lib/board'
 import { cleanText, touch } from './lib/boardOps'
-import { applyChange, changeBetween, isEmpty, onlyFavourites, type BoardChange } from './lib/changes'
+import { applyChange, changeBetween, isEmpty, onlyReactions, type BoardChange } from './lib/changes'
 import { createBoard } from './lib/sparks/newBoard'
 import { CONTENT_CATEGORIES } from './lib/sparks/content'
 import type { Spark } from './lib/sparks/deal'
@@ -286,7 +286,7 @@ export default function App() {
     const before = saved.current?.id === next.id ? saved.current : board?.id === next.id ? board : null
     const change = changeBetween(before, next)
     // A viewer can favourite, nothing else (the database would refuse it anyway).
-    if (role === 'viewer' && before && !onlyFavourites(before, change)) return
+    if (role === 'viewer' && before && !onlyReactions(before, change)) return
     saved.current = next
     setBoard(next)
     setBoards((list) => withSummary(list ?? [], next))

@@ -355,9 +355,11 @@
     left: 0;
     z-index: 6;
     display: flex;
-    gap: 0.35rem;
+    gap: 0.25rem;
     justify-content: space-between;
-    padding: 0.45rem 0.5rem;
+    padding: 0.45rem 0.35rem;
+    /* Seven buttons: on the narrowest phones they keep their 44px and the bar scrolls sideways. */
+    overflow-x: auto;
     background: var(--screen-bar);
     border-top: 1px solid var(--line);
   }
@@ -385,6 +387,7 @@
 
   /* The heart and the × are icons, so they keep to 44px and the words get the rest. */
   .selection-bar__button:first-child,
+  .selection-bar__icon,
   .selection-bar__delete {
     flex: 0 0 44px;
     display: grid;

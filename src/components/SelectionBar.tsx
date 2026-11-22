@@ -1,8 +1,9 @@
 import { useStore } from '@xyflow/react'
-import { isMine, type Board } from '../lib/board'
+import { isMine, isMyDownvote, type Board } from '../lib/board'
 import { findNode } from '../lib/boardOps'
 import { useBoardActions } from './boardActions'
 import { BinIcon } from './BinIcon'
+import { DownvoteIcon } from './DownvoteIcon'
 import { HeartIcon } from './HeartIcon'
 
 // On a phone: when one box is selected, everything you can do with it, in a bar docked along the
@@ -19,6 +20,7 @@ export function SelectionBar({ board }: { board: Board }) {
   if (!node || actions.editingId === node.id) return null
 
   const mine = isMine(node)
+  const myDown = isMyDownvote(node)
   const editable = node.kind === 'user' || node.category === 'theme'
   const linking = actions.linkingFrom === node.id
   const n = node.number
@@ -26,6 +28,15 @@ export function SelectionBar({ board }: { board: Board }) {
     <div className="selection-bar" role="toolbar" aria-label={`Box ${n}`}>
       <button type="button" className={`selection-bar__button${mine ? ' selection-bar__button--on' : ''}`} aria-pressed={mine} aria-label={mine ? `Unfavourite ${n}` : `Favourite ${n}`} onClick={() => actions.favourite(node.id)}>
         <HeartIcon filled={mine} size={14} />
+      </button>
+      <button
+        type="button"
+        className={`selection-bar__button selection-bar__icon${myDown ? ' selection-bar__button--on' : ''}`}
+        aria-pressed={myDown}
+        aria-label={myDown ? `Take back your down-vote on ${n}` : `Down-vote ${n}`}
+        onClick={() => actions.downvote(node.id)}
+      >
+        <DownvoteIcon filled={myDown} size={14} />
       </button>
       {node.kind !== 'nudge' && (
         <button type="button" className="selection-bar__button" aria-label={`Nudge ${n}`} onClick={() => actions.nudge(node.id)}>

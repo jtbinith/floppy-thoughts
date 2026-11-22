@@ -165,6 +165,20 @@ describe('version 3: box numbers', () => {
     expect(errorsFor(board).some((e) => e.startsWith('nodes.0.favouritedBy'))).toBe(true)
   })
 
+  it('refuses someone down-voting the same box twice, or favouriting and down-voting it', () => {
+    const twice = validBoard()
+    twice.nodes[0].downvotedBy = [ME, ME]
+    expect(errorsFor(twice).some((e) => e.startsWith('nodes.0.downvotedBy'))).toBe(true)
+    const both = validBoard()
+    both.nodes[0].favouritedBy = [ME]
+    both.nodes[0].downvotedBy = [ME]
+    expect(errorsFor(both).some((e) => e.startsWith('nodes.0.downvotedBy'))).toBe(true)
+    const others = validBoard()
+    others.nodes[0].favouritedBy = [ME]
+    others.nodes[0].downvotedBy = ['ana']
+    expect(parseBoard(others).ok).toBe(true)
+  })
+
   it('refuses two boxes with the same number', () => {
     const board = validBoard()
     board.nodes[1].number = board.nodes[0].number

@@ -51,7 +51,7 @@ function Signed({ account, storage }: { account: Account; storage: StorageAdapte
       }
       const user = (await supabase?.auth.getUser())?.data.user
       const data = {
-        about: 'Everything Floppy Thoughts keeps about you. On boards, "me" in favouritedBy is you.',
+        about: 'Everything Floppy Thoughts keeps about you. On boards, "me" in favouritedBy and downvotedBy is you.',
         downloaded: new Date().toISOString(),
         account: { id: account.id, github: account.name, email: user?.email ?? null, picture: account.avatarUrl, since: user?.created_at ?? null },
         boards,

@@ -138,7 +138,7 @@ export function Workspace(props: Props) {
     edit: setEditingId,
     onOpenNew,
   })
-  const { addAndEdit, branchFrom, requestNudge, nudgeSelected, placeNote, requestDelete, makeFavouritesBoard, addThemes, favourite, rename, saveEdit } = edits
+  const { addAndEdit, branchFrom, requestNudge, nudgeSelected, placeNote, requestDelete, makeFavouritesBoard, addThemes, favourite, downvote, rename, saveEdit } = edits
 
   // The machine in the drawer hands over its controls, so the terminal can run it.
   const machineControl = useRef<MachineControl | null>(null)
@@ -184,6 +184,8 @@ export function Workspace(props: Props) {
     say: setNotice,
     showKeys: () => setShowKeys(true),
     whoIs: (id) => (id && names?.board === board.id ? names.byId.get(id) : undefined),
+    downvote,
+    shared: names?.board === board.id,
     linkingFrom,
     startLink: (id) => {
       setLinkingFrom(id)

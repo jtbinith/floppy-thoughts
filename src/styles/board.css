@@ -136,7 +136,44 @@
   margin-left: 0;
 }
 
+/* Down-votes: a small down-vote mark, in a quiet colour (a "not for me", not a red flag). */
+.idea__down-mark {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.idea__fav-mark + .idea__down-mark {
+  margin-left: 0.4rem;
+}
+
+.idea__down-mark + .idea__id {
+  margin-left: 0;
+}
+
+.react-flow__node.selected .idea__down-mark {
+  visibility: hidden;
+}
+
+/* On a shared board: how many favourited it, and how many down-voted it, side by side. They stay
+   when the box is selected, as the buttons only show your own. */
+.idea__count {
+  gap: 0.2rem;
+  font-size: 0.75rem;
+}
+
+.react-flow__node.selected .idea__count {
+  visibility: visible;
+}
+
+.idea__down--on {
+  color: var(--text);
+  border-color: var(--text);
+}
+
 .heart-icon,
+.downvote-icon,
 .lock-icon {
   vertical-align: -1px;
 }

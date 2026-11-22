@@ -14,6 +14,11 @@ export type BoardActions = {
   nudge: (id: string) => void
   // Favourite or unfavourite anything (F key or the heart button).
   favourite: (id: string) => void
+  // Down-vote anything, or take it back (the down-vote button). Takes away your favourite on it.
+  downvote: (id: string) => void
+  // Whether other people are on this board: then each box shows how many favourited and
+  // down-voted it. On a board only you have, just your own heart or down-vote shows.
+  shared: boolean
   deleteNode: (id: string) => void
   // Delete several things at once (and remove selected links), as one change.
   deleteMany: (ids: string[], links: [string, string][]) => void

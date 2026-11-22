@@ -185,3 +185,19 @@ test('boxes glide back when a tidy is undone, instead of jumping', async ({ page
   // …and then all the way back.
   await expect.poll(where).toBe(start)
 })
+
+test('down-voting a box takes away your favourite, and the heart takes away the down-vote', async ({ page }) => {
+  await type(page, 'a pocket sundial')
+  await box(page, 'n1').click()
+  await page.getByRole('button', { name: 'Favourite 1' }).click()
+  await expect(page.getByRole('button', { name: 'Unfavourite 1' })).toBeVisible()
+  await page.getByRole('button', { name: 'Down-vote 1' }).click()
+  await expect(page.getByRole('button', { name: 'Take back your down-vote on 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Favourite 1' })).toBeVisible()
+  // Off the box, the down-vote mark shows (just yours: nobody else is on this board).
+  await page.locator('.react-flow__pane').click({ position: { x: 10, y: 10 } })
+  await expect(box(page, 'n1').locator('.idea__down-mark')).toBeVisible()
+  await expect(box(page, 'n1').locator('.idea__count')).toHaveCount(0)
+  await type(page, '/down 1')
+  await expect(box(page, 'n1').locator('.idea__down-mark')).toHaveCount(0)
+})

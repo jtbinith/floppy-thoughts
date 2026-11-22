@@ -23,6 +23,8 @@ export type NodeRow = {
 }
 export type LinkRow = { board_id: string; node_a: string; node_b: string }
 export type FavouriteRow = { board_id: string; node_id: string; user_id: string }
+// Down-votes are stored the same way as favourites.
+export type DownvoteRow = FavouriteRow
 
 // A box's own fields, as save_nodes takes them (the board is given once, for all of them).
 export const nodeFields = (n: BoardNode): Omit<NodeRow, 'board_id' | 'created_by' | 'updated_by'> => ({
@@ -47,9 +49,16 @@ export function boardFromRows(
   links: LinkRow[],
   favourites: FavouriteRow[],
   me: string,
+  downvotes: DownvoteRow[] = [],
 ): ReturnType<typeof parseBoard> {
-  const who = new Map<string, string[]>()
-  for (const f of favourites) who.set(f.node_id, [...(who.get(f.node_id) ?? []), f.user_id === me ? ME : f.user_id])
+  // Who reacted to each box, with you as ME (as on a board in the browser).
+  const byNode = (rows: FavouriteRow[]) => {
+    const who = new Map<string, string[]>()
+    for (const r of rows) who.set(r.node_id, [...(who.get(r.node_id) ?? []), r.user_id === me ? ME : r.user_id])
+    return who
+  }
+  const who = byNode(favourites)
+  const down = byNode(downvotes)
   const board = {
     version: BOARD_VERSION,
     id: b.id,
@@ -67,6 +76,7 @@ export function boardFromRows(
         ...(n.locked !== null ? { locked: n.locked } : {}),
         ...(n.nudge_type ? { nudgeType: n.nudge_type } : {}),
         ...(who.has(n.id) ? { favouritedBy: who.get(n.id) } : {}),
+        ...(down.has(n.id) ? { downvotedBy: down.get(n.id) } : {}),
         ...(n.created_by ? { addedBy: n.created_by } : {}),
         ...(n.updated_by ? { editedBy: n.updated_by } : {}),
       })),
@@ -85,6 +95,12 @@ export const myFavourites = (boardId: string, nodes: BoardNode[], me: string): {
   remove: nodes.filter((n) => !n.favouritedBy?.includes(ME)).map((n) => n.id),
 })
 
+// Your own down-votes on these boxes, the same way.
+export const myDownvotes = (boardId: string, nodes: BoardNode[], me: string): { add: DownvoteRow[]; remove: string[] } => ({
+  add: nodes.filter((n) => n.downvotedBy?.includes(ME)).map((n) => ({ board_id: boardId, node_id: n.id, user_id: me })),
+  remove: nodes.filter((n) => !n.downvotedBy?.includes(ME)).map((n) => n.id),
+})
+
 // What a change means in rows: what to delete first, then what to write.
 export function rowsOfChange(change: BoardChange, me: string) {
   return {
@@ -94,6 +110,7 @@ export function rowsOfChange(change: BoardChange, me: string) {
     nodes: change.nodes.map(nodeFields),
     links: change.links.map((l) => linkRow(change.boardId, l)),
     favourites: myFavourites(change.boardId, change.nodes, me),
+    downvotes: myDownvotes(change.boardId, change.nodes, me),
   }
 }
 

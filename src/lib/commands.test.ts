@@ -112,6 +112,14 @@ describe('notes, favourites and names', () => {
     expect(runCommand(r.board!, '/fav 2', ctx).output).toEqual(['unfavourited 2: plants'])
   })
 
+  it('down-votes with /down, which takes away your favourite, and takes it back', () => {
+    const fav = runCommand(board, '/fav 2', ctx)
+    const down = runCommand(fav.board!, '/down 2', ctx)
+    expect(down.output).toEqual(['▼ down-voted 2: plants'])
+    expect(down.board?.nodes.find((n) => n.number === 2)).not.toHaveProperty('favouritedBy')
+    expect(runCommand(down.board!, '/down 2', ctx).output).toEqual(['took back your down-vote on 2: plants'])
+  })
+
   it('renames the board', () => {
     expect(runCommand(board, '/rename  Time   machine ', ctx).board?.name).toBe('Time machine')
     expect(runCommand(board, '/rename', ctx).error).toBe(true)

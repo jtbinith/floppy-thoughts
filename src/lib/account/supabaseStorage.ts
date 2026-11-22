@@ -4,7 +4,7 @@ import { applyChange, changeBetween, isEmpty, type BoardChange } from '../change
 import { KEYS } from '../keys'
 import { summaryOf, type BoardSummary, type LoadResult, type StorageAdapter } from '../storage'
 import { Outbox, isConnectionProblem, type Pending, type SyncState } from './outbox'
-import { boardFromRows, rowsOfChange, type BoardRow, type FavouriteRow, type LinkRow, type NodeRow } from './rows'
+import { boardFromRows, rowsOfChange, type BoardRow, type DownvoteRow, type FavouriteRow, type LinkRow, type NodeRow } from './rows'
 
 // Boards in your account, when you're signed in. Each change sends only the rows it touched
 // (see changes.ts); the database's rules decide what you're allowed to change.
@@ -59,9 +59,12 @@ export class SupabaseStorage implements StorageAdapter {
     // Adds new boxes and saves edited ones, changing only what's allowed (supabase/migrations).
     if (rows.nodes.length) check(await this.db.rpc('save_nodes', { board: id, rows: rows.nodes }))
     if (rows.links.length) check(await this.db.from('links').upsert(rows.links, { onConflict: 'node_a,node_b', ignoreDuplicates: true }))
-    const { add, remove } = rows.favourites
-    if (add.length) check(await this.db.from('favourites').upsert(add, { onConflict: 'node_id,user_id', ignoreDuplicates: true }))
-    if (remove.length) check(await this.db.from('favourites').delete().eq('user_id', this.me).in('node_id', remove))
+    // Your favourites and down-votes. Taking back comes first, so changing your mind (a favourite
+    // to a down-vote, or back) never briefly has both; the database also takes away the other one.
+    for (const [table, mine] of [['favourites', rows.favourites], ['downvotes', rows.downvotes]] as const)
+      if (mine.remove.length) check(await this.db.from(table).delete().eq('user_id', this.me).in('node_id', mine.remove))
+    for (const [table, mine] of [['favourites', rows.favourites], ['downvotes', rows.downvotes]] as const)
+      if (mine.add.length) check(await this.db.from(table).upsert(mine.add, { onConflict: 'node_id,user_id', ignoreDuplicates: true }))
     // Last, as everything above counts as an edit: a board uploaded from the browser keeps the
     // "last edited" it had there.
     if (isNew) check(await this.db.rpc('keep_edited', { board: id, edited: board.updatedAt }))
@@ -157,17 +160,18 @@ export class SupabaseStorage implements StorageAdapter {
   private toResult(row: Joined): LoadResult {
     const { nodes, links, ...board } = row
     const favourites = nodes.flatMap((n) => n.favourites)
-    const result = boardFromRows(board, nodes, links, favourites, this.me)
+    const downvotes = nodes.flatMap((n) => n.downvotes ?? [])
+    const result = boardFromRows(board, nodes, links, favourites, this.me, downvotes)
     return result.ok ? { status: 'ok', board: result.board } : { status: 'invalid', errors: result.errors }
   }
 }
 
 const meta = (b: Board) => ({ name: b.name, createdAt: b.createdAt, updatedAt: b.updatedAt })
 
-// Favourites belong to their box (that's how the database knows they're on the right board), so
-// they come with the boxes.
-const EVERYTHING = 'id, name, created_at, updated_at, nodes(*, favourites(*)), links(*)'
-type Joined = BoardRow & { nodes: (NodeRow & { favourites: FavouriteRow[] })[]; links: LinkRow[] }
+// Favourites and down-votes belong to their box (that's how the database knows they're on the
+// right board), so they come with the boxes.
+const EVERYTHING = 'id, name, created_at, updated_at, nodes(*, favourites(*), downvotes(*)), links(*)'
+type Joined = BoardRow & { nodes: (NodeRow & { favourites: FavouriteRow[]; downvotes?: DownvoteRow[] })[]; links: LinkRow[] }
 
 // Errors keep the database's own words, so a lost connection can be told from a refusal.
 function check({ error }: { error: { message: string } | null }) {

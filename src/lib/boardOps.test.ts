@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_NODES, MAX_NODE_TEXT, ME, parseBoard, type Board } from './board'
-import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNumber, removeLink, themes, toggleFavourite } from './boardOps'
+import { BOARD_FULL_MESSAGE, addLink, addNote, addUserNode, chainAround, deleteNodes, deleteUserNode, editUserNode, addTheme, mainTheme, nextNumber, removeLink, themes, toggleDownvote, toggleFavourite } from './boardOps'
 
 const now = new Date('2026-10-28T12:00:00Z')
 
@@ -123,6 +123,32 @@ describe('board operations', () => {
     const off = expectOk(toggleFavourite(theirs.board, 'n1', 'someone-else', now))
     expect(off.node).not.toHaveProperty('favourites')
     expect(toggleFavourite(board(), 'n99').ok).toBe(false)
+  })
+})
+
+describe('down-votes', () => {
+  it('down-votes and takes it back, one per person', () => {
+    const on = expectOk(toggleDownvote(board(), 'n2', ME, now))
+    expect(on.node?.downvotedBy).toEqual([ME])
+    const two = expectOk(toggleDownvote(on.board, 'n2', 'ana', now))
+    expect(two.node?.downvotedBy).toEqual([ME, 'ana'])
+    const off = expectOk(toggleDownvote(two.board, 'n2', ME, now))
+    expect(off.node?.downvotedBy).toEqual(['ana'])
+    expect(toggleDownvote(board(), 'n99').ok).toBe(false)
+  })
+
+  it('is a favourite or a down-vote, never both, for each person', () => {
+    const fav = expectOk(toggleFavourite(board(), 'n2', ME, now))
+    const theirs = expectOk(toggleFavourite(fav.board, 'n2', 'ana', now))
+    // Down-voting takes away your favourite, and only yours.
+    const down = expectOk(toggleDownvote(theirs.board, 'n2', ME, now))
+    expect(down.node?.downvotedBy).toEqual([ME])
+    expect(down.node?.favouritedBy).toEqual(['ana'])
+    // And favouriting again takes away your down-vote.
+    const back = expectOk(toggleFavourite(down.board, 'n2', ME, now))
+    expect(back.node?.favouritedBy).toEqual(['ana', ME])
+    expect(back.node).not.toHaveProperty('downvotedBy')
+    expect(parseBoard(back.board).ok).toBe(true)
   })
 })
 

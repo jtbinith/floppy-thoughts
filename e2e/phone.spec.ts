@@ -77,6 +77,11 @@ test('a tapped box has its actions in a bar: link, next, edit, favourite and del
   await expect(boxes(page)).toHaveCount(3)
   await expect(links(page)).toHaveCount(2)
 
+  // Down-vote, then favourite instead.
+  await tapBox(page, '3')
+  await page.getByRole('button', { name: 'Down-vote 3' }).tap()
+  await expect(page.getByRole('button', { name: 'Take back your down-vote on 3' })).toHaveAttribute('aria-pressed', 'true')
+
   // Edit, favourite and delete.
   await tapBox(page, '3')
   await page.getByRole('button', { name: 'Edit 3' }).tap()

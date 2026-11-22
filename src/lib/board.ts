@@ -59,6 +59,8 @@ export const boardNodeSchema = z.object({
   nudgeType: z.enum(NUDGE_TYPES).optional(),
   // Who favourited it. Signed out it's only ever you (ME); on a shared board, everyone's account id.
   favouritedBy: z.array(id).optional(),
+  // Who down-voted it, the same way. Each person favourites or down-votes an idea, never both.
+  downvotedBy: z.array(id).optional(),
   // On boards in an account: who added it and who changed it last (account ids, set by the database).
   addedBy: id.optional(),
   editedBy: id.optional(),
@@ -105,6 +107,8 @@ export const boardSchema = z
 
     board.nodes.forEach((node, i) => {
       if (node.favouritedBy && new Set(node.favouritedBy).size !== node.favouritedBy.length) issue('Someone favourited this twice', ['nodes', i, 'favouritedBy'])
+      if (node.downvotedBy && new Set(node.downvotedBy).size !== node.downvotedBy.length) issue('Someone down-voted this twice', ['nodes', i, 'downvotedBy'])
+      if (node.downvotedBy?.some((who) => node.favouritedBy?.includes(who))) issue('Someone both favourited and down-voted this', ['nodes', i, 'downvotedBy'])
     })
 
     // Links are undirected: a→b and b→a count as the same link.
@@ -123,6 +127,9 @@ export const boardSchema = z
 export const ME = 'me'
 export const isFavourite = (node: Pick<BoardNode, 'favouritedBy'>) => (node.favouritedBy?.length ?? 0) > 0
 export const isMine = (node: Pick<BoardNode, 'favouritedBy'>, who = ME) => node.favouritedBy?.includes(who) ?? false
+// Down-votes: whether anyone down-voted it, and whether you did.
+export const isDownvoted = (node: Pick<BoardNode, 'downvotedBy'>) => (node.downvotedBy?.length ?? 0) > 0
+export const isMyDownvote = (node: Pick<BoardNode, 'downvotedBy'>, who = ME) => node.downvotedBy?.includes(who) ?? false
 
 // Boxes are shown and typed as their number (1, 2…), never their id.
 export const numberOf = (board: Board, id?: string) => {

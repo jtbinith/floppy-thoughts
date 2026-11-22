@@ -45,6 +45,8 @@ function trailsTo(board: Board, idea: BoardNode): BoardNode[][] {
 }
 
 // Favourite ideas, most favourited first (ties keep board order, so the earliest stays ahead).
+// Down-votes are left out on purpose: the summary is what people liked, and someone's down-vote
+// shouldn't hide an idea someone else favourited.
 export const favouriteIdeas = (board: Board) =>
   board.nodes.filter((n) => n.kind === 'user' && isFavourite(n)).sort((a, b) => (b.favouritedBy?.length ?? 0) - (a.favouritedBy?.length ?? 0))
 

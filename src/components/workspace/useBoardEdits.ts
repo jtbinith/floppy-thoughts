@@ -1,7 +1,7 @@
 import { useState, type RefObject } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { MAX_BOARD_NAME, isFavourite, numberOf, type Board } from '../../lib/board'
-import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
+import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, cleanText, deleteNodes, editUserNode, findNode, themes, toggleDownvote, toggleFavourite, touch } from '../../lib/boardOps'
 import { favouritesBoard } from '../../lib/favouritesBoard'
 import { pickNudge, type NudgeChoice } from '../../lib/nudges/pickNudge'
 import { BOX, centreOfBox, placeFor } from '../../lib/placement'
@@ -206,6 +206,12 @@ export function useBoardEdits({
     if (result.ok) commit(board, result.board)
   }
 
+  // Down-vote, or take it back (it takes away your favourite on it).
+  function downvote(id: string) {
+    const result = toggleDownvote(board, id)
+    if (result.ok) commit(board, result.board)
+  }
+
   function rename(name: string) {
     const clean = cleanText(name).slice(0, MAX_BOARD_NAME)
     if (clean && clean !== board.name) commit(board, touch({ ...board, name: clean }, new Date()))
@@ -236,6 +242,7 @@ export function useBoardEdits({
     makeFavouritesBoard,
     addThemes,
     favourite,
+    downvote,
     rename,
     saveEdit,
   }

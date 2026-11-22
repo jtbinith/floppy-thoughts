@@ -201,11 +201,27 @@ export function addNote(board: Board, note: { text: string; category: SparkCateg
 
 // Favourites or unfavourites anything on the board, for one person (you, when signed out).
 export function toggleFavourite(board: Board, id: string, who = ME, now = new Date()): OpResult {
+  return toggleReaction(board, id, 'favouritedBy', 'downvotedBy', who, now)
+}
+
+// Down-votes the same way: on, or off again. Down-voting takes away your favourite on it.
+export function toggleDownvote(board: Board, id: string, who = ME, now = new Date()): OpResult {
+  return toggleReaction(board, id, 'downvotedBy', 'favouritedBy', who, now)
+}
+
+// One person's reaction on a box: turns it on or off, and turning it on takes away their other one
+// (a favourite or a down-vote, never both). Empty lists are left off the box.
+function toggleReaction(board: Board, id: string, mine: 'favouritedBy' | 'downvotedBy', other: 'favouritedBy' | 'downvotedBy', who: string, now: Date): OpResult {
   const node = findNode(board, id)
   if (!node) return { ok: false, error: `Nothing numbered ${numberOf(board, id)}` }
-  const { favouritedBy = [], ...rest } = node
-  const next = favouritedBy.includes(who) ? favouritedBy.filter((h) => h !== who) : [...favouritedBy, who]
-  const toggled: BoardNode = next.length ? { ...rest, favouritedBy: next } : rest
+  const had = node[mine] ?? []
+  const adding = !had.includes(who)
+  const lists = { [mine]: adding ? [...had, who] : had.filter((h) => h !== who), [other]: adding ? (node[other] ?? []).filter((h) => h !== who) : (node[other] ?? []) }
+  const toggled: BoardNode = { ...node }
+  for (const [key, list] of Object.entries(lists) as [typeof mine, string[]][]) {
+    if (list.length) toggled[key] = list
+    else delete toggled[key]
+  }
   return {
     ok: true,
     board: touch({ ...board, nodes: board.nodes.map((n) => (n.id === id ? toggled : n)) }, now),

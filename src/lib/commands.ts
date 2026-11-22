@@ -1,8 +1,8 @@
-import { MAX_BOARD_NAME, ME, isMine, idOf, isFavourite, numberOf, type Board } from './board'
+import { MAX_BOARD_NAME, ME, isMine, isMyDownvote, idOf, isFavourite, numberOf, type Board } from './board'
 import { favouriteIdeas } from './summary'
 import { NUDGE_CHOICES } from './nudges/pickNudge'
 import { VEND_ROWS } from './sparks/vend'
-import { addLink, addUserNode, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleFavourite, touch, type OpResult } from './boardOps'
+import { addLink, addUserNode, cleanText, deleteUserNode, editUserNode, findNode, neighbours, removeLink, addTheme, toggleDownvote, toggleFavourite, touch, type OpResult } from './boardOps'
 
 // The terminal's command language. Anything you type is a thought; commands start with "/",
 // like Slack or Discord, so a thought is never mistaken for one.
@@ -233,6 +233,15 @@ export const COMMANDS: Command[] = [
     args: [node],
     run: ({ board, args, ctx }) =>
       fromOp(toggleFavourite(board, args[0], ME, ctx.now), (r) => `${isMine(r.node!) ? '♥ favourited' : 'unfavourited'} ${r.node?.number}: ${r.node?.text}`),
+  },
+  {
+    name: 'down',
+    group: 'FAVOURITES AND YOUR IDEAS',
+    usage: '/down <id>',
+    does: "down-vote something you wouldn't build, or take it back",
+    args: [node],
+    run: ({ board, args, ctx }) =>
+      fromOp(toggleDownvote(board, args[0], ME, ctx.now), (r) => `${isMyDownvote(r.node!) ? '▼ down-voted' : 'took back your down-vote on'} ${r.node?.number}: ${r.node?.text}`),
   },
   {
     name: 'favs',

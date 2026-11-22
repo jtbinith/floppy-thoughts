@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ME, type Board } from './board'
-import { addLink, addUserNode, deleteNodes, editUserNode, removeLink, toggleFavourite, type OpResult } from './boardOps'
-import { applyChange, changeBetween, isEmpty, onlyFavourites } from './changes'
+import { addLink, addUserNode, deleteNodes, editUserNode, removeLink, toggleDownvote, toggleFavourite, type OpResult } from './boardOps'
+import { applyChange, changeBetween, isEmpty, onlyReactions } from './changes'
 import { createBoard } from './sparks/newBoard'
 
 const ok = (r: OpResult) => {
@@ -107,13 +107,15 @@ describe('applyChange', () => {
   })
 })
 
-describe('onlyFavourites', () => {
+describe('onlyReactions', () => {
   it('lets a favourite through, and nothing else', () => {
     const a = start()
-    expect(onlyFavourites(a, changeBetween(a, ok(toggleFavourite(a, idOf(a, 2)))))).toBe(true)
-    expect(onlyFavourites(a, changeBetween(a, ok(editUserNode(a, idOf(a, 2), 'nope'))))).toBe(false)
-    expect(onlyFavourites(a, changeBetween(a, ok(addUserNode(a, 'nope', { x: 0, y: 0 }))))).toBe(false)
-    expect(onlyFavourites(a, changeBetween(a, ok(removeLink(a, idOf(a, 1), idOf(a, 2)))))).toBe(false)
-    expect(onlyFavourites(a, changeBetween(a, { ...a, name: 'nope' }))).toBe(false)
+    expect(onlyReactions(a, changeBetween(a, ok(toggleFavourite(a, idOf(a, 2)))))).toBe(true)
+    // A viewer can down-vote too.
+    expect(onlyReactions(a, changeBetween(a, ok(toggleDownvote(a, idOf(a, 2)))))).toBe(true)
+    expect(onlyReactions(a, changeBetween(a, ok(editUserNode(a, idOf(a, 2), 'nope'))))).toBe(false)
+    expect(onlyReactions(a, changeBetween(a, ok(addUserNode(a, 'nope', { x: 0, y: 0 }))))).toBe(false)
+    expect(onlyReactions(a, changeBetween(a, ok(removeLink(a, idOf(a, 1), idOf(a, 2)))))).toBe(false)
+    expect(onlyReactions(a, changeBetween(a, { ...a, name: 'nope' }))).toBe(false)
   })
 })

@@ -50,6 +50,30 @@ describe('board ↔ rows', () => {
     expect(linkRow('b', { from: 'z', to: 'a' })).toEqual({ board_id: 'b', node_a: 'a', node_b: 'z' })
   })
 
+  it('reads down-votes back too, with you as ME', () => {
+    const { nodes, links, favourites } = asRows()
+    const result = boardFromRows(
+      { id: board.id, name: 'Time', created_at: '2026-11-03 10:00:00+00', updated_at: '2026-11-03T11:00:00Z' },
+      nodes,
+      links,
+      favourites,
+      me,
+      [
+        { board_id: board.id, node_id: board.nodes[2].id, user_id: me },
+        { board_id: board.id, node_id: board.nodes[2].id, user_id: ana },
+      ],
+    )
+    if (!result.ok) throw new Error(result.errors.join())
+    expect(result.board.nodes[2].downvotedBy).toEqual([ME, ana])
+    expect(result.board.nodes[1]).not.toHaveProperty('downvotedBy')
+  })
+
+  it('turns a change into rows: your down-votes only, as your account', () => {
+    const edited = { ...board, nodes: board.nodes.map((n) => (n.number === 3 ? { ...n, downvotedBy: [ME, ana] } : n)) }
+    const rows = rowsOfChange(changeBetween(board, edited), me)
+    expect(rows.downvotes).toEqual({ add: [{ board_id: board.id, node_id: board.nodes[2].id, user_id: me }], remove: [] })
+  })
+
   it('turns a change into rows: your favourites only, as your account', () => {
     const edited = { ...board, nodes: board.nodes.map((n) => (n.number === 3 ? { ...n, favouritedBy: [ME] } : n.number === 2 ? { ...n, favouritedBy: [ana] } : n)) }
     const rows = rowsOfChange(changeBetween(board, edited), me)
