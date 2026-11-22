@@ -13,7 +13,7 @@ import { terminalUi } from './workspace/terminalUi'
 import { useBoardView } from './workspace/useBoardView'
 import { NEW_IDEA, useBoardEdits } from './workspace/useBoardEdits'
 import { isTyping } from './workspace/isTyping'
-import { BoardActionsContext, type BoardActions } from './boardActions'
+import { BoardActionsContext, type BoardActions, type Person } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
 import { usePhone, useTouch } from '../lib/usePhone'
@@ -24,6 +24,7 @@ import { KeysSheet } from './KeysSheet'
 import { ShareDialog } from './ShareDialog'
 import { useAccount } from '../lib/account/account'
 import { members } from '../lib/account/sharing'
+import { unknownPeople } from '../lib/reactors'
 import type { Here } from '../lib/account/live'
 import type { SyncState } from '../lib/account/outbox'
 import type { BoardChange } from '../lib/changes'
@@ -72,21 +73,30 @@ export function Workspace(props: Props) {
   const [showSummary, setShowSummary] = useState(false)
   const [showKeys, setShowKeys] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  // On a shared board, everyone's names, so each box can say who added and edited it.
+  // On a shared board, everyone on it (name and picture), so each box can say who added and
+  // edited it, and who favourited or down-voted it. Asked again when someone not on the list yet
+  // shows up on a box (they joined while the board was open).
   const { account } = useAccount()
   const me = account?.id
-  const [names, setNames] = useState<{ board: string; byId: Map<string, string> } | null>(null)
+  const [people, setPeople] = useState<{ board: string; byId: Map<string, Person> } | null>(null)
+  const strangers = unknownPeople(board.nodes, people?.board === board.id ? people.byId : null, me)
   useEffect(() => {
     if (!role) return
     let gone = false
     members(board.id).then(
-      (list) => !gone && setNames(list.length > 1 ? { board: board.id, byId: new Map(list.map((p) => [p.userId, p.userId === me ? 'you' : p.name])) } : null),
+      (list) =>
+        !gone &&
+        setPeople(
+          list.length > 1
+            ? { board: board.id, byId: new Map(list.map((p) => [p.userId, { name: p.userId === me ? 'you' : p.name, avatarUrl: p.avatarUrl }])) }
+            : null,
+        ),
       () => {},
     )
     return () => {
       gone = true
     }
-  }, [role, board.id, me, showShare])
+  }, [role, board.id, me, showShare, strangers])
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false)
   // Box numbers only show while you're typing a command, so the board stays calm otherwise.
   const [showIds, setShowIds] = useState(false)
@@ -183,9 +193,10 @@ export function Workspace(props: Props) {
     paste: (text, nearId) => edits.pasteIdea(text, visibleCentre(), nearId),
     say: setNotice,
     showKeys: () => setShowKeys(true),
-    whoIs: (id) => (id && names?.board === board.id ? names.byId.get(id) : undefined),
+    whoIs: (id) => (id && people?.board === board.id ? people.byId.get(id)?.name : undefined),
+    personOf: (id) => (people?.board === board.id ? people.byId.get(id) : undefined),
     downvote,
-    shared: names?.board === board.id,
+    shared: people?.board === board.id,
     linkingFrom,
     startLink: (id) => {
       setLinkingFrom(id)
@@ -495,3 +506,4 @@ export function Workspace(props: Props) {
     </BoardActionsContext.Provider>
   )
 }
+

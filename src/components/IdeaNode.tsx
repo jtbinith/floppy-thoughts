@@ -7,11 +7,12 @@ import { BinIcon } from './BinIcon'
 import { DownvoteIcon } from './DownvoteIcon'
 import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
+import { Reactors } from './Reactors'
 import { useTouch } from '../lib/usePhone'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, downvote, nudge, whoIs, linkingFrom, shared } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, downvote, nudge, whoIs, personOf, linkingFrom, shared } = useBoardActions()
   // On a touch screen the selected box's actions are in the bar along the bottom of the board
   // instead (see SelectionBar); here it only keeps the box in view above the on-screen keyboard.
   const touch = useTouch()
@@ -70,34 +71,17 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             <span className="idea__category">{CATEGORY_LABEL[data.category]}</span>
           </>
         )}
-        {/* Shared boards show how many favourited and down-voted it, apart (never one score);
-            a board only you have just shows your own heart or down-vote. */}
-        {shared ? (
-          <>
-            {favs > 0 && (
-              <span className="idea__fav-mark idea__count" title={`${favs} favourited`} aria-label={`${favs} favourited`}>
-                <HeartIcon size={9} /> {favs}
-              </span>
-            )}
-            {downs > 0 && (
-              <span className="idea__down-mark idea__count" title={`${downs} down-voted`} aria-label={`${downs} down-voted`}>
-                <DownvoteIcon size={9} /> {downs}
-              </span>
-            )}
-          </>
-        ) : (
-          <>
-            {isFav && (
-              <span className="idea__fav-mark" title="Favourite">
-                <HeartIcon size={9} />
-              </span>
-            )}
-            {isDownvoted(data) && (
-              <span className="idea__down-mark" title="Down-voted">
-                <DownvoteIcon size={9} />
-              </span>
-            )}
-          </>
+        {/* A board only you have just shows your own heart or down-vote here. Shared boards show
+            the counts and faces under the text instead. */}
+        {!shared && isFav && (
+          <span className="idea__fav-mark" title="Favourite">
+            <HeartIcon size={9} />
+          </span>
+        )}
+        {!shared && isDownvoted(data) && (
+          <span className="idea__down-mark" title="Down-voted">
+            <DownvoteIcon size={9} />
+          </span>
         )}
         <span className="idea__id">{data.number}</span>
       </span>
@@ -129,6 +113,25 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
         />
       ) : (
         <span className="idea__text">{data.text}</span>
+      )}
+
+      {/* On a shared board: how many favourited it and how many down-voted it, apart (never one
+          score), each with the faces of who did. */}
+      {shared && (favs > 0 || downs > 0) && (
+        <span className="idea__reactions">
+          {favs > 0 && (
+            <span className="idea__fav-mark idea__count">
+              <HeartIcon size={9} /> {favs}
+              <Reactors ids={data.favouritedBy ?? []} personOf={personOf} what="Favourited" />
+            </span>
+          )}
+          {downs > 0 && (
+            <span className="idea__down-mark idea__count">
+              <DownvoteIcon size={9} /> {downs}
+              <Reactors ids={data.downvotedBy ?? []} personOf={personOf} what="Down-voted" />
+            </span>
+          )}
+        </span>
       )}
 
       {selected && !editing && (
