@@ -23,7 +23,6 @@ import { BoardList } from './BoardList'
 import { Dialog } from './Dialog'
 import { FolderCards, MoveTargets } from './FolderCards'
 import { DRAGGED, countOf, dragData, type Dragged } from './folderDrag'
-import { FolderIcon } from './FolderIcon'
 import { NavBar } from './NavBar'
 import { SiteFooter } from './InfoPages'
 
@@ -138,7 +137,7 @@ export function BoardsPage(props: Props) {
             onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
           />
           <button type="button" className="boards-tools__folder" onClick={() => setNaming(true)}>
-            <FolderIcon size={14} /> new folder
+            <span aria-hidden="true">+</span> new folder
           </button>
           <label className="boards-tools__sort">
             sort by

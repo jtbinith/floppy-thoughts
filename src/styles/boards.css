@@ -429,3 +429,9 @@
     min-height: 44px;
   }
 }
+
+.boards-tools__folder span {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
