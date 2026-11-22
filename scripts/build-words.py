@@ -7,13 +7,16 @@ Run by us, not by visitors, whenever the word data should change:
     .words-venv/bin/python -I scripts/build-words.py \
         --conceptnet path/to/conceptnet-assertions-5.7.0.csv.gz \
         --blocklist path/to/LDNOOBW-en.txt \
-        --cmudict path/to/cmudict.dict
+        --cmudict path/to/cmudict.dict \
+        --cities path/to/geonames/cities15000.txt
 
 Datasets (none are committed; download them yourself):
 - ConceptNet 5.7 assertions (CC BY-SA 4.0): https://github.com/commonsense/conceptnet5/wiki/Downloads
   How words are linked: associations, opposites, what things are like, used for, found at and so on.
 - CMU Pronouncing Dictionary (BSD-style licence): https://github.com/cmusphinx/cmudict
   How words sound, for rhymes ("rhymes with clock: sock") and words that start the same way.
+- pycountry (ISO 3166 country and region names) and GeoNames cities15000 (CC BY 4.0):
+  https://www.geonames.org. Used only to leave place names out; nothing from them is shipped.
 - wordfreq (CC BY-SA 4.0 data, Apache 2.0 code): https://github.com/rspeer/wordfreq
   How common each word is, to keep words people know.
 - List of Dirty, Naughty, Obscene, and Otherwise Bad Words (CC BY 4.0):
@@ -34,6 +37,7 @@ import re
 import sys
 from collections import defaultdict
 
+import pycountry
 from wordfreq import top_n_list, zipf_frequency
 
 # ConceptNet relation -> our name for it, and which way it reads. "forward" means the edge
@@ -81,6 +85,39 @@ def term_of(uri):
     return parts[3].replace("_", " ").lower()
 
 
+# Kinds of thing a word can be that we leave out entirely, as they're about places, peoples or
+# beliefs and could offend: "russia IsA country", "kabul IsA capital", "latin IsA language". Any word
+# ConceptNet says is one of these never gets nudges and never comes out of one.
+SENSITIVE_KINDS = {
+    "country", "nation", "nationality", "nation state", "sovereign state", "city", "capital",
+    "capital city", "province", "county", "continent",
+    "language", "natural language", "dialect", "religion", "faith", "ethnic group", "tribe",
+    "inhabitant", "citizen", "political party", "ideology", "political movement",
+    "terrorist organization", "militant group", "ethnic slur", "slur", "pejorative",
+}
+
+
+# Everyday words that are also the name of a place, kept for their everyday meaning. Checked by hand;
+# add one only if its everyday meaning is the one people think of first (so no "china" or "jordan":
+# when in doubt, a word stays out).
+EVERYDAY_PLACE_WORDS = {
+    "turkey", "orange", "phoenix", "jersey", "nice", "mobile", "reading", "bath",
+    "centre", "central", "victoria", "buffalo", "salt", "rose", "sale", "split", "cork",
+    "independence", "concord", "union", "mercury", "java",
+    "eden", "hope",
+    "acre", "aurora", "bar", "bay", "cascade", "coast", "delta", "east", "west", "north", "south",
+    "northern", "southern", "eastern", "western", "central", "gulf", "highland", "lakes", "lot",
+    "pool", "rivers", "plateau", "wild", "unity", "savannah", "metropolis", "pest", "para", "var",
+    "van", "mono", "lola", "kent", "nelson", "regina", "charlotte", "mary", "paul", "owen", "isabel",
+    "clare", "kerry", "mayo", "rae", "sutton", "kingston", "queens", "salvador", "santiago",
+    "plymouth", "portland", "darwin", "perth", "alexandria", "lagos", "sofia", "roma", "venice",
+    "valencia", "toledo", "porto", "goa", "bali", "hue", "nan", "gao", "mon", "bam", "chin",
+    # Not places, but caught as "a kind of language" (programming languages and such).
+    "html", "javascript", "basic", "slang", "saga", "usage", "antique", "meta", "edits", "grad",
+    "resident", "most", "bloke", "batman",
+}
+
+
 def load_blocklist(paths):
     words, phrases = set(), set()
     for path in paths:
@@ -98,6 +135,7 @@ def main():
     parser.add_argument("--conceptnet", required=True)
     parser.add_argument("--blocklist", required=True)
     parser.add_argument("--cmudict", required=True)
+    parser.add_argument("--cities", required=True, help="GeoNames cities15000.txt")
     parser.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "public", "words"))
     args = parser.parse_args()
 
@@ -119,6 +157,49 @@ def main():
 
     def is_source(term):
         return " " not in term and term in known and zipf[term] >= SOURCE_ZIPF and not is_blocked(term)
+
+    # First, words that are mostly a place, a people or a belief: of what ConceptNet (not DBpedia,
+    # which also lists every small town named Eagle or Fire) says a word is a kind of, at least half
+    # are sensitive kinds. "france IsA country" is left out; "mercury" (a planet and a metal too) stays.
+    print("  finding words for places, peoples and beliefs", file=sys.stderr)
+    kinds_sensitive, kinds_other = defaultdict(int), defaultdict(int)
+    with gzip.open(args.conceptnet, "rt", encoding="utf-8", newline="") as f:
+        for row in csv.reader(f, delimiter="\t"):
+            if len(row) < 5 or row[1] not in ("/r/IsA", "/r/InstanceOf"):
+                continue
+            if json.loads(row[4]).get("dataset", "").startswith("/d/dbpedia"):
+                continue
+            start, end = term_of(row[2]), term_of(row[3])
+            if not start or not end:
+                continue
+            if end in SENSITIVE_KINDS or end.split()[-1] in ("country", "city", "language", "religion"):
+                kinds_sensitive[start] += 1
+            else:
+                kinds_other[start] += 1
+    sensitive = {w for w, n in kinds_sensitive.items() if n >= kinds_other.get(w, 0) and w not in EVERYDAY_PLACE_WORDS}
+
+    # And real place names: every country and its states and regions, the continents, and cities
+    # of a million people or more. All of them are left out, except everyday words that happen to be
+    # places too (EVERYDAY_PLACE_WORDS: "turkey" the bird, "java" the coffee).
+    places = {"africa", "america", "americas", "antarctica", "arctic", "asia", "australasia", "europe", "eurasia", "oceania"}
+    for c in pycountry.countries:
+        places.update(getattr(c, a, "").lower() for a in ("name", "common_name", "official_name"))
+    for sub in pycountry.subdivisions:
+        places.add(sub.name.lower())
+    with open(args.cities, encoding="utf-8") as f:
+        for line in f:
+            cols = line.split("\t")
+            if len(cols) > 14 and cols[14].isdigit() and int(cols[14]) >= 1_000_000:
+                places.add(cols[1].lower())
+                places.add(cols[2].lower())
+    places = {p for p in places if p and re.fullmatch(r"[a-z]+( [a-z]+)*", p)}
+    for place in places:
+        if " " in place:
+            blocked_phrases.add(place)
+        elif place not in EVERYDAY_PLACE_WORDS:
+            sensitive.add(place)
+    blocked_words.update(sensitive)
+    print(f"  left out {len(sensitive):,} words for places, peoples and beliefs", file=sys.stderr)
 
     # source -> relation -> target -> best weight
     links = defaultdict(lambda: defaultdict(dict))

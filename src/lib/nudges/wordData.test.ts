@@ -52,4 +52,18 @@ describe('the word files', () => {
           expect(other.slice(0, 4), `${kind} of ${word}: ${other}`).not.toBe(word.slice(0, 4))
         }
   })
+
+  it('leave out places, peoples, languages and religions entirely', () => {
+    const all: Words = Object.assign({}, ...files.map((f) => JSON.parse(f.text) as Words))
+    const used = new Set(Object.values(all).flatMap((links) => Object.values(links).flat()))
+    const never = ['russia', 'france', 'china', 'japan', 'india', 'africa', 'america', 'europe', 'asia', 'mexico', 'canada', 'germany',
+      'paris', 'london', 'tokyo', 'kabul', 'texas', 'scotland', 'islam', 'christianity', 'judaism', 'buddhism', 'hindi', 'latin',
+      'russian', 'french', 'chinese', 'american', 'african', 'muslim', 'jewish', 'christian']
+    for (const w of never) {
+      expect(all[w], `${w} has nudges`).toBeUndefined()
+      expect(used.has(w), `${w} comes out of a nudge`).toBe(false)
+    }
+    // Everyday words that are also places stay.
+    expect(all.turkey && all.orange).toBeTruthy()
+  })
 })

@@ -18,7 +18,8 @@ Built from ConceptNet 5.7.0 (`conceptnet-assertions-5.7.0.csv.gz`), the CMU Pron
 Changes: only English words people commonly know were kept, with each word's strongest links
 (associations, opposites, what it's like, what it's for, where it's found, its parts, what it is
 a kind of, leads to, needs, involves, is done to, is made of and is similar to), plus rhymes and words
-that start with the same sounds; filler, offensive words and words for groups of people were removed.
+that start with the same sounds; filler, offensive words, words for groups of people, and places, peoples, languages and religions
+(found with ConceptNet, the ISO country list and GeoNames) were removed.
 
 The word files are shared under the same licence, **CC BY-SA 4.0**. The rest of Floppy Thoughts
 keeps its own licence.
