@@ -68,6 +68,34 @@ test('favourites show in the drawer, and can go on a new board', async ({ page }
   await expect(boxes(page)).toHaveCount(2)
 })
 
+test('ticked favourites can go on a new board on their own', async ({ page }) => {
+  await type(page, 'keep this')
+  await type(page, 'and this')
+  await type(page, 'and this too')
+  await type(page, '/fav 1')
+  await type(page, '/fav 2')
+  await type(page, '/fav 3')
+  await page.getByRole('button', { name: 'Favourites', exact: true }).click()
+  await page.getByLabel('Tick keep this for a new board').check()
+  await page.getByLabel('Tick and this too for a new board').check()
+  await page.getByRole('button', { name: 'put the 2 ticked on a new board' }).click()
+  await expect(page.locator('.screen__name-button')).toContainText('favourites')
+  await expect(boxes(page)).toHaveCount(2)
+})
+
+test('/favboard with numbers puts just those favourites on a new board', async ({ page }) => {
+  await type(page, 'keep this')
+  await type(page, 'and this')
+  await type(page, 'not this')
+  await type(page, '/fav 1')
+  await type(page, '/fav 2')
+  await type(page, '/favboard 1 3')
+  await expect(page.locator('.terminal')).toContainText("3 isn't a favourite")
+  await type(page, '/favboard 2')
+  await expect(page.locator('.screen__name-button')).toContainText('favourites')
+  await expect(boxes(page)).toHaveCount(1)
+})
+
 test('favouriting ideas puts them in the summary, with how you got there', async ({ page }) => {
   await type(page, '/theme Plants')
   await type(page, 'a plant that texts you')

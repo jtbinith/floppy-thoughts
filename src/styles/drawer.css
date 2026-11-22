@@ -137,6 +137,57 @@
   border-radius: 4px;
 }
 
+/* Ticked for a new board: the box's edge in the spark colour. */
+.favs__item--ticked {
+  border-color: var(--spark);
+}
+
+/* The tick box on the left of each favourite, the whole strip tappable. */
+.favs__tick {
+  display: grid;
+  place-items: center;
+  padding: 0 0.5rem;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.favs__tick input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--spark);
+  cursor: pointer;
+}
+
+/* The new-board button, and "clear" once something is ticked. */
+.favs__actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.favs__clear {
+  padding: 0.3rem 0.4rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.favs__clear:hover,
+.favs__clear:focus-visible {
+  color: var(--text);
+}
+
+.favs__hint {
+  margin: -0.8rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 .favs__open {
   display: flex;
   flex: 1;

@@ -432,7 +432,7 @@ export function Workspace(props: Props) {
                 favourites={boardFavourites}
                 onOpenFavourite={(f) => show(f.node.id)}
                 onUnfavourite={(f) => favourite(f.node.id)}
-                onFavouritesBoard={() => void makeFavouritesBoard()}
+                onFavouritesBoard={(ids) => void makeFavouritesBoard(ids)}
                 onUseCommand={(command) => terminalRef.current?.fill(command)}
                 onShowKeys={() => setShowKeys(true)}
               />

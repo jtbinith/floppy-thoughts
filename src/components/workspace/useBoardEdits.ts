@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react'
 import { useReactFlow } from '@xyflow/react'
-import { MAX_BOARD_NAME, numberOf, type Board } from '../../lib/board'
+import { MAX_BOARD_NAME, isFavourite, numberOf, type Board } from '../../lib/board'
 import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
 import { favouritesBoard } from '../../lib/favouritesBoard'
 import { pickNudge, type NudgeChoice } from '../../lib/nudges/pickNudge'
@@ -170,8 +170,15 @@ export function useBoardEdits({
     setPendingDelete(null)
   }
 
-  function makeFavouritesBoard(): string {
-    const made = favouritesBoard(board)
+  // All the favourites onto a new board, or just the ones picked (ticked in the favourites tab, or
+  // named after /favboard). Anything picked that isn't a favourite is said, not quietly dropped.
+  function makeFavouritesBoard(ids?: string[]): string {
+    const notFav = (ids ?? []).filter((id) => {
+      const node = findNode(board, id)
+      return !node || !isFavourite(node)
+    })
+    if (notFav.length) return `${notFav.map((id) => numberOf(board, id)).join(', ')} ${notFav.length > 1 ? "aren't favourites" : "isn't a favourite"}. try /fav <id> first`
+    const made = favouritesBoard(board, { ids })
     if (!made) return 'no favourites on this board yet. try /fav <id>'
     onOpenNew(made)
     return `made ${made.name}`

@@ -2,8 +2,10 @@ import { BOARD_VERSION, MAX_BOARD_NAME, isFavourite, type Board, type BoardNode 
 
 // A new board with just this board's favourited thoughts, and the links between them, so you can
 // look at the ones you liked on their own. Positions and favourites are kept, so it feels familiar.
-export function favouritesBoard(from: Board, options: { id?: string; now?: Date } = {}): Board | null {
-  const favourites = from.nodes.filter(isFavourite)
+// With `ids`, only those favourites (the ones you ticked), and the links between them.
+export function favouritesBoard(from: Board, options: { id?: string; now?: Date; ids?: string[] } = {}): Board | null {
+  const picked = options.ids ? new Set(options.ids) : null
+  const favourites = from.nodes.filter((n) => isFavourite(n) && (!picked || picked.has(n.id)))
   if (favourites.length === 0) return null
   const now = (options.now ?? new Date()).toISOString()
   // Fresh ids for the copies, numbered 1, 2, 3… on the new board.

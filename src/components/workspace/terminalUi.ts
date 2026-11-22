@@ -25,7 +25,7 @@ export function terminalUi(deps: {
   // Deleting may stop to ask whether to keep a chain connected (then it returns false).
   requestDelete: (ids: string[]) => boolean
   showSummary: () => void
-  makeFavouritesBoard: () => string
+  makeFavouritesBoard: (ids?: string[]) => string
   // The machine in the drawer, once it's loaded.
   machine: () => MachineControl | null
   requestNudge: (id: string, type?: NudgeChoice) => Promise<Result>

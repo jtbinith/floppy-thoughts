@@ -285,6 +285,20 @@
     min-height: 44px;
   }
 
+  /* Favourites' tick boxes and "clear", big enough for a finger. */
+  .favs__tick {
+    min-width: 44px;
+  }
+
+  .favs__clear,
+  .panel__button {
+    min-height: 44px;
+  }
+
+  .favs__remove {
+    min-width: 44px;
+  }
+
   /* Pinch zooms and drags pan, so the zoom buttons go. ("Tidy the board" is in the menus.) */
   .workspace .react-flow__controls {
     display: none;

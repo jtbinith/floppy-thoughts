@@ -35,7 +35,8 @@ type Props = {
   onOpenFavourite: (favourites: Favourite) => void
   onUnfavourite: (favourites: Favourite) => void
   // Copy what's favourited onto a new board.
-  onFavouritesBoard: () => void
+  // All the favourites onto a new board, or just the ticked ones.
+  onFavouritesBoard: (ids?: string[]) => void
   // Put a command in the terminal (from the commands tab).
   onUseCommand: (command: string) => void
   // Open the keyboard shortcuts sheet.
@@ -163,6 +164,17 @@ function MachineTab({ onBoard, onStick, onMachineControl, noteLanding }: Props) 
 }
 
 function FavouritesTab({ favourites, onOpenFavourite, onUnfavourite, onFavouritesBoard }: Props) {
+  // The favourites ticked for a new board. None ticked means all of them.
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set())
+  // Only the ones still here (one may have been unfavourited since).
+  const picked = favourites.filter((f) => ticked.has(f.node.id)).map((f) => f.node.id)
+  const tick = (id: string) =>
+    setTicked((t) => {
+      const next = new Set(t)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   if (favourites.length === 0)
     return (
       <p className="panel__empty">
@@ -172,12 +184,28 @@ function FavouritesTab({ favourites, onOpenFavourite, onUnfavourite, onFavourite
 
   return (
     <div className="favs">
-      <button type="button" className="panel__button" onClick={onFavouritesBoard} title="A new board with just these, and the links between them">
-        put these on a new board
-      </button>
+      <div className="favs__actions">
+        <button
+          type="button"
+          className="panel__button"
+          onClick={() => onFavouritesBoard(picked.length ? picked : undefined)}
+          title={picked.length ? 'A new board with just the ticked ones, and the links between them' : 'A new board with all of these, and the links between them'}
+        >
+          {picked.length ? `put the ${picked.length} ticked on a new board` : 'put these on a new board'}
+        </button>
+        {picked.length > 0 && (
+          <button type="button" className="favs__clear" onClick={() => setTicked(new Set())}>
+            clear
+          </button>
+        )}
+      </div>
+      <p className="favs__hint">{picked.length ? 'Tick more, or clear to use them all.' : 'Tick some to put just those on a new board.'}</p>
       <ul className="favs__list">
         {favourites.map((f) => (
-          <li key={f.node.id} className={`favs__item favs__item--${f.node.kind}`}>
+          <li key={f.node.id} className={`favs__item favs__item--${f.node.kind}${ticked.has(f.node.id) ? ' favs__item--ticked' : ''}`}>
+            <label className="favs__tick">
+              <input type="checkbox" checked={ticked.has(f.node.id)} onChange={() => tick(f.node.id)} aria-label={`Tick ${f.node.text} for a new board`} />
+            </label>
             <button type="button" className="favs__open" onClick={() => onOpenFavourite(f)} title="Show it on the board">
               <small>{kindLabel(f)}</small>
               {f.node.text}

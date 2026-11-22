@@ -69,4 +69,21 @@ describe('favourited board', () => {
   it('is nothing when nothing is favourited', () => {
     expect(favouritesBoard({ ...board, nodes: [], links: [] })).toBeNull()
   })
+
+  it('can take just the favourites you pick, and the links between those', () => {
+    const copy = favouritesBoard(board, { id: 'f2', ids: ['n2', 'n4'] })!
+    expect(copy.nodes.map((n) => [n.number, n.text])).toEqual([
+      [1, 'cassette'],
+      [2, 'a plant that sings when thirsty'],
+    ])
+    // 2 and 4 aren't linked to each other (only through 3), so no links come with them.
+    expect(copy.links).toEqual([])
+    const linked = favouritesBoard(board, { ids: ['n3', 'n4'] })!
+    expect(linked.links).toEqual([{ from: linked.nodes[0].id, to: linked.nodes[1].id }])
+  })
+
+  it('leaves out anything picked that isn\'t a favourite', () => {
+    expect(favouritesBoard(board, { ids: ['n5'] })).toBeNull()
+    expect(favouritesBoard(board, { ids: ['n2', 'n5'] })!.nodes.map((n) => n.text)).toEqual(['cassette'])
+  })
 })

@@ -34,7 +34,8 @@ export type BoardUi = {
   // Deleting may stop to ask whether to keep a chain connected.
   remove: (id: string) => string
   showSummary: () => boolean
-  favouritesBoard: () => string
+  // All the favourites, or just these ones (by id).
+  favouritesBoard: (ids?: string[]) => string
   vend: (row: string | undefined) => { text: string; error?: boolean }
   // The note out of the machine: swap it for another, stick it on the board, or put it back.
   note: (action: 'swap' | 'stick' | 'back') => { text: string; error?: boolean }
@@ -247,10 +248,10 @@ export const COMMANDS: Command[] = [
   {
     name: 'favboard',
     group: 'FAVOURITES AND YOUR IDEAS',
-    usage: '/favboard',
-    does: 'copy what you favourited onto a new board',
-    args: [],
-    run: ({ ctx }) => (ctx.ui ? { output: [ctx.ui.favouritesBoard()] } : needsBoard('favboard')),
+    usage: '/favboard [id …]',
+    does: 'copy what you favourited onto a new board (or just the favourites you name)',
+    args: [{ kind: 'node', optional: true, repeats: true }],
+    run: ({ args, ctx }) => (ctx.ui ? { output: [ctx.ui.favouritesBoard(args.length ? args : undefined)] } : needsBoard('favboard')),
   },
   {
     name: 'summary',
