@@ -553,6 +553,9 @@
 }
 
 .card-menu__list .card-menu__danger {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
   color: var(--error);
 }
 

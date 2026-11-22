@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { BinIcon } from './BinIcon'
 
 // A card's ⋯ menu (a board or a folder on the boards page): rename, move and delete, kept off the
 // card until you ask. Esc, or a tap
@@ -36,7 +37,7 @@ export function CardMenu({ label, name, open, onToggle, onRename, onMove, onDele
             </button>
           )}
           <button type="button" role="menuitem" className="card-menu__danger" onClick={pick(onDelete)}>
-            delete
+            <BinIcon size={11} /> delete
           </button>
         </span>
       )}
