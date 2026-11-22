@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { parseBoard, type Board } from '../board'
 import { addNudge } from '../boardOps'
-import { forgetLetters, formsOf, linksOf } from './words'
+import { forgetFiles, formsOf, linksOf } from './words'
 import { chooseType, chooseWord, distanceFromSpark, fittingTypes, keywordOf, pickNudge, twoStepWildcard } from './pickNudge'
 import { fillQuestion } from './questions'
 
@@ -19,23 +19,23 @@ const board: Board = {
 }
 
 const first = () => 0
-// Our word files, served by letter: { c: { cassette: {...} } }.
+// Our word files, served by first two letters: { ca: { cassette: {...} } }.
 const fakeWords = (files: Record<string, unknown>) =>
   vi.fn(async (url: string) => {
-    const letter = /\/words\/([a-z])\.json$/.exec(url)?.[1] ?? ''
-    return new Response(JSON.stringify(files[letter] ?? {}), { status: 200 })
+    const prefix = /\/words\/([a-z]{2})\.json$/.exec(url)?.[1] ?? ''
+    return new Response(JSON.stringify(files[prefix] ?? {}), { status: 200 })
   }) as unknown as typeof fetch
 const offline = vi.fn(async () => {
   throw new TypeError('offline')
 }) as unknown as typeof fetch
 
 const WORDS = {
-  c: { cassette: { related: ['tape', 'music', '<script>'], opposite: ['stream'], usedFor: ['recording music'] } },
-  t: { tape: { related: ['glue', 'measure', 'cassette', 'music'] } },
-  m: { music: { related: ['dance'] } },
+  ca: { cassette: { related: ['tape', 'music', '<script>'], opposite: ['stream'], usedFor: ['recording music'], rhymes: ['jet set'] } },
+  ta: { tape: { related: ['glue', 'measure', 'cassette', 'music'] } },
+  mu: { music: { related: ['dance'] } },
 }
 
-beforeEach(() => forgetLetters())
+beforeEach(() => forgetFiles())
 
 describe('keywordOf', () => {
   it('picks the most meaningful word', () => {
@@ -61,13 +61,13 @@ describe('our word data', () => {
     expect(formsOf('glass')).toEqual(['glass'])
   })
 
-  it('reads only the file for its first letter, and keeps only plain words', async () => {
+  it('reads only the file for its first two letters, and keeps only plain words', async () => {
     const fetchImpl = fakeWords(WORDS)
     const found = await linksOf('cassettes', fetchImpl)
     expect(found?.word).toBe('cassette')
     expect(found?.links.related).toEqual(['tape', 'music'])
     expect(fetchImpl).toHaveBeenCalledTimes(1)
-    expect((fetchImpl as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]).toMatch(/\/words\/c\.json$/)
+    expect((fetchImpl as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]).toMatch(/\/words\/ca\.json$/)
   })
 
   it('gives nothing (and no error) when offline with nothing kept', async () => {
@@ -98,7 +98,7 @@ describe('pickNudge', () => {
     })
     const related = await pickNudge(board, 'n1', { type: 'related', random: first, fetchImpl: fakeWords(WORDS) })
     expect(related?.type).toBe('related')
-    expect(related?.text).toMatch(/^cassette(, used for: recording music| → makes people think of: (tape|music))$/)
+    expect(related?.text).toMatch(/^(cassette, used for: recording music|cassette → makes people think of: (tape|music)|rhymes with cassette: jet set)$/)
   })
 
   it('falls back to a question that fits when our data has nothing', async () => {

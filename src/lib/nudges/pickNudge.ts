@@ -102,9 +102,25 @@ function questionNudge(type: QuestionType, subject: string, random: () => number
   return { type, text: fillQuestion(pick(QUESTIONS[type], random), subject) }
 }
 
-// What a "related" nudge can say, besides plain associations. Associations come up twice as
-// often, as they're the best leaps.
-const RELATED_KINDS: readonly Relation[] = ['related', 'related', 'usedFor', 'foundAt', 'parts', 'kindOf']
+// What a "related" nudge can say, besides plain associations: what it's for, where it's found,
+// what it leads to and needs, what it's like, and sound games (rhymes, words that start the same).
+// Associations come up twice as often, as they're the best leaps.
+const RELATED_KINDS: readonly Relation[] = [
+  'related',
+  'related',
+  'usedFor',
+  'foundAt',
+  'parts',
+  'kindOf',
+  'causes',
+  'needs',
+  'similar',
+  'involves',
+  'doneTo',
+  'madeOf',
+  'rhymes',
+  'startsLike',
+]
 
 const LABEL: Partial<Record<Relation, (k: string) => string>> = {
   related: (k) => `${k} → makes people think of`,
@@ -114,6 +130,14 @@ const LABEL: Partial<Record<Relation, (k: string) => string>> = {
   foundAt: (k) => `${k}, found in or at`,
   parts: (k) => `${k}, has`,
   kindOf: (k) => `${k} is a kind of`,
+  causes: (k) => `${k}, leads to`,
+  needs: (k) => `${k}, needs`,
+  similar: (k) => `${k}, similar to`,
+  involves: (k) => `${k}, involves`,
+  doneTo: (k) => `${k}, done to`,
+  madeOf: (k) => `${k}, made of`,
+  rhymes: (k) => `rhymes with ${k}`,
+  startsLike: (k) => `starts like ${k}`,
 }
 
 const shuffled = <T,>(items: readonly T[], random: () => number): T[] => {

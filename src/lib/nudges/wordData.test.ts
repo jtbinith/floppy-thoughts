@@ -14,8 +14,9 @@ const blocked = new Set([...listed(blocklist), ...listed(groups)])
 type Words = Record<string, Record<string, string[]>>
 
 describe('the word files', () => {
-  it('are one small file per letter', () => {
-    expect(files.length).toBe(26)
+  it('are small files, one per first two letters', () => {
+    expect(files.length).toBeGreaterThan(200)
+    for (const f of files) expect(f.name).toMatch(/^[a-z]{2}\.json$/)
     for (const f of files) expect(f.text.length, f.name).toBeLessThan(250_000)
   })
 
@@ -38,5 +39,17 @@ describe('the word files', () => {
         for (const targets of Object.values(links)) for (const t of targets) expect(t).toMatch(/^[a-z]+( [a-z]+)?$/)
       }
     }
+  })
+
+  it('rhyme and "starts like" with real words, never the word itself or a form of it', () => {
+    const all: Words = Object.assign({}, ...files.map((f) => JSON.parse(f.text) as Words))
+    expect(all.clock.rhymes).toEqual(expect.arrayContaining(['rock']))
+    expect(all.clock.startsLike?.length).toBeGreaterThan(0)
+    for (const [word, links] of Object.entries(all))
+      for (const kind of ['rhymes', 'startsLike'])
+        for (const other of links[kind] ?? []) {
+          expect(other, `${kind} of ${word}`).not.toBe(word)
+          expect(other.slice(0, 4), `${kind} of ${word}: ${other}`).not.toBe(word.slice(0, 4))
+        }
   })
 })

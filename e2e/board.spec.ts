@@ -240,19 +240,19 @@ test.describe('nudges', () => {
       const url = new URL(r.url())
       if (!['127.0.0.1', 'localhost'].includes(url.hostname) && !url.hostname.endsWith('supabase.co')) outside.push(url.hostname)
     })
-    const words = page.waitForResponse((r) => r.url().endsWith('/words/c.json'))
+    const words = page.waitForResponse((r) => r.url().endsWith('/words/cl.json'))
     await type(page, 'clock')
     await type(page, '/nudge 1 opposite')
     await words
     await expect(page.locator('.idea--nudge')).toHaveCount(1)
     await expect(page.locator('.idea--nudge')).toContainText(/opposite of clock: /)
 
-    // Offline now: another c word still gets a word nudge, from the copy kept in the browser.
+    // Offline now: another cl word still gets a word nudge, from the copy kept in the browser.
     await context.setOffline(true)
-    await type(page, 'cheese')
+    await type(page, 'cloud')
     await type(page, '/nudge 3 related')
     await expect(page.locator('.idea--nudge')).toHaveCount(2)
-    await expect(page.locator('.idea--nudge').nth(1)).toContainText(/cheese( → makes people think of|, used for|, found in or at|, has| is a kind of): /)
+    await expect(page.locator('.idea--nudge').nth(1)).toContainText(/(cloud( → makes people think of|, [a-z ]+| is a kind of)|(rhymes with|starts like) cloud): /)
     await context.setOffline(false)
     expect(outside).toEqual([])
   })
