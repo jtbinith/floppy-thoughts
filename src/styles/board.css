@@ -526,42 +526,44 @@
   gap: 0.3rem;
 }
 
-.mini-map .react-flow__minimap {
-  position: static;
-  margin: 0;
+.board-map {
+  display: block;
   background: var(--screen-bar);
   border: 1px solid var(--line);
   border-radius: 4px;
-  overflow: hidden;
   cursor: crosshair;
-}
-
-/* Drawn at the size given in BoardCanvas, so the box for the view lines up exactly. */
-.mini-map .react-flow__minimap svg {
-  display: block;
+  touch-action: none;
 }
 
 /* Everything outside the part on screen is dimmed; the part on screen has an outline. */
-.mini-map .react-flow__minimap-mask {
-  fill: color-mix(in srgb, var(--screen) 70%, transparent);
+.board-map__dim {
+  fill: color-mix(in srgb, var(--screen) 65%, transparent);
+  pointer-events: none;
+}
+
+.board-map__view {
+  fill: transparent;
   stroke: var(--spark);
-  stroke-width: 2px;
-  vector-effect: non-scaling-stroke;
+  stroke-width: 1.5px;
   cursor: grab;
 }
 
-.mini-map__box { fill: var(--text) !important; stroke: none !important; }
-.mini-map__box--nudge { fill: var(--nudge) !important; }
-.mini-map__box--theme { fill: var(--cat-theme) !important; }
-.mini-map__box--words { fill: var(--cat-words) !important; }
-.mini-map__box--objects { fill: var(--cat-objects) !important; }
-.mini-map__box--problems { fill: var(--cat-problems) !important; }
-.mini-map__box--curiosities { fill: var(--cat-curiosities) !important; }
-.mini-map__box--nature { fill: var(--cat-nature) !important; }
-.mini-map__box--constraints { fill: var(--cat-constraints) !important; }
+.board-map:active .board-map__view {
+  cursor: grabbing;
+}
 
-:root[data-theme='light'] .mini-map__box--user {
-  fill: #7d6a58 !important;
+.board-map__box { fill: var(--text); }
+.board-map__box--nudge { fill: var(--nudge); }
+.board-map__box--theme { fill: var(--cat-theme); }
+.board-map__box--words { fill: var(--cat-words); }
+.board-map__box--objects { fill: var(--cat-objects); }
+.board-map__box--problems { fill: var(--cat-problems); }
+.board-map__box--curiosities { fill: var(--cat-curiosities); }
+.board-map__box--nature { fill: var(--cat-nature); }
+.board-map__box--constraints { fill: var(--cat-constraints); }
+
+:root[data-theme='light'] .board-map__box--user {
+  fill: #7d6a58;
 }
 
 /* Hide (×) on the map's corner; when it's hidden, a small map button to bring it back. */

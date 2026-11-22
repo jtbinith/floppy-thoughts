@@ -3,7 +3,7 @@ import { newBoard, type } from './helpers'
 
 // The mini-map: the whole board small, with a box for the part on screen.
 
-const map = (page: Page) => page.locator('.react-flow__minimap svg')
+const map = (page: Page) => page.getByRole('img', { name: 'Mini-map of the board' })
 const viewport = (page: Page) => page.locator('.react-flow__viewport').getAttribute('style')
 
 async function someIdeas(page: Page) {
@@ -14,7 +14,7 @@ test('the mini-map shows every box, and can be hidden and shown again (remembere
   await newBoard(page)
   await someIdeas(page)
   await expect(map(page)).toBeVisible()
-  await expect(page.locator('.react-flow__minimap .mini-map__box')).toHaveCount(4)
+  await expect(page.locator('.board-map__box')).toHaveCount(4)
 
   await page.getByRole('button', { name: 'Hide the mini-map' }).click()
   await expect(map(page)).toHaveCount(0)
@@ -57,13 +57,40 @@ test('clicking the mini-map moves the view there; dragging its box moves around'
   await expect.poll(() => viewport(page)).not.toBe(before)
 
   before = await viewport(page)
-  const mask = (await page.locator('.react-flow__minimap-mask').boundingBox())!
+  const mask = (await page.locator('.board-map__view').boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
   await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 10, { steps: 6 })
   await page.mouse.up()
   expect(mask.width).toBeGreaterThan(0)
   await expect.poll(() => viewport(page)).not.toBe(before)
+})
+
+test("the box for the view keeps its size as you move around, and only changes when you zoom", async ({ page }) => {
+  await newBoard(page)
+  await someIdeas(page)
+  const size = async () => {
+    const b = (await page.locator('.board-map__view').boundingBox())!
+    return Math.round(b.width * 10) / 10
+  }
+  // Moving even far past the edge of the boxes: same size.
+  await page.locator('.react-flow__pane').hover({ position: { x: 300, y: 300 } })
+  await page.mouse.wheel(0, -600)
+  await page.waitForTimeout(300)
+  const before = await size()
+  const map = (await page.locator('.board-map').boundingBox())!
+  await page.mouse.move(map.x + map.width / 2, map.y + map.height / 2)
+  await page.mouse.down()
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(map.x + map.width / 2 + i * 12, map.y + map.height / 2 + i * 6)
+    expect(await size()).toBe(before)
+  }
+  await page.mouse.up()
+  // Zooming changes it.
+  await page.locator('.react-flow__pane').hover({ position: { x: 300, y: 300 } })
+  await page.mouse.wheel(0, 600)
+  await page.waitForTimeout(300)
+  expect(await size()).toBeGreaterThan(before)
 })
 
 test.describe('on a phone', () => {

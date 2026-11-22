@@ -4,7 +4,6 @@ import {
   BackgroundVariant,
   ControlButton,
   Controls,
-  MiniMap,
   Panel,
   ConnectionMode,
   ReactFlow,
@@ -26,6 +25,7 @@ import { numberOf } from '../lib/board'
 import { useBoardActions } from './boardActions'
 import { usePhone } from '../lib/usePhone'
 import { CentreEdge } from './CentreEdge'
+import { BoardMiniMap } from './BoardMiniMap'
 import { IdeaNode } from './IdeaNode'
 import { LinkPreview } from './LinkPreview'
 
@@ -426,16 +426,7 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink, miniMap,
         >
           {miniMap ? <span aria-hidden="true">×</span> : <MapIcon />}
         </button>
-        {miniMap && (
-          <MiniMap
-            pannable
-            style={phone ? { width: 150, height: 105 } : { width: 200, height: 140 }}
-            ariaLabel="Mini-map of the board"
-            nodeClassName={(n) => `mini-map__box mini-map__box--${(n.data as IdeaFlowNode['data']).category ?? (n.data as IdeaFlowNode['data']).kind}`}
-            nodeBorderRadius={2}
-            onClick={(_e, at) => void setCenter(at.x, at.y, { zoom: getZoom(), duration: 250 })}
-          />
-        )}
+        {miniMap && <BoardMiniMap {...(phone ? { width: 150, height: 105 } : { width: 200, height: 140 })} />}
       </Panel>
     </ReactFlow>
   )
