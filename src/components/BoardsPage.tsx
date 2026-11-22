@@ -243,7 +243,7 @@ export function BoardsPage(props: Props) {
       <SiteFooter />
       {notice && (
         <p key={notice.n} className={`boards-notice${notice.ok ? '' : ' boards-notice--bad'}`} role={notice.ok ? 'status' : 'alert'}>
-          {notice.ok ? <TickIcon size={16} /> : <CrossIcon size={13} />}
+          {notice.ok ? <TickIcon size={18} /> : <CrossIcon size={15} />}
           <span>{notice.text}</span>
         </p>
       )}
