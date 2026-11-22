@@ -19,6 +19,7 @@ export function terminalUi(deps: {
   stepForward: () => string
   tidy: () => string
   fit: () => void
+  toggleMiniMap: () => string
   openPanel: (tab: PanelTab) => void
   onNewBoard: () => void
   onOpenBoard: (id: string) => void
@@ -52,6 +53,7 @@ export function terminalUi(deps: {
     undo: deps.stepBack,
     redo: deps.stepForward,
     tidy: deps.tidy,
+    toggleMiniMap: deps.toggleMiniMap,
     fit: () => {
       deps.fit()
       return board.nodes.length ? 'fitted the board to the screen' : 'the board is empty'

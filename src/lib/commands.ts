@@ -26,6 +26,8 @@ export type BoardUi = {
   redo: () => string
   tidy: () => string
   fit: () => string
+  // Show or hide the mini-map; says which.
+  toggleMiniMap: () => string
   showCommands: () => void
   newBoard: () => void
   // Your boards, newest first, with which one is open.
@@ -284,6 +286,14 @@ export const COMMANDS: Command[] = [
     does: 'fit the whole board on screen',
     args: [],
     run: ({ ctx }) => (ctx.ui ? { output: [ctx.ui.fit()] } : needsBoard('fit')),
+  },
+  {
+    name: 'map',
+    group: 'VIEW',
+    usage: '/map',
+    does: 'show or hide the mini-map',
+    args: [],
+    run: ({ ctx }) => (ctx.ui ? { output: [ctx.ui.toggleMiniMap()] } : needsBoard('map')),
   },
   {
     name: 'tidy',

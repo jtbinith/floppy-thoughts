@@ -4,6 +4,8 @@ import {
   BackgroundVariant,
   ControlButton,
   Controls,
+  MiniMap,
+  Panel,
   ConnectionMode,
   ReactFlow,
   applyEdgeChanges,
@@ -22,6 +24,7 @@ import { nearestInDirection, nearestTo, type Direction } from '../lib/nav'
 import { BOX } from '../lib/placement'
 import { numberOf } from '../lib/board'
 import { useBoardActions } from './boardActions'
+import { usePhone } from '../lib/usePhone'
 import { CentreEdge } from './CentreEdge'
 import { IdeaNode } from './IdeaNode'
 import { LinkPreview } from './LinkPreview'
@@ -36,6 +39,10 @@ type Props = {
   // Lay the board out tidily (the button under the zoom controls).
   onTidy: () => void
   onLink: (a: string, b: string) => void
+  // The mini-map in the corner (like a strategy game's): whether it's showing, and turning it on
+  // or off.
+  miniMap: boolean
+  onMiniMap: (on: boolean) => void
 }
 
 // Boxes gliding from where they're drawn to where the board now has them (see the board sync).
@@ -45,8 +52,9 @@ const GLIDE_MS = 450
 // More than a pixel off counts as moved (rounding alone shouldn't start a glide).
 const movedFrom = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.abs(a.x - b.x) > 1 || Math.abs(a.y - b.y) > 1
 
-export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
+export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink, miniMap, onMiniMap }: Props) {
   const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
+  const phone = usePhone()
   const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys, fit, paste, linkingFrom, linkTo, cancelLink } = useBoardActions()
   // y y copies a box's text here; p puts it back as a new idea (like vim's yank and put).
   const yanked = useRef<string | null>(null)
@@ -405,7 +413,40 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
           <TidyIcon />
         </ControlButton>
       </Controls>
+      {/* The whole board, small, with a box for the part on screen: drag the box to move around,
+          or click anywhere on the map to jump there. */}
+      <Panel position="bottom-right" className={`mini-map${miniMap ? '' : ' mini-map--off'}`}>
+        <button
+          type="button"
+          className="mini-map__toggle"
+          aria-label={miniMap ? 'Hide the mini-map' : 'Show the mini-map'}
+          aria-pressed={miniMap}
+          title={miniMap ? 'Hide the mini-map (m)' : 'Show the mini-map (m)'}
+          onClick={() => onMiniMap(!miniMap)}
+        >
+          {miniMap ? <span aria-hidden="true">×</span> : <MapIcon />}
+        </button>
+        {miniMap && (
+          <MiniMap
+            pannable
+            style={phone ? { width: 150, height: 105 } : { width: 200, height: 140 }}
+            ariaLabel="Mini-map of the board"
+            nodeClassName={(n) => `mini-map__box mini-map__box--${(n.data as IdeaFlowNode['data']).category ?? (n.data as IdeaFlowNode['data']).kind}`}
+            nodeBorderRadius={2}
+            onClick={(_e, at) => void setCenter(at.x, at.y, { zoom: getZoom(), duration: 250 })}
+          />
+        )}
+      </Panel>
     </ReactFlow>
+  )
+}
+
+// A folded map, for bringing the mini-map back.
+function MapIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.5 3.5 5.5 2l5 1.5 4-1.5v10.5l-4 1.5-5-1.5-4 1.5z M5.5 2v10.5 M10.5 3.5V14" />
+    </svg>
   )
 }
 

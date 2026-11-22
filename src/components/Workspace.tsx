@@ -17,6 +17,7 @@ import { BoardActionsContext, type BoardActions, type Person } from './boardActi
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
 import { usePhone, useTouch } from '../lib/usePhone'
+import { useMiniMap } from '../lib/useMiniMap'
 import { SelectionBar } from './SelectionBar'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
@@ -228,6 +229,7 @@ export function Workspace(props: Props) {
     stepForward,
     tidy,
     fit: () => void fitView(FIT_VIEW),
+    toggleMiniMap,
     openPanel: setPanel,
     onNewBoard,
     onOpenBoard,
@@ -271,6 +273,11 @@ export function Workspace(props: Props) {
   // gets the room. Everywhere else it's always there and this does nothing to the layout.
   const [terminalOpen, setTerminalOpen] = useState(false)
   const phone = usePhone()
+  const [miniMap, setMiniMap] = useMiniMap()
+  const toggleMiniMap = () => {
+    setMiniMap(!miniMap)
+    return miniMap ? 'hid the mini-map' : 'showing the mini-map'
+  }
   const touch = useTouch()
   // On a phone the drawer and the terminal open below the board, so the page scrolls down to
   // whichever just opened (the bottom of it, so its input or keypad is in reach).
@@ -312,6 +319,8 @@ export function Workspace(props: Props) {
     openPanel: setPanel,
     focusTerminal,
     fit: () => void fitView(FIT_VIEW),
+    miniMap,
+    toggleMiniMap: () => void toggleMiniMap(),
     showKeys: () => setShowKeys(true),
   })
 
@@ -322,6 +331,9 @@ export function Workspace(props: Props) {
       if (e.key === 'v' || e.key === 'V') {
         e.preventDefault()
         openMachine()
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault()
+        toggleMiniMap()
       } else if (e.key === 'Escape' && panel && (e.target as Element).closest?.('.panel')) {
         setPanel(null)
       }
@@ -403,6 +415,8 @@ export function Workspace(props: Props) {
                 onChange={(next) => commit(board, next)}
                 onAddAt={addAndEdit}
                 onTidy={() => void tidy()}
+                miniMap={miniMap}
+                onMiniMap={setMiniMap}
                 onLink={(a, b) => {
                   const result = addLink(board, a, b)
                   if (result.ok) commit(board, result.board)

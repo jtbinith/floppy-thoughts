@@ -15,6 +15,7 @@ const BOARD_KEYS: { group: string; keys: Key[] }[] = [
       { keys: 'G', does: 'jump to the last box', why: 'go to the bottom' },
       { keys: 'z z', does: 'centre on the selected box', why: 'z is for the view' },
       { keys: 'z f', does: 'fit the whole board on screen', why: 'z for the view, f for fit' },
+      { keys: 'm', does: 'show or hide the mini-map', why: 'map' },
       { keys: 'Esc', does: 'deselect, or stop linking', why: 'back out of whatever you were doing' },
     ],
   },

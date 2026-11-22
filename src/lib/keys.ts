@@ -11,6 +11,8 @@ export const KEYS = {
   seenNotes: `${PREFIX}seen-sparks`,
   theme: `${PREFIX}ui:theme`,
   boardSort: `${PREFIX}ui:board-sort`,
+  // Whether the board's mini-map is showing ("on" or "off"; unset: on, except on phones).
+  miniMap: `${PREFIX}ui:mini-map`,
   // Your folders on the boards page, and which folder each board is in.
   folders: `${PREFIX}folders`,
   // The folder you're looking at on the boards page, and the one a new board started there goes in (session only).

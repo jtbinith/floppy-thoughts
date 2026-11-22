@@ -516,3 +516,94 @@
 .workspace__board--ids .idea__delete {
   display: none;
 }
+
+/* The mini-map, bottom right: the whole board small, with the part on screen as a box you can
+   drag. Boxes are in their note colours, like the boards page sketch. */
+.mini-map {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.mini-map .react-flow__minimap {
+  position: static;
+  margin: 0;
+  background: var(--screen-bar);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* Drawn at the size given in BoardCanvas, so the box for the view lines up exactly. */
+.mini-map .react-flow__minimap svg {
+  display: block;
+}
+
+/* Everything outside the part on screen is dimmed; the part on screen has an outline. */
+.mini-map .react-flow__minimap-mask {
+  fill: color-mix(in srgb, var(--screen) 70%, transparent);
+  stroke: var(--spark);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  cursor: grab;
+}
+
+.mini-map__box { fill: var(--text) !important; stroke: none !important; }
+.mini-map__box--nudge { fill: var(--nudge) !important; }
+.mini-map__box--theme { fill: var(--cat-theme) !important; }
+.mini-map__box--words { fill: var(--cat-words) !important; }
+.mini-map__box--objects { fill: var(--cat-objects) !important; }
+.mini-map__box--problems { fill: var(--cat-problems) !important; }
+.mini-map__box--curiosities { fill: var(--cat-curiosities) !important; }
+.mini-map__box--nature { fill: var(--cat-nature) !important; }
+.mini-map__box--constraints { fill: var(--cat-constraints) !important; }
+
+:root[data-theme='light'] .mini-map__box--user {
+  fill: #7d6a58 !important;
+}
+
+/* Hide (×) on the map's corner; when it's hidden, a small map button to bring it back. */
+.mini-map__toggle {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text);
+  background: var(--screen-bar);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.mini-map__toggle:hover {
+  background: var(--line);
+}
+
+.mini-map__toggle:focus-visible {
+  outline: 2px solid var(--spark);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .mini-map__toggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Touch screens: the bottom of the board has the bar for a tapped box (and on phones the floating
+   + button), so the mini-map sits in the top corner instead, with its button above it. */
+@media (pointer: coarse), (max-width: 700px) {
+  .react-flow__panel.mini-map {
+    top: 0;
+    bottom: auto;
+    flex-direction: column;
+  }
+}
+

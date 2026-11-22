@@ -31,6 +31,9 @@ export function workspaceMenus(d: {
   openPanel: (tab: PanelTab | null) => void
   focusTerminal: () => void
   fit: () => void
+  // Whether the mini-map is showing, and turning it on or off.
+  miniMap: boolean
+  toggleMiniMap: () => void
   showKeys: () => void
 }): Menu[] {
   const { board } = d
@@ -78,6 +81,7 @@ export function workspaceMenus(d: {
         'divider',
         { label: 'Terminal', shortcut: 'Ctrl+`', onSelect: d.focusTerminal },
         { label: 'Fit the board to the screen', shortcut: 'z f', onSelect: d.fit },
+        { label: d.miniMap ? 'Hide the mini-map' : 'Show the mini-map', shortcut: 'm', onSelect: d.toggleMiniMap },
       ],
     },
     {
