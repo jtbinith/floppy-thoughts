@@ -15,8 +15,8 @@ export function SiteFooter() {
         <a href="#/privacy">privacy</a> · <a href="#/terms">terms</a> · <Mail />
       </span>
       <span>
-        built with <a href="https://reactflow.dev">React Flow</a>, <a href="https://threejs.org">three.js</a>, <a href="https://zod.dev">Zod</a> and{' '}
-        <a href="https://www.datamuse.com/api/">Datamuse</a>
+        built with <a href="https://reactflow.dev">React Flow</a>, <a href="https://threejs.org">three.js</a>, <a href="https://zod.dev">Zod</a> and words from{' '}
+        <a href="https://conceptnet.io">ConceptNet</a>
       </span>
     </footer>
   )
@@ -95,9 +95,6 @@ export function PrivacyPage() {
         <li>
           <strong>GitHub</strong> signs you in, so it knows you use Floppy Thoughts. It also hosts this site and keeps the usual request logs
           (IP addresses and pages loaded) for a short time.
-        </li>
-        <li>
-          <strong>Datamuse</strong> is asked for related words when you ask for a nudge. Like any website it sees your IP address, along with that one word.
         </li>
       </ul>
 

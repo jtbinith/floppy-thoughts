@@ -39,7 +39,7 @@ export type BoardUi = {
   vend: (row: string | undefined) => { text: string; error?: boolean }
   // The note out of the machine: swap it for another, stick it on the board, or put it back.
   note: (action: 'swap' | 'stick' | 'back') => { text: string; error?: boolean }
-  // Nudges come back later (Datamuse is asked), so they print when they arrive.
+  // Nudges come back later (a word file may need loading), so they print when they arrive.
   nudge: (id: string, type: string | undefined) => void
 }
 

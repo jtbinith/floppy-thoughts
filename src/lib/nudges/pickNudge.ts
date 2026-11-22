@@ -1,9 +1,10 @@
 import type { Board, NudgeType, SparkCategory } from '../board'
-import { fetchWords, type DatamuseRelation } from './datamuse'
+import { linksOf, type Relation, type WordLinks } from './words'
 import { QUESTIONS, WILDCARDS, fillQuestion, type QuestionType } from './questions'
 
-// Chooses one nudge for an idea. Words come from Datamuse; questions and wildcards
-// are hand-written. If Datamuse has nothing (or we're offline), a question is used instead.
+// Chooses one nudge for an idea. Words come from our own word data (open datasets, see
+// nudges/words.ts); questions and most wildcards are hand-written. If there's no word that fits, a
+// question is used instead, so there's always a nudge.
 
 export type Nudge = { text: string; type: NudgeType }
 
@@ -11,7 +12,7 @@ export type Nudge = { text: string; type: NudgeType }
 export const NUDGE_CHOICES = ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'push', 'wildcard'] as const
 export type NudgeChoice = (typeof NUDGE_CHOICES)[number]
 
-const DATAMUSE: readonly NudgeChoice[] = ['related', 'opposite', 'described']
+const WORDS: readonly NudgeChoice[] = ['related', 'opposite', 'described']
 
 const STOPWORDS = new Set(
   'a an the and or but of for to in on at by with from up about into over after my your our their his her its i me we you they it this that these those is are was were be been am do does did have has had not no so if then than too very can could would should will just what who how why when where which while'.split(' '),
@@ -31,8 +32,12 @@ export function keywordOf(text: string): string | null {
   return words.reduce((best, w) => (score(w) > score(best) ? w : best))
 }
 
-// Adjectives Datamuse often returns that say nothing about the thing itself.
-const BLAND = new Set('many most other common popular next nearest same new old first last own few several such various different certain main whole entire little big small good great'.split(' '))
+// Words that say nothing about the thing itself.
+const BLAND = new Set(
+  'many most other common popular next nearest same new old first last own few several such various different certain main whole entire little big small good great nice bad fun interesting important useful beautiful pretty lovely cool real normal usual'.split(
+    ' ',
+  ),
+)
 
 const pick = <T,>(items: readonly T[], random: () => number): T => items[Math.floor(random() * items.length)]
 
@@ -97,6 +102,83 @@ function questionNudge(type: QuestionType, subject: string, random: () => number
   return { type, text: fillQuestion(pick(QUESTIONS[type], random), subject) }
 }
 
+// What a "related" nudge can say, besides plain associations. Associations come up twice as
+// often, as they're the best leaps.
+const RELATED_KINDS: readonly Relation[] = ['related', 'related', 'usedFor', 'foundAt', 'parts', 'kindOf']
+
+const LABEL: Partial<Record<Relation, (k: string) => string>> = {
+  related: (k) => `${k} → makes people think of`,
+  opposite: (k) => `opposite of ${k}`,
+  described: (k) => `${k}, often described as`,
+  usedFor: (k) => `${k}, used for`,
+  foundAt: (k) => `${k}, found in or at`,
+  parts: (k) => `${k}, has`,
+  kindOf: (k) => `${k} is a kind of`,
+}
+
+const shuffled = <T,>(items: readonly T[], random: () => number): T[] => {
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+// Words given as nudges lately, so asking again brings something new.
+const recent: string[] = []
+const remember = (word: string) => {
+  recent.push(word)
+  if (recent.length > 40) recent.shift()
+}
+
+// Our own choosing: from a relation's words (strongest first), skip the bland ones, anything
+// already on the board and anything given lately; then pick one of the strongest few at random,
+// so it isn't always the same. Further down the list they get strange.
+export function chooseWord(words: readonly string[] | undefined, board: Board, random: () => number, top = 5): string | null {
+  const onBoard = board.nodes.map((n) => n.text.toLowerCase())
+  const fresh = (words ?? []).filter((w) => !BLAND.has(w) && !onBoard.some((t) => t.includes(w)))
+  const unseen = fresh.filter((w) => !recent.includes(w))
+  const pool = (unseen.length ? unseen : fresh).slice(0, top)
+  return pool.length ? pick(pool, random) : null
+}
+
+// A word nudge for the idea's key word, or null if our data has nothing that fits.
+async function wordNudge(type: NudgeChoice, keyword: string, board: Board, random: () => number, fetchImpl?: typeof fetch): Promise<Nudge | null> {
+  const found = await linksOf(keyword, fetchImpl)
+  if (!found) return null
+  const kinds = type === 'related' ? RELATED_KINDS.filter((k) => found.links[k]?.length) : [type as Relation]
+  // Try the kinds in a random order until one has a fresh word.
+  const order = shuffled(kinds, random)
+  for (const kind of order) {
+    const word = chooseWord(found.links[kind], board, random)
+    if (word) {
+      remember(word)
+      return { type, text: `${LABEL[kind]!(found.word)}: ${word}` }
+    }
+  }
+  return null
+}
+
+// A wildcard that's still connected: two steps along associations (clock → time → tide), so it's
+// surprising but there's a thread back. Null if there's no such path.
+export async function twoStepWildcard(keyword: string, board: Board, random: () => number, fetchImpl?: typeof fetch): Promise<Nudge | null> {
+  const first = await linksOf(keyword, fetchImpl)
+  const middle = chooseWord(first?.links.related, board, random)
+  if (!first || !middle) return null
+  const second: WordLinks | undefined = (await linksOf(middle, fetchImpl))?.links
+  const near = new Set([first.word, middle, ...(first.links.related ?? [])])
+  const far = chooseWord(
+    (second?.related ?? []).filter((w) => !near.has(w)),
+    board,
+    random,
+    8,
+  )
+  if (!far) return null
+  remember(far)
+  return { type: 'wildcard', text: `wildcard: ${far} (${first.word} → ${middle} → ${far})` }
+}
+
 export async function pickNudge(
   board: Board,
   targetId: string,
@@ -110,28 +192,22 @@ export async function pickNudge(
   if (!type) return null
 
   if (type === 'wildcard') {
+    // Half the time, a connected leap from our word data; otherwise a hand-written wildcard.
+    const keyword = keywordOf(target.text)
+    if (keyword && random() < 0.5) {
+      const leap = await twoStepWildcard(keyword, board, random, options.fetchImpl)
+      if (leap) return leap
+    }
     const onBoard = new Set(board.nodes.map((n) => n.text.toLowerCase()))
     const choices = WILDCARDS.filter((w) => !onBoard.has(w))
     return { type, text: `wildcard: ${pick(choices.length ? choices : WILDCARDS, random)}` }
   }
 
-  if (DATAMUSE.includes(type)) {
+  if (WORDS.includes(type)) {
     const keyword = keywordOf(target.text)
-    if (keyword) {
-      const onBoard = board.nodes.map((n) => n.text.toLowerCase())
-      const words = (await fetchWords(type as DatamuseRelation, keyword, options.fetchImpl))
-        .filter((w) => !BLAND.has(w) && !onBoard.some((text) => text.includes(w)))
-        // The strongest few associations; further down the list they get strange.
-        .slice(0, 5)
-      if (words.length) {
-        const word = pick(words, random)
-        const label = { related: `${keyword} → makes people think of`, opposite: `opposite of ${keyword}`, described: `${keyword}, often described as` }[
-          type as DatamuseRelation
-        ]
-        return { type, text: `${label}: ${word}` }
-      }
-    }
-    // Nothing useful from Datamuse: fall back to a question that fits, rather than leaving the user stuck.
+    const nudge = keyword ? await wordNudge(type, keyword, board, random, options.fetchImpl) : null
+    if (nudge) return nudge
+    // No word that fits: fall back to a question that fits, rather than leaving the user stuck.
     const questions = fittingTypes(board, targetId).filter((t): t is QuestionType => t in QUESTIONS)
     return questionNudge(questions.length ? pick(questions, random) : 'push', target.text, random)
   }

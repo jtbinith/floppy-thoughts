@@ -301,7 +301,7 @@ The app keeps working the way it feels now: changes show at once and are saved i
 - Offline, changes queue up in the browser (and survive a reload) and are sent, in order, when the connection is back; then whatever others changed meanwhile is merged in. A copy of each board stays in the browser so it opens without a connection.
 - Undo and redo stay on your device and only undo your own changes.
 
-No server-side cache is needed at this size. The app's files are cached by the host. Word lookups for nudges will be cached by the small proxy in front of Datamuse.
+No server-side cache is needed at this size. The app's files are cached by the host. Nudges use word files that are part of the site, so there's nothing to look up elsewhere.
 
 ## Signing in for the first time
 
@@ -332,7 +332,6 @@ The only reason data is held is to provide the service people signed up for. No 
 | Supabase | Everything above (the database and sign-in). Hosted in the London or EU region |
 | GitHub | That you signed in to Floppy Thoughts |
 | The web host | Standard request logs (IP address, pages loaded) |
-| Datamuse (through the word-lookup proxy) | The single word being looked up, nothing about you |
 
 ### Who can see what
 

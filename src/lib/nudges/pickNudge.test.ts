@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { parseBoard, type Board } from '../board'
 import { addNudge } from '../boardOps'
-import { fetchWords } from './datamuse'
-import { chooseType, distanceFromSpark, fittingTypes, keywordOf, pickNudge } from './pickNudge'
+import { forgetLetters, formsOf, linksOf } from './words'
+import { chooseType, chooseWord, distanceFromSpark, fittingTypes, keywordOf, pickNudge, twoStepWildcard } from './pickNudge'
 import { fillQuestion } from './questions'
 
 const board: Board = {
@@ -19,8 +19,23 @@ const board: Board = {
 }
 
 const first = () => 0
-const fakeFetch = (words: unknown) =>
-  vi.fn(async () => new Response(JSON.stringify(words), { status: 200 })) as unknown as typeof fetch
+// Our word files, served by letter: { c: { cassette: {...} } }.
+const fakeWords = (files: Record<string, unknown>) =>
+  vi.fn(async (url: string) => {
+    const letter = /\/words\/([a-z])\.json$/.exec(url)?.[1] ?? ''
+    return new Response(JSON.stringify(files[letter] ?? {}), { status: 200 })
+  }) as unknown as typeof fetch
+const offline = vi.fn(async () => {
+  throw new TypeError('offline')
+}) as unknown as typeof fetch
+
+const WORDS = {
+  c: { cassette: { related: ['tape', 'music', '<script>'], opposite: ['stream'], usedFor: ['recording music'] } },
+  t: { tape: { related: ['glue', 'measure', 'cassette', 'music'] } },
+  m: { music: { related: ['dance'] } },
+}
+
+beforeEach(() => forgetLetters())
 
 describe('keywordOf', () => {
   it('picks the most meaningful word', () => {
@@ -38,30 +53,56 @@ describe('fillQuestion', () => {
   })
 })
 
-describe('fetchWords', () => {
-  it('sends one keyword and keeps only plain words', async () => {
-    const fetchImpl = fakeFetch([{ word: 'tape' }, { word: '<script>' }, { word: 'CASSETTE' }, { score: 3 }, { word: 'vinyl' }])
-    expect(await fetchWords('related', 'cassette', fetchImpl)).toEqual(['tape', 'vinyl'])
-    expect(fetchImpl).toHaveBeenCalledWith('https://api.datamuse.com/words?rel_trg=cassette&max=20', expect.anything())
+describe('our word data', () => {
+  it('finds a word under its plain form', () => {
+    expect(formsOf('clocks')).toContain('clock')
+    expect(formsOf('cities')).toContain('city')
+    expect(formsOf('boxes')).toContain('box')
+    expect(formsOf('glass')).toEqual(['glass'])
   })
 
-  it('returns nothing when offline or the reply is odd', async () => {
-    const offline = vi.fn(async () => {
-      throw new TypeError('offline')
-    }) as unknown as typeof fetch
-    expect(await fetchWords('related', 'cassette', offline)).toEqual([])
-    expect(await fetchWords('related', 'cassette', fakeFetch({ not: 'a list' }))).toEqual([])
+  it('reads only the file for its first letter, and keeps only plain words', async () => {
+    const fetchImpl = fakeWords(WORDS)
+    const found = await linksOf('cassettes', fetchImpl)
+    expect(found?.word).toBe('cassette')
+    expect(found?.links.related).toEqual(['tape', 'music'])
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect((fetchImpl as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]).toMatch(/\/words\/c\.json$/)
+  })
+
+  it('gives nothing (and no error) when offline with nothing kept', async () => {
+    expect(await linksOf('cassette', offline)).toBeNull()
+  })
+})
+
+describe('choosing a word', () => {
+  it('skips words already on the board and picks from the strongest few', () => {
+    const b = { ...board, nodes: [...board.nodes, { id: 'n9', number: 9, text: 'a tape for plants', kind: 'user' as const, x: 0, y: 0 }] }
+    expect(chooseWord(['tape', 'music', 'vinyl'], b, first)).toBe('music')
+    expect(chooseWord(['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf'], board, () => 0.99)).toBe('echo')
+    expect(chooseWord([], board, first)).toBeNull()
+  })
+
+  it('makes a two-step wildcard that leads somewhere new', async () => {
+    const leap = await twoStepWildcard('cassette', board, first, fakeWords(WORDS))
+    // cassette → tape → glue: not cassette itself, and not one of cassette's own associations.
+    expect(leap).toEqual({ type: 'wildcard', text: 'wildcard: glue (cassette → tape → glue)' })
   })
 })
 
 describe('pickNudge', () => {
-  it('gives a Datamuse word for related nudges', async () => {
-    const nudge = await pickNudge(board, 'n1', { type: 'related', random: first, fetchImpl: fakeFetch([{ word: 'tape' }]) })
-    expect(nudge).toEqual({ type: 'related', text: 'cassette → makes people think of: tape' })
+  it('gives a word from our data for word nudges', async () => {
+    expect(await pickNudge(board, 'n1', { type: 'opposite', random: first, fetchImpl: fakeWords(WORDS) })).toEqual({
+      type: 'opposite',
+      text: 'opposite of cassette: stream',
+    })
+    const related = await pickNudge(board, 'n1', { type: 'related', random: first, fetchImpl: fakeWords(WORDS) })
+    expect(related?.type).toBe('related')
+    expect(related?.text).toMatch(/^cassette(, used for: recording music| → makes people think of: (tape|music))$/)
   })
 
-  it('falls back to a question that fits when Datamuse has nothing', async () => {
-    const nudge = await pickNudge(board, 'n1', { type: 'opposite', random: first, fetchImpl: fakeFetch([]) })
+  it('falls back to a question that fits when our data has nothing', async () => {
+    const nudge = await pickNudge(board, 'n1', { type: 'described', random: first, fetchImpl: fakeWords(WORDS) })
     // The first fitting question type for a word is perspective.
     expect(nudge).toEqual({ type: 'perspective', text: 'How would a 7-year-old use cassette?' })
   })
@@ -74,7 +115,9 @@ describe('pickNudge', () => {
   })
 
   it('gives a wildcard word that is not already on the board', async () => {
-    const nudge = await pickNudge(board, 'n1', { type: 'wildcard', random: first })
+    // The first random number skips the two-step leap; then the first hand-written wildcard.
+    const rolls = [0.9]
+    const nudge = await pickNudge(board, 'n1', { type: 'wildcard', random: () => rolls.shift() ?? 0, fetchImpl: fakeWords(WORDS) })
     expect(nudge).toEqual({ type: 'wildcard', text: 'wildcard: banana' })
   })
 

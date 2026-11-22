@@ -12,7 +12,7 @@ A single-page React app with no backend. Everything runs in the browser and boar
 flowchart LR
   U[You] --> App[Floppy Thoughts in the browser]
   App <--> LS[(localStorage: boards and settings)]
-  App -. one keyword per word nudge .-> DM[Datamuse API]
+  App -. word files, loaded when nudging .-> WF[public/words]
 ```
 
 | Part | Where | What it does |
@@ -173,15 +173,16 @@ Select something and press **N**, use the box's **nudge** button, or type `/nudg
 ```mermaid
 flowchart LR
   K[N / button / command] --> P[pickNudge]
-  P -->|related, opposite, described| D[Datamuse API]
+  P -->|related, opposite, described| D[our word files]
   P -->|perspective, scale, senses, push| Q[question lists]
-  P -->|wildcard| W[wildcards]
-  D -- nothing found / offline --> Q
+  P -->|wildcard| W[wildcards, or two steps through the word files]
+  D -- no word that fits --> Q
 ```
 
 - **Nudges that fit:** the type depends on what's selected. Words and objects get word games, senses, perspective and scale; problems get perspective, scale and push; well-developed ideas get pushed rather than word games; word nudges only fire on short text; nudges can't be nudged.
 - **No judging-criteria nudges** (impact, demo), for the same reason links aren't scored.
-- **Datamuse privacy:** only one keyword is sent (preferring nouns), never the whole idea. Results are filtered, and the request times out after 3 seconds, falling back to a question.
+- **Our own word data:** `scripts/build-words.py` builds `public/words/a.json` … `z.json` from ConceptNet 5.7 and wordfreq (about 13,000 common words, each with its strongest 8 links per relation: associated, opposite, described, used for, found at, has, a kind of). Offensive words and words for groups of people are left out (`scripts/words-blocklist.txt`, `scripts/words-groups.txt`, the LDNOOBW list), and a test checks the shipped files. Nothing is sent anywhere: a word's letter file loads when a nudge needs it and is kept in the browser's cache, so nudges work offline after.
+- **Choosing a word:** the key word of the idea ("clocks" → clock), then one of the strongest five links of the right kind, skipping words already on the board and words given lately, picked at random. A **related** nudge can also say what it's used for, where it's found, what it has or what it's a kind of. Half of wildcards go **two steps** (clock → time → tide), surprising but connected.
 
 ## Tidy
 
@@ -232,5 +233,4 @@ Browser tests start their own dev server on `127.0.0.1:5181`.
 
 - Split `Workspace.tsx` into smaller pieces (command wiring, deleting, tidy).
 - Accounts and shared boards (Supabase), with a privacy notice.
-- A server-side proxy for Datamuse, which will need a key from February 2027.
 - Pixel art for the machine and frame; phone layout.

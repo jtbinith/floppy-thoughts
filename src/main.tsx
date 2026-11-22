@@ -15,7 +15,7 @@ import { initTheme } from './lib/theme'
 
 // Credits for the open-source libraries behind Floppy Thoughts (also listed in the README).
 console.info(
-  '%cFloppy Thoughts%c is built with React Flow (https://reactflow.dev, MIT) by the xyflow team, Zod (https://zod.dev) and word data from Datamuse (https://www.datamuse.com/api/). Thank you!',
+  '%cFloppy Thoughts%c is built with React Flow (https://reactflow.dev, MIT) by the xyflow team, Zod (https://zod.dev) and word data from ConceptNet (https://conceptnet.io, CC BY-SA 4.0) and wordfreq (https://github.com/rspeer/wordfreq, CC BY-SA 4.0). Thank you!',
   'font-weight:bold;color:#e2955a',
   'color:inherit',
 )

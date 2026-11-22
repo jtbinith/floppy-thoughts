@@ -27,3 +27,6 @@ dist-ssr
 test-results/
 playwright-report/
 
+
+# Python environment for scripts/build-words.py
+.words-venv/

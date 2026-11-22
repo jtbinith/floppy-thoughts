@@ -233,6 +233,29 @@ test.describe('nudges', () => {
     await box(page, 'n1').getByRole('button', { name: 'Nudge 1' }).click()
     await expect(page.locator('.idea--nudge')).toHaveCount(1)
   })
+
+  test('word nudges come from our own word files, nothing outside the site, and work offline once loaded', async ({ page, context }) => {
+    const outside: string[] = []
+    page.on('request', (r) => {
+      const url = new URL(r.url())
+      if (!['127.0.0.1', 'localhost'].includes(url.hostname) && !url.hostname.endsWith('supabase.co')) outside.push(url.hostname)
+    })
+    const words = page.waitForResponse((r) => r.url().endsWith('/words/c.json'))
+    await type(page, 'clock')
+    await type(page, '/nudge 1 opposite')
+    await words
+    await expect(page.locator('.idea--nudge')).toHaveCount(1)
+    await expect(page.locator('.idea--nudge')).toContainText(/opposite of clock: /)
+
+    // Offline now: another c word still gets a word nudge, from the copy kept in the browser.
+    await context.setOffline(true)
+    await type(page, 'cheese')
+    await type(page, '/nudge 3 related')
+    await expect(page.locator('.idea--nudge')).toHaveCount(2)
+    await expect(page.locator('.idea--nudge').nth(1)).toContainText(/cheese( → makes people think of|, used for|, found in or at|, has| is a kind of): /)
+    await context.setOffline(false)
+    expect(outside).toEqual([])
+  })
 })
 
 test.describe('switching boards', () => {

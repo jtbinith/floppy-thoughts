@@ -1,0 +1,33 @@
+# Words that must never come out of a nudge, on top of the LDNOOBW list (see build-words.py).
+# One word or phrase per line. Add to it whenever a nudge says something it shouldn't.
+# ConceptNet is crowd-sourced, so some associations are stereotypes; groups of people are left out
+# of nudges entirely rather than risk one.
+racist
+racism
+slavery
+slave
+nazi
+hitler
+terrorist
+terrorism
+suicide
+rape
+rapist
+murder
+murderer
+kill
+killing
+genocide
+holocaust
+abuse
+abuser
+torture
+drug
+drugs
+cocaine
+heroin
+gun
+guns
+weapon
+weapons
+bomb

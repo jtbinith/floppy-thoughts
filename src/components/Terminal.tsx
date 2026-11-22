@@ -9,7 +9,7 @@ type Line = { text: string; kind: 'input' | 'output' | 'error' }
 export type TerminalHandle = {
   run: (input: string) => void
   focus: () => void
-  // For results that arrive later, e.g. a nudge from Datamuse.
+  // For results that arrive later, e.g. a nudge once its word file has loaded.
   print: (lines: string[], error?: boolean) => void
   // Put text in the input, ready to finish off (from the commands tab).
   fill: (text: string) => void
