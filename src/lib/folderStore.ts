@@ -71,8 +71,12 @@ export class AccountFolders implements FolderStore {
       check(await this.db.from('folders').insert(steps.added.map((f) => ({ id: f.id, name: f.name, parent_id: f.parentId, created_at: f.createdAt }))))
     for (const f of steps.changed) check(await this.db.from('folders').update({ name: f.name, parent_id: f.parentId }).eq('id', f.id))
     // Boards moved (before any folder goes, which would take its boards' rows with it).
-    if (steps.placed.length)
-      check(await this.db.from('board_folders').upsert(steps.placed.map(([board_id, folder_id]) => ({ board_id, folder_id })), { onConflict: 'user_id,board_id' }))
+    // A board filed for the first time is added; one already in a folder just changes folder.
+    // (The database only lets the folder change on a row, never which board it's for.)
+    const filed = steps.placed.filter(([board]) => !(board in before.placed))
+    if (filed.length) check(await this.db.from('board_folders').insert(filed.map(([board_id, folder_id]) => ({ board_id, folder_id }))))
+    for (const [board, folder] of steps.placed.filter(([board]) => board in before.placed))
+      check(await this.db.from('board_folders').update({ folder_id: folder }).eq('board_id', board))
     if (steps.unplaced.length) check(await this.db.from('board_folders').delete().in('board_id', steps.unplaced))
     if (steps.removed.length) check(await this.db.from('folders').delete().in('id', steps.removed))
     await this.copy.save(before, after)

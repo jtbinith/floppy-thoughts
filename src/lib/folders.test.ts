@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { describe, expect, it, vi } from 'vitest'
 import {
   NO_FOLDERS,
   boardsInside,
@@ -14,7 +15,7 @@ import {
   renameFolder,
   type Folders,
 } from './folders'
-import { LocalFolders, stepsBetween } from './folderStore'
+import { AccountFolders, LocalFolders, stepsBetween } from './folderStore'
 
 const now = new Date('2026-11-22T12:00:00Z')
 const must = (f: Folders | null): Folders => {
@@ -129,5 +130,32 @@ describe('saving', () => {
     expect(await store.load()).toEqual(sample())
     map.set('f', '{"broken":')
     expect(await store.load()).toEqual(NO_FOLDERS)
+  })
+})
+
+describe('saving to an account', () => {
+  // A stand-in for the database client that records each request.
+  function fakeDb() {
+    const calls: string[] = []
+    const ok = Promise.resolve({ data: [], error: null })
+    const chain = (desc: string): unknown =>
+      new Proxy(() => {}, {
+        get: (_t, key) => (key === 'then' ? ok.then.bind(ok) : (...args: unknown[]) => chain(`${desc}.${String(key)}(${JSON.stringify(args)})`)),
+        apply: () => chain(desc),
+      })
+    const db = { from: (table: string) => new Proxy({}, { get: (_t, op) => (...args: unknown[]) => (calls.push(`${table}.${String(op)} ${JSON.stringify(args)}`), chain(table)) }) }
+    return { db: db as unknown as SupabaseClient, calls }
+  }
+
+  it('adds a board to a folder the first time, then only changes its folder (never an upsert)', async () => {
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} })
+    const { db, calls } = fakeDb()
+    const store = new AccountFolders(db, 'me')
+    const before = sample()
+    const after = must(placeBoard(must(placeBoard(before, 'b3', 'uni')), 'b1', 'uni'))
+    await store.save(before, after)
+    expect(calls).toEqual(['board_folders.insert [[{"board_id":"b3","folder_id":"uni"}]]', 'board_folders.update [{"folder_id":"uni"}]'])
+    expect(calls.some((c) => c.includes('upsert'))).toBe(false)
+    vi.unstubAllGlobals()
   })
 })
