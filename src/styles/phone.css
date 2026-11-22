@@ -238,6 +238,66 @@
     display: none;
   }
 
+  /* A selected box's actions are in the bar along the bottom of the board (SelectionBar), so
+     the small buttons on the box itself go. */
+  .idea__tools,
+  .idea__delete {
+    display: none;
+  }
+
+  .selection-bar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    display: flex;
+    gap: 0.35rem;
+    justify-content: space-between;
+    padding: 0.45rem 0.5rem;
+    background: var(--screen-bar);
+    border-top: 1px solid var(--line);
+  }
+
+  .selection-bar__button {
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 0.15rem;
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+
+  .selection-bar__button--on {
+    color: var(--on-spark);
+    background: var(--spark);
+    border-color: var(--spark);
+  }
+
+  /* The heart and the × are icons, so they keep to 44px and the words get the rest. */
+  .selection-bar__button:first-child,
+  .selection-bar__delete {
+    flex: 0 0 44px;
+    font-size: 1.15rem;
+  }
+
+  /* With a box selected its bar is along the bottom, so the + button floats up above it. */
+  .workspace:has(.selection-bar) .device__rail > .device__button:first-child {
+    bottom: calc(100% + 1rem + 3.6rem);
+  }
+
+  /* The box waiting for the other end of a link. */
+  .idea--linking {
+    outline: 3px dashed var(--spark);
+    outline-offset: 4px;
+  }
+
   /* Touch tips in the help tab. */
   .touch-tips__list {
     display: flex;

@@ -40,7 +40,7 @@ type Props = {
 
 export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
-  const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys, fit, paste } = useBoardActions()
+  const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys, fit, paste, linkingFrom, linkTo, cancelLink } = useBoardActions()
   // y y copies a box's text here; p puts it back as a new idea (like vim's yank and put).
   const yanked = useRef<string | null>(null)
 
@@ -333,8 +333,15 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
       onNodeDragStop={handleDragStop}
       onNodeDoubleClick={(_e, node) => (node.data.kind === 'user' || node.data.category === 'theme') && startEdit(node.id)}
       onDoubleClick={handleDoubleClick}
-      onPaneClick={finishEditing}
-      onNodeClick={(_e, node) => node.id !== editingId && finishEditing()}
+      onPaneClick={() => {
+        cancelLink()
+        finishEditing()
+      }}
+      onNodeClick={(_e, node) => {
+        // Waiting for the other end of a link: this tap is it.
+        if (linkingFrom && node.id !== linkingFrom) return linkTo(node.id)
+        if (node.id !== editingId) finishEditing()
+      }}
       // Capture, so our keys come before React Flow's own (its arrows would move boxes).
       onKeyDownCapture={(e) => handleKey(e, e.currentTarget)}
       zoomOnDoubleClick={false}

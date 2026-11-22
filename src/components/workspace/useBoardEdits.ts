@@ -4,7 +4,8 @@ import { MAX_BOARD_NAME, numberOf, type Board } from '../../lib/board'
 import { addLinkedIdea, addNote, addNudge, addTheme, addUserNode, chainAround, cleanText, deleteNodes, editUserNode, findNode, themes, toggleFavourite, touch } from '../../lib/boardOps'
 import { favouritesBoard } from '../../lib/favouritesBoard'
 import { pickNudge, type NudgeChoice } from '../../lib/nudges/pickNudge'
-import { BOX, PLACE, centreOfBox } from '../../lib/placement'
+import { BOX, centreOfBox, placeFor } from '../../lib/placement'
+import { usePhone } from '../../lib/usePhone'
 import type { Spark } from '../../lib/sparks/deal'
 import { rememberSeen } from '../../lib/sparks/seen'
 
@@ -48,6 +49,8 @@ export function useBoardEdits({
   onOpenNew: (board: Board) => void
 }) {
   const { getNodes } = useReactFlow()
+  // Where linked ideas, nudges and notes go: beside what they come from, or below it on a phone.
+  const place = placeFor(usePhone())
   // Deleting from the middle of a chain asks first whether to keep it connected.
   const [pendingDelete, setPendingDelete] = useState<{
     ids: string[]
@@ -62,13 +65,15 @@ export function useBoardEdits({
       return
     }
     commit(board, result.board)
+    // If the view was full it went just off screen: bring it in, so you can see what you type.
+    reveal(at)
     edit(result.node?.id ?? null)
   }
 
   // p: a copied box's text as a new idea, beside `nearId` (or at `at`, the middle of the view).
   function pasteIdea(text: string, at: Spot, nearId?: string) {
     const near = nearId ? findNode(board, nearId) : undefined
-    const spot = near ? spotNear(board, { x: near.x + PLACE.branch.x, y: near.y + PLACE.branch.y }) : at
+    const spot = near ? spotNear(board, { x: near.x + place.branch.x, y: near.y + place.branch.y }) : at
     const result = addUserNode(board, text, spot)
     if (!result.ok) {
       say(result.error)
@@ -83,7 +88,7 @@ export function useBoardEdits({
   function branchFrom(from: Board, fromId: string) {
     const parent = findNode(from, fromId)
     if (!parent) return
-    const at = spotNear(from, { x: parent.x + PLACE.branch.x, y: parent.y + PLACE.branch.y })
+    const at = spotNear(from, { x: parent.x + place.branch.x, y: parent.y + place.branch.y })
     const result = addLinkedIdea(from, fromId, NEW_IDEA, at)
     if (!result.ok) {
       say(result.error)
@@ -105,7 +110,7 @@ export function useBoardEdits({
       say(message)
       return { text: message, error: true }
     }
-    const at = spotNear(current, { x: target.x + PLACE.nudge.x, y: target.y + PLACE.nudge.y })
+    const at = spotNear(current, { x: target.x + place.nudge.x, y: target.y + place.nudge.y })
     const result = addNudge(current, targetId, nudge, at)
     if (!result.ok) {
       say(result.error)

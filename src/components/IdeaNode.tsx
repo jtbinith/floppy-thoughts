@@ -5,10 +5,14 @@ import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
 import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
+import { usePhone } from '../lib/usePhone'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge, whoIs } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, nudge, whoIs, linkingFrom } = useBoardActions()
+  // On a phone the selected box's actions are in the bar along the bottom of the board instead
+  // (see SelectionBar); here it only keeps the box in view while you type.
+  const phone = usePhone()
   const editing = editingId === id
   // Escape unmounts the textarea, which fires blur; this stops that blur from saving.
   const finished = useRef(false)
@@ -24,22 +28,25 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
     const tryFocus = () => {
       const input = inputRef.current
       input?.focus()
-      if (input && document.activeElement === input) input.select()
-      else if (tries++ < 30) frame = requestAnimationFrame(tryFocus)
+      if (input && document.activeElement === input) {
+        input.select()
+        // On a phone the keyboard comes up over the bottom of the screen: keep the box in view.
+        if (phone) setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+      } else if (tries++ < 30) frame = requestAnimationFrame(tryFocus)
     }
     frame = requestAnimationFrame(tryFocus)
     return () => cancelAnimationFrame(frame)
-  }, [editing])
+  }, [editing, phone])
   const isTheme = data.category === 'theme'
   const isFav = isFavourite(data)
   const mine = isMine(data)
-  const label = data.kind === 'spark' ? (isTheme ? 'theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
+    const label = data.kind === 'spark' ? (isTheme ? 'theme' : 'note') : data.kind === 'nudge' ? data.nudgeType : 'idea'
 
   return (
     <div
       data-number={data.number}
       title={byWhom(whoIs(data.addedBy), whoIs(data.editedBy))}
-      className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${isFav ? ' idea--favourite' : ''}`}
+      className={`idea idea--${data.kind}${data.category ? ` idea--cat-${data.category}` : ''}${editing ? ' idea--editing' : ''}${isFav ? ' idea--favourite' : ''}${linkingFrom === id ? ' idea--linking' : ''}`}
     >
       {/* Drag from either dot to another node to link them. */}
       <Handle type="target" position={Position.Top} className="idea__handle" />

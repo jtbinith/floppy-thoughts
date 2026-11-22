@@ -30,6 +30,12 @@ export type BoardActions = {
   showKeys: () => void
   // On a shared board, the name of someone on it ("you" for you); otherwise undefined.
   whoIs: (accountId?: string) => string | undefined
+  // Linking by tapping (the link button on a phone): the box waiting for its other end, starting
+  // that wait, linking it to the next box tapped, and giving up (a tap on the empty board).
+  linkingFrom: string | null
+  startLink: (id: string) => void
+  linkTo: (id: string) => void
+  cancelLink: () => void
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null)

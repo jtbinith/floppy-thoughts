@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from './board'
-import { BOX, freeSpotNear } from './placement'
+import { BOX, PHONE_PLACE, PLACE, freeSpotNear } from './placement'
 
 const empty: Board = {
   version: 4,
@@ -48,5 +48,23 @@ describe('placing within the visible board', () => {
   it('looks further out when the visible area is full', () => {
     const tiny = { x: 0, y: 0, width: 10, height: 10 }
     expect(freeSpotNear(board, { x: 0, y: 0 }, tiny)).toBeDefined()
+  })
+})
+
+describe('placing on a phone', () => {
+  const one: Board = { ...empty, nodes: [{ id: 'a', number: 1, text: 'a', kind: 'user', x: 0, y: 0 }] }
+
+  it('puts a new box straight below a taken spot, not beside it', () => {
+    const spot = freeSpotNear(one, { x: BOX.width / 2, y: BOX.height / 2 }, undefined, true)
+    expect(spot.x).toBe(0)
+    expect(spot.y).toBeGreaterThanOrEqual(BOX.height)
+  })
+
+  it('places linked ideas, nudges and notes below what they come from', () => {
+    for (const p of Object.values(PHONE_PLACE)) {
+      expect(p.x).toBe(BOX.width / 2)
+      expect(p.y).toBeGreaterThan(BOX.height)
+    }
+    expect(PLACE.nudge.x).toBeGreaterThan(BOX.width)
   })
 })

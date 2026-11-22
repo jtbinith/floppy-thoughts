@@ -17,6 +17,7 @@ import { BoardActionsContext, type BoardActions } from './boardActions'
 import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
 import { usePhone } from '../lib/usePhone'
+import { SelectionBar } from './SelectionBar'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
 import { KeysSheet } from './KeysSheet'
@@ -103,6 +104,8 @@ export function Workspace(props: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<TerminalHandle>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // The box waiting for the other end of a link (after its link button on a phone).
+  const [linkingFrom, setLinkingFrom] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   // Notices fade after a few seconds.
   useEffect(() => {
@@ -181,6 +184,26 @@ export function Workspace(props: Props) {
     say: setNotice,
     showKeys: () => setShowKeys(true),
     whoIs: (id) => (id && names?.board === board.id ? names.byId.get(id) : undefined),
+    linkingFrom,
+    startLink: (id) => {
+      setLinkingFrom(id)
+      setNotice('Now tap the box to link it to.')
+    },
+    linkTo: (id) => {
+      const from = linkingFrom
+      setLinkingFrom(null)
+      if (!from || from === id) return
+      const result = addLink(board, from, id)
+      if (result.ok) {
+        commit(board, result.board)
+        setNotice(null)
+      } else setNotice(result.error)
+    },
+    cancelLink: () => {
+      if (!linkingFrom) return
+      setLinkingFrom(null)
+      setNotice(null)
+    },
   }
 
   // What the board on screen does for terminal commands that need more than the board itself.
@@ -370,6 +393,7 @@ export function Workspace(props: Props) {
                   if (result.ok) commit(board, result.board)
                 }}
               />
+              {phone && <SelectionBar board={board} />}
               {board.nodes.length === 0 && !askTheme && (
                 <div className="board__empty">
                   <p>{phone ? 'Add your first thoughts, or get a note from the vending machine.' : 'Start typing your first thoughts, or get a note from the vending machine.'}</p>

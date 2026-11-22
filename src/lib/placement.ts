@@ -16,6 +16,12 @@ export const PLACE = {
   note: { x: BOX.width + 70, y: -BOX.height / 2 + 5 },
 }
 
+// On a phone a readable box is nearly the screen's width, so things go below what they come
+// from (the screen is tall) instead of beside it (where they'd be off screen).
+const BELOW = { x: BOX.width / 2, y: BOX.height * 2 + 10 }
+export const PHONE_PLACE: typeof PLACE = { branch: BELOW, nudge: BELOW, note: BELOW }
+export const placeFor = (phone: boolean) => (phone ? PHONE_PLACE : PLACE)
+
 // The middle of a box whose top-left corner is at `at`.
 export const centreOfBox = (at: { x: number; y: number }) => ({ x: at.x + BOX.width / 2, y: at.y + BOX.height / 2 })
 
@@ -24,7 +30,9 @@ export type Rect = { x: number; y: number; width: number; height: number }
 // Finds the nearest empty spot to `target`, searching outwards in rings.
 // With `within` (the part of the board you can see), it only picks spots that fit inside it,
 // so new things don't land off screen. If there's no room there, it looks further out.
-export function freeSpotNear(board: Board, target: { x: number; y: number }, within?: Rect): { x: number; y: number } {
+// With `below` (on a phone), it tries straight down first, so a column of ideas builds up the
+// screen instead of spreading sideways.
+export function freeSpotNear(board: Board, target: { x: number; y: number }, within?: Rect, below = false): { x: number; y: number } {
   const overlaps = (x: number, y: number) =>
     board.nodes.some((n) => Math.abs(n.x - x) < NODE_W && Math.abs(n.y - y) < NODE_H)
   const visible = (x: number, y: number) =>
@@ -34,6 +42,7 @@ export function freeSpotNear(board: Board, target: { x: number; y: number }, wit
   for (const needVisible of within ? [true, false] : [false]) {
     const ok = (x: number, y: number) => !overlaps(x, y) && (!needVisible || visible(x, y))
     if (ok(start.x, start.y)) return round(start)
+    if (below) for (let step = 1; step <= 12; step++) if (ok(start.x, start.y + step * NODE_H * 1.2)) return round({ x: start.x, y: start.y + step * NODE_H * 1.2 })
     for (let ring = 1; ring <= 12; ring++) {
       const steps = ring * 8
       for (let i = 0; i < steps; i++) {

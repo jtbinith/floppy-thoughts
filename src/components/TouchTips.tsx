@@ -7,8 +7,10 @@ import { ShrimpIcon } from './ShrimpIcon'
 
 const TIPS: { title: string; how: React.ReactNode }[] = [
   { title: 'Add an idea', how: <>Tap the round + button, type it, then tap anywhere on the board (or return) to put it down.</> },
-  { title: 'Change an idea', how: <>Double-tap the box.</> },
-  { title: 'Link two ideas', how: <>Drag from the dot on a box&apos;s edge onto another box.</> },
+  { title: 'Do things with a box', how: <>Tap it: a bar along the bottom of the board has ♥, nudge, edit, link, + next and ×.</> },
+  { title: 'Change an idea', how: <>Tap the box, then edit (or double-tap it).</> },
+  { title: 'Link two ideas', how: <>Tap a box, then link, then the box to link it to. Or drag from the dot on a box&apos;s edge onto another box.</> },
+  { title: 'Follow a thought', how: <>Tap a box, then + next: a new idea, already linked to it.</> },
   {
     title: 'Get a note',
     how: (
@@ -17,17 +19,17 @@ const TIPS: { title: string; how: React.ReactNode }[] = [
       </>
     ),
   },
-  { title: 'Stuck?', how: <>Tap nudge on a box for a word or a question to push the idea further.</> },
+  { title: 'Stuck?', how: <>Tap a box, then nudge, for a word or a question to push the idea further.</> },
   {
     title: 'Favourite',
     how: (
       <>
-        Tap <HeartIcon size={12} /> on the ideas you&apos;d build. They&apos;re all in the favourites tab.
+        Tap a box, then <HeartIcon size={12} />, on the ideas you&apos;d build. They&apos;re all in the favourites tab.
       </>
     ),
   },
   { title: 'Move around', how: <>Drag the board to look around and pinch to zoom. Tidy the board is in the Menu.</> },
-  { title: 'Delete', how: <>Tap a box, then its ×. Undo is in the Menu.</> },
+  { title: 'Delete', how: <>Tap a box, then ×. Undo is in the Menu.</> },
   { title: 'Rather type?', how: <>Tap &gt;_ for the terminal: type a thought and press return, or a command starting with /.</> },
 ]
 
