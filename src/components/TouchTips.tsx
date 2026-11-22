@@ -24,7 +24,7 @@ const TIPS: { title: string; how: React.ReactNode }[] = [
     title: 'Favourite',
     how: (
       <>
-        Tap a box, then <HeartIcon size={12} />, on the ideas you&apos;d build. They&apos;re all in the favourites tab.
+        Tap a box, then <HeartIcon size={12} />, on the ideas you&apos;d build. They&apos;re all in the favourites tab, where you can tick some to put just those on a new board.
       </>
     ),
   },
