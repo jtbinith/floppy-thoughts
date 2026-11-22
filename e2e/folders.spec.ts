@@ -65,6 +65,7 @@ test('make folders, put boards in them, and go in and out', async ({ page }) => 
   await expect(folderCards(page)).toHaveText(['Hackathons', 'Uni'])
 
   await moveTo(page, 'zebra', 'Hackathons')
+  await expect(page.getByRole('status')).toHaveText('Moved “zebra” to “Hackathons”.')
   // The top still lists every board, saying where each one is.
   await expect(cards(page)).toHaveText(['kettle', 'apple', 'zebra'])
   await expect(page.locator('.boards__card', { hasText: 'zebra' })).toContainText('in Hackathons')
@@ -175,9 +176,26 @@ test('with a mouse, a board can be dragged onto a folder', async ({ page }) => {
   await makeBoards(page, 'zebra', 'apple')
   await newFolder(page, 'Hackathons')
   await page.locator('.boards__card', { hasText: 'zebra' }).dragTo(page.locator('.folders__card', { hasText: 'Hackathons' }))
+  await expect(page.getByRole('status')).toHaveText('Moved “zebra” to “Hackathons”.')
   await expect(page.locator('.boards__card', { hasText: 'zebra' })).toContainText('in Hackathons')
   await openFolder(page, 'Hackathons')
   await expect(cards(page)).toHaveText(['zebra'])
+})
+
+test('if a move does not save, it says so and the board stays put', async ({ page }) => {
+  await makeBoards(page, 'zebra')
+  await newFolder(page, 'Hackathons')
+  // From now on, saving folders fails (like a lost connection when signed in).
+  await page.evaluate(() => {
+    const set = Storage.prototype.setItem
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === 'floppy:folders') throw new Error('offline')
+      return set.call(this, key, value)
+    }
+  })
+  await page.locator('.boards__card', { hasText: 'zebra' }).dragTo(page.locator('.folders__card', { hasText: 'Hackathons' }))
+  await expect(page.getByRole('alert')).toHaveText('Couldn’t move “zebra”. Check your connection and try again.'.replace('’', "'"))
+  await expect(page.locator('.folders__card', { hasText: 'Hackathons' })).toContainText('empty')
 })
 
 test.describe('on a phone', () => {

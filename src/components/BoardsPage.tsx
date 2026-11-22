@@ -52,7 +52,15 @@ export function BoardsPage(props: Props) {
   const [moving, setMoving] = useState<Dragged | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [naming, setNaming] = useState(false)
-  const [problem, setProblem] = useState<string | null>(null)
+  // A short message at the bottom of the screen after a change: what moved where, or that it
+  // didn't save. It goes after a few seconds.
+  const [notice, setNotice] = useState<{ text: string; ok: boolean; n: number } | null>(null)
+  const say = useCallback((text: string, ok = true) => setNotice((was) => ({ text, ok, n: (was?.n ?? 0) + 1 })), [])
+  useEffect(() => {
+    if (!notice) return
+    const t = setTimeout(() => setNotice(null), notice.ok ? 3500 : 6000)
+    return () => clearTimeout(t)
+  }, [notice])
 
   useEffect(() => {
     let gone = false
@@ -79,17 +87,16 @@ export function BoardsPage(props: Props) {
       if (!next) return false
       const before = raw
       setRaw(next)
-      setProblem(null)
       try {
         await folderStore.save(before, next)
         return true
       } catch {
         setRaw(before)
-        setProblem("That didn't save. Check your connection and try again.")
+        say("That didn't save. Check your connection and try again.", false)
         return false
       }
     },
-    [raw, folderStore],
+    [raw, folderStore, say],
   )
 
   function changeSort(value: string) {
@@ -98,8 +105,23 @@ export function BoardsPage(props: Props) {
     localStorage.setItem(KEYS.boardSort, value)
   }
 
-  const moveTo = (thing: Dragged, into: string | null) =>
-    void change(thing.kind === 'board' ? placeBoard(raw, thing.id, into) : canMoveFolder(raw, thing.id, into) ? moveFolder(raw, thing.id, into) : null)
+  async function moveTo(thing: Dragged, into: string | null) {
+    const what = nameOf(thing, boards, folders)
+    const where = into ? `“${folderById(folders, into)?.name}”` : 'my boards (no folder)'
+    const now = thing.kind === 'board' ? folderOf(folders, thing.id) : (folderById(folders, thing.id)?.parentId ?? null)
+    if (now === into) return say(`${what} is already in ${where}.`)
+    if (thing.kind === 'folder' && !canMoveFolder(raw, thing.id, into)) return say(`A folder can't go inside itself.`, false)
+    const next = thing.kind === 'board' ? placeBoard(raw, thing.id, into) : moveFolder(raw, thing.id, into)
+    const before = raw
+    setRaw(next ?? raw)
+    try {
+      if (next) await folderStore.save(before, next)
+      say(`Moved ${what} to ${where}.`)
+    } catch {
+      setRaw(before)
+      say(`Couldn't move ${what}. Check your connection and try again.`, false)
+    }
+  }
 
   async function removeFolder(id: string, keepInside: boolean) {
     const result = deleteFolder(raw, id, keepInside)
@@ -158,20 +180,15 @@ export function BoardsPage(props: Props) {
         ) : (
           here && (
           <nav className="boards-path" aria-label="Folder">
-            <Crumb drop={TOP} label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => moveTo(thing, null)} />
+            <Crumb drop={TOP} label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => void moveTo(thing, null)} />
             {path.map((f) => (
               <span key={f.id} className="boards-path__step">
                 <span aria-hidden="true">/</span>
-                <Crumb drop={f.id} label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && moveTo(thing, f.id)} />
+                <Crumb drop={f.id} label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && void moveTo(thing, f.id)} />
               </span>
             ))}
           </nav>
           )
-        )}
-        {problem && (
-          <p className="boards-tools__none" role="alert">
-            {problem}
-          </p>
         )}
 
         {!searching && foldersIn(folders, here).length > 0 && <h2 className="boards-heading">folders</h2>}
@@ -184,7 +201,7 @@ export function BoardsPage(props: Props) {
             onRename={(id, name) => void change(renameFolder(raw, id, name))}
             onMove={(id) => setMoving({ kind: 'folder', id })}
             onDelete={setDeleting}
-            onDrop={moveTo}
+            onDrop={(thing, into) => void moveTo(thing, into)}
           />
         )}
         {!searching && <h2 className="boards-heading">{here ? `boards in ${folderById(folders, here)?.name}` : 'all boards'}</h2>}
@@ -193,7 +210,7 @@ export function BoardsPage(props: Props) {
           boards={shown}
           onMove={(id) => setMoving({ kind: 'board', id })}
           where={searching || !here ? whereIs : undefined}
-          onDropInto={moveTo}
+          onDropInto={(thing, into) => void moveTo(thing, into)}
           onNew={() => (here ? sessionStorage.setItem(KEYS.newBoardFolder, here) : sessionStorage.removeItem(KEYS.newBoardFolder))}
         />
         {searching && shown.length === 0 && <p className="boards-tools__none">No boards match “{search.trim()}”.</p>}
@@ -202,6 +219,11 @@ export function BoardsPage(props: Props) {
         )}
       </main>
       <SiteFooter />
+      {notice && (
+        <p key={notice.n} className={`boards-notice${notice.ok ? '' : ' boards-notice--bad'}`} role={notice.ok ? 'status' : 'alert'}>
+          {notice.text}
+        </p>
+      )}
 
       {naming && (
         <Dialog label="New folder" onCancel={() => setNaming(false)}>
@@ -238,7 +260,7 @@ export function BoardsPage(props: Props) {
               moving={moving}
               current={moving.kind === 'board' ? folderOf(folders, moving.id) : (folderById(folders, moving.id)?.parentId ?? null)}
               onPick={(into) => {
-                moveTo(moving, into)
+                void moveTo(moving, into)
                 setMoving(null)
               }}
             />

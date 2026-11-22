@@ -596,3 +596,41 @@
   right: auto;
   margin-left: auto;
 }
+
+/* After a change on the boards page: what moved where, or that it didn't save. Fixed at the
+   bottom, so it shows wherever you've scrolled to. */
+.boards-notice {
+  position: fixed;
+  bottom: max(1.2rem, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 60;
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 0.6rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--raised);
+  border: 2px solid var(--cat-problems-ink);
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+  transform: translateX(-50%);
+  animation: boards-notice-in 0.18s ease-out;
+}
+
+.boards-notice--bad {
+  border-color: var(--error);
+}
+
+@keyframes boards-notice-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boards-notice {
+    animation: none;
+  }
+}
