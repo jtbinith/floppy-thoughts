@@ -90,10 +90,12 @@
   resize: none;
 }
 
+/* The buttons on a selected box, with the same room on both sides (so a short note's box grows to
+   fit them rather than squeezing them against its edge), and a little more under them. */
 .idea__tools {
   display: flex;
-  gap: 0.35rem;
-  margin: 0.35rem 0 0 0.7rem;
+  gap: 0.45rem;
+  margin: 0.5rem 0.7rem 0.15rem;
 }
 
 .idea__tool {
@@ -624,7 +626,7 @@
 
 .nudge-button__more {
   margin-left: -1px;
-  padding-inline: 0.35rem !important;
+  padding-inline: 0.4rem !important;
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
 }
