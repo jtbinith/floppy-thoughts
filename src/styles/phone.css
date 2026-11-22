@@ -319,7 +319,8 @@
   .selection-bar__button:first-child,
   .selection-bar__delete {
     flex: 0 0 44px;
-    font-size: 1.15rem;
+    display: grid;
+    place-items: center;
   }
 
   /* With a box selected its bar is along the bottom, so the + button floats up above it. */

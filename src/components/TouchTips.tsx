@@ -7,7 +7,7 @@ import { ShrimpIcon } from './ShrimpIcon'
 
 const TIPS: { title: string; how: React.ReactNode }[] = [
   { title: 'Add an idea', how: <>Tap the round + button, type it, then tap anywhere on the board (or return) to put it down.</> },
-  { title: 'Do things with a box', how: <>Tap it: a bar along the bottom of the board has ♥, nudge, edit, link, + next and ×.</> },
+  { title: 'Do things with a box', how: <>Tap it: a bar along the bottom of the board has ♥, nudge, edit, link, + next and the bin.</> },
   { title: 'Change an idea', how: <>Tap the box, then edit (or double-tap it).</> },
   { title: 'Link two ideas', how: <>Tap a box, then link, then the box to link it to. Or drag from the dot on a box&apos;s edge onto another box.</> },
   { title: 'Follow a thought', how: <>Tap a box, then + next: a new idea, already linked to it.</> },
@@ -29,7 +29,7 @@ const TIPS: { title: string; how: React.ReactNode }[] = [
     ),
   },
   { title: 'Move around', how: <>Drag the board to look around and pinch to zoom. Tidy the board is in the Menu.</> },
-  { title: 'Delete', how: <>Tap a box, then ×. Undo is in the Menu.</> },
+  { title: 'Delete', how: <>Tap a box, then the bin. Changed your mind? Undo (↶) is at the top.</> },
   { title: 'Rather type?', how: <>Tap &gt;_ for the terminal: type a thought and press return, or a command starting with /.</> },
 ]
 

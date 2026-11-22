@@ -2,6 +2,7 @@ import { useStore } from '@xyflow/react'
 import { isMine, type Board } from '../lib/board'
 import { findNode } from '../lib/boardOps'
 import { useBoardActions } from './boardActions'
+import { BinIcon } from './BinIcon'
 import { HeartIcon } from './HeartIcon'
 
 // On a phone: when one box is selected, everything you can do with it, in a bar docked along the
@@ -49,7 +50,7 @@ export function SelectionBar({ board }: { board: Board }) {
         + next
       </button>
       <button type="button" className="selection-bar__button selection-bar__delete" aria-label={`Delete ${n}`} onClick={() => actions.deleteNode(node.id)}>
-        ×
+        <BinIcon size={16} />
       </button>
     </div>
   )

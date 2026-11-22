@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { CATEGORY_LABEL, MAX_NODE_TEXT, isMine, isFavourite } from '../lib/board'
 import type { IdeaFlowNode } from '../lib/flow'
 import { useBoardActions } from './boardActions'
+import { BinIcon } from './BinIcon'
 import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
 import { usePhone } from '../lib/usePhone'
@@ -103,8 +104,8 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
       )}
 
       {selected && !editing && (
-        <button type="button" className="idea__delete nodrag" aria-label={`Delete ${data.number}`} onClick={() => deleteNode(id)}>
-          ×
+        <button type="button" className="idea__delete nodrag" aria-label={`Delete ${data.number}`} onClick={() => deleteNode(id)} title="Delete (x)">
+          <BinIcon size={10} />
         </button>
       )}
       {selected && !editing && (
