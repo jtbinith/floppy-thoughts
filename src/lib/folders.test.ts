@@ -159,3 +159,24 @@ describe('saving to an account', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('folders shown straight away', () => {
+  it('in the browser, are always known', () => {
+    const map = new Map<string, string>()
+    const fake = { getItem: (k: string) => map.get(k) ?? null, setItem: (k: string, v: string) => void map.set(k, v), removeItem: (k: string) => void map.delete(k) } as Storage
+    expect(new LocalFolders(fake, 'f').kept()).toEqual(NO_FOLDERS)
+  })
+
+  it('in an account, are unknown until loaded once, then kept for next time', async () => {
+    const map = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (k: string) => map.get(k) ?? null, setItem: (k: string, v: string) => void map.set(k, v), removeItem: (k: string) => void map.delete(k) })
+    const rows = { folders: [{ id: 'hacks', name: 'Hacks', parent_id: null, created_at: '2026-11-22T12:00:00Z' }], board_folders: [{ board_id: 'b1', folder_id: 'hacks' }] }
+    const db = { from: (table: keyof typeof rows) => ({ select: async () => ({ data: rows[table], error: null }) }) } as unknown as SupabaseClient
+    const store = new AccountFolders(db, 'me')
+    expect(store.kept()).toBeNull()
+    await store.load()
+    expect(new AccountFolders(db, 'me').kept()?.placed).toEqual({ b1: 'hacks' })
+    vi.unstubAllGlobals()
+  })
+})
+

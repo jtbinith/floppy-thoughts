@@ -342,7 +342,7 @@ export default function App() {
       />
     )
   if (route === 'boards')
-    return <BoardsPage boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} folderStore={folderStore} />
+    return <BoardsPage key={accountId ?? 'browser'} boards={boards ?? []} openId={board?.id} onOpen={(id) => void open(id)} onRename={renameBoard} onDelete={deleteBoard} folderStore={folderStore} />
 
   return (
     <div className="page">

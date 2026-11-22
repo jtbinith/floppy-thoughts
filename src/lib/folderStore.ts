@@ -7,6 +7,9 @@ import { KEYS } from './keys'
 export interface FolderStore {
   load(): Promise<Folders>
   save(before: Folders, after: Folders): Promise<void>
+  // The folders as last seen, straight away (no waiting), or null if they've never been loaded here.
+  // The boards page shows these while it loads, so boards don't flash up in the wrong place.
+  kept(): Folders | null
 }
 
 const read = (storage: Storage, key: string): Folders | null => {
@@ -27,7 +30,14 @@ export class LocalFolders implements FolderStore {
     this.key = key
   }
   async load(): Promise<Folders> {
+    return this.kept()
+  }
+  kept(): Folders {
     return read(this.storage, this.key) ?? NO_FOLDERS
+  }
+  // Only what's been saved here, or null.
+  saved(): Folders | null {
+    return read(this.storage, this.key)
   }
   async save(_before: Folders, after: Folders): Promise<void> {
     this.storage.setItem(this.key, JSON.stringify(after))
@@ -62,6 +72,10 @@ export class AccountFolders implements FolderStore {
     }
     await this.copy.save(NO_FOLDERS, loaded)
     return loaded
+  }
+
+  kept(): Folders | null {
+    return this.copy.saved()
   }
 
   async save(before: Folders, after: Folders): Promise<void> {

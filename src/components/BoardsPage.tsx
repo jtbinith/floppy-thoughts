@@ -49,7 +49,11 @@ export function BoardsPage(props: Props) {
   const [search, setSearch] = useState('')
   const phone = usePhone()
   const [sort, setSort] = useState<Sort>(savedSort)
-  const [raw, setRaw] = useState<Folders>(NO_FOLDERS)
+  // Your folders: the copy kept in this browser straight away, then the latest once loaded. Until
+  // they're known at all (the first visit signed in), the boards wait too, so none of them shows up
+  // loose for a moment before jumping into its folder.
+  const [raw, setRaw] = useState<Folders>(() => folderStore.kept() ?? NO_FOLDERS)
+  const [known, setKnown] = useState(() => folderStore.kept() !== null)
   // The folder you're looking at (null: the top), kept while you pop into a board and back.
   const [at, setAtState] = useState<string | null>(() => sessionStorage.getItem(KEYS.boardsFolder))
   const [moving, setMoving] = useState<Dragged | null>(null)
@@ -67,7 +71,14 @@ export function BoardsPage(props: Props) {
 
   useEffect(() => {
     let gone = false
-    folderStore.load().then((f) => !gone && setRaw(f), () => {})
+    // (Signing in or out gives the page a new folder store, and App starts it afresh.)
+    const kept = folderStore.kept()
+    const show = (f: Folders) => {
+      if (gone) return
+      setRaw(f)
+      setKnown(true)
+    }
+    folderStore.load().then(show, () => show(kept ?? NO_FOLDERS))
     return () => {
       gone = true
     }
@@ -179,6 +190,7 @@ export function BoardsPage(props: Props) {
           </label>
         </div>
 
+        {known && (
         <div className="boards-layout">
           <TreePanel phone={phone}>
             <FolderTree
@@ -239,6 +251,7 @@ export function BoardsPage(props: Props) {
             )}
           </div>
         </div>
+        )}
       </main>
       <SiteFooter />
       {notice && (
