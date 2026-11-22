@@ -38,6 +38,13 @@ type Props = {
   onLink: (a: string, b: string) => void
 }
 
+// Boxes gliding from where they're drawn to where the board now has them (see the board sync).
+type Glide = { moves: Map<string, { from: { x: number; y: number }; to: { x: number; y: number } }> }
+// As long as tidy's own glide.
+const GLIDE_MS = 450
+// More than a pixel off counts as moved (rounding alone shouldn't start a glide).
+const movedFrom = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.abs(a.x - b.x) > 1 || Math.abs(a.y - b.y) > 1
+
 export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props) {
   const { screenToFlowPosition, getNodes, getEdges, setCenter, getZoom } = useReactFlow<IdeaFlowNode>()
   const { editingId, startEdit, branch, nudge, favourite, deleteMany, undo, redo, addIdea, say, showKeys, fit, paste, linkingFrom, linkTo, cancelLink } = useBoardActions()
@@ -52,21 +59,60 @@ export function BoardCanvas({ board, onChange, onAddAt, onTidy, onLink }: Props)
   // If one new thing appeared (a typed idea, a note, the theme), select just that, so Tab, N and F
   // work on it straight away. A new nudge leaves its idea selected, so N again gives another.
   // Done during render rather than in an effect, as React recommends for derived state.
+  //
+  // Boxes that moved somewhere other than where they're drawn (someone else tidied or dragged them,
+  // or an undo put them back) glide there, like your own tidy does, instead of jumping. Your own
+  // moves are already drawn where they end up, so they don't glide again; a box you're dragging is
+  // never pulled away; and with reduced motion they just move.
   const [syncedBoard, setSyncedBoard] = useState(board)
+  const [glide, setGlide] = useState<Glide | null>(null)
   if (board !== syncedBoard) {
     const before = new Set(syncedBoard.nodes.map((n) => n.id))
     const added = board.nodes.filter((n) => !before.has(n.id))
     const fresh = added.length === 1 && added[0].kind !== 'nudge' ? added[0].id : null
     setSyncedBoard(board)
-    setNodes((current) => {
-      const selected = fresh ? new Set([fresh]) : new Set(current.filter((n) => n.selected).map((n) => n.id))
-      return toFlowNodes(board).map((n) => ({ ...n, selected: selected.has(n.id) }))
-    })
+    const selected = fresh ? new Set([fresh]) : new Set(nodes.filter((n) => n.selected).map((n) => n.id))
+    const shown = new Map(nodes.map((n) => [n.id, n]))
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    const moves: Glide['moves'] = new Map()
+    setNodes(
+      toFlowNodes(board).map((n) => {
+        const was = shown.get(n.id)
+        const next = { ...n, selected: selected.has(n.id) }
+        if (!was || was.dragging || still || !movedFrom(was.position, n.position)) return next
+        moves.set(n.id, { from: was.position, to: n.position })
+        return { ...next, position: was.position }
+      }),
+    )
+    if (moves.size) setGlide({ moves })
     setEdges((current) => {
       const selected = new Set(current.filter((e) => e.selected).map((e) => e.id))
       return toFlowEdges(board).map((e) => ({ ...e, selected: selected.has(e.id) }))
     })
   }
+
+  // Each frame of a glide moves the boxes a step along (eased, like tidy); a box picked up mid-glide
+  // stops gliding. A newer glide replaces this one, starting from wherever the boxes are drawn.
+  useEffect(() => {
+    if (!glide) return
+    const start = performance.now()
+    const ease = (t: number) => 1 - (1 - t) ** 3
+    let frame = 0
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / GLIDE_MS)
+      setNodes((current) =>
+        current.map((n) => {
+          const m = glide.moves.get(n.id)
+          if (!m || n.dragging) return n
+          const k = ease(t)
+          return { ...n, position: { x: m.from.x + (m.to.x - m.from.x) * k, y: m.from.y + (m.to.y - m.from.y) * k } }
+        }),
+      )
+      if (t < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [glide])
 
   function handleNodesChange(changes: NodeChange<IdeaFlowNode>[]) {
     setNodes((current) => applyNodeChanges(changes, current))

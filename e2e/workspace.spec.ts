@@ -163,3 +163,25 @@ test('everything is still there after a reload', async ({ page }) => {
   await expect(box(page, 'n2')).toContainText('clocks that grow')
   await expect(box(page, 'n2').locator('.idea__fav-mark')).toBeVisible()
 })
+
+test('boxes glide back when a tidy is undone, instead of jumping', async ({ page }) => {
+  await type(page, 'one')
+  await type(page, 'two')
+  await type(page, 'three')
+  await type(page, '/link 1 2')
+  await type(page, '/link 2 3')
+  const where = () => box(page, 'n3').evaluate((n) => (n as HTMLElement).style.transform)
+  const start = await where()
+  await type(page, '/tidy')
+  await expect.poll(where).not.toBe(start)
+  const tidied = await where()
+  await page.waitForTimeout(600)
+  await type(page, '/undo')
+  // Part-way back a moment later (neither where it was tidied to nor where it started)…
+  await page.waitForTimeout(120)
+  const between = await where()
+  expect(between).not.toBe(start)
+  expect(between).not.toBe(tidied)
+  // …and then all the way back.
+  await expect.poll(where).toBe(start)
+})
