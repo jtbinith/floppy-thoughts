@@ -14,7 +14,7 @@ export function AccountPage({ storage, folderStore }: { storage: StorageAdapter;
     <div className="home">
       <NavBar current="info" />
       <main className="info">
-        <h1>your account</h1>
+        <h1>my account</h1>
         {!ready ? null : account ? (
           <Signed account={account} storage={storage} folderStore={folderStore} />
         ) : (

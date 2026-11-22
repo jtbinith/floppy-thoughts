@@ -85,7 +85,7 @@ function AccountMenu({ account }: { account: Account }) {
             signed in as <strong>{account.name}</strong>
           </p>
           <a role="menuitem" href="#/account" onClick={() => setOpen(false)}>
-            Your Account
+            My Account
           </a>
           <button
             type="button"
