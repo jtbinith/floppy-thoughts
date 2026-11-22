@@ -391,8 +391,11 @@ export function createMachineScene(container: HTMLElement, opts: {
   // --- Sizing: draw at a fraction of the screen's pixels, so it looks like pixel art ---
   // How big a drawn pixel is, in CSS pixels. Sharp screens (phones, tablets, Retina laptops: 2 or
   // more screen pixels to a CSS pixel) get 1.5, so the machine keeps detail (keys, the legend, the
-  // sign) while still clearly pixel art; ordinary screens 2, which looks the same size there.
-  let pixelSize = (window.devicePixelRatio || 1) >= 2 ? 1.5 : 2
+  // sign) while still clearly pixel art. Everything else gets 2 of the screen's own pixels: on a
+  // laptop scaled to 125% or 150%, 2 CSS pixels would round up to 3 screen pixels, which looked
+  // blocky.
+  const dpr0 = window.devicePixelRatio || 1
+  let pixelSize = dpr0 >= 2 ? 1.5 : 2 / dpr0
   // Zoomed in, draw finer, so the pixels stay about the same size on the machine (and small text
   // like the legend can be read in the keypad close-up).
   let drawnAt = 0
