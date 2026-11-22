@@ -22,7 +22,7 @@ import type { BoardSummary } from '../lib/storage'
 import { BoardList } from './BoardList'
 import { Dialog } from './Dialog'
 import { FolderCards, MoveTargets } from './FolderCards'
-import { DRAGGED, countOf, dragData, type Dragged } from './folderDrag'
+import { DRAGGED, TOP, countOf, dragData, dragEnded, type Dragged } from './folderDrag'
 import { NavBar } from './NavBar'
 import { TickIcon } from './TickIcon'
 import { SiteFooter } from './InfoPages'
@@ -112,7 +112,8 @@ export function BoardsPage(props: Props) {
   }
 
   const searching = search.trim().length > 0
-  const shown = findBoards(searching ? boards : boards.filter((b) => folderOf(folders, b.id) === here), search, sort)
+  // At the top, every board (each says which folder it's in); inside a folder, just its boards.
+  const shown = findBoards(searching || !here ? boards : boards.filter((b) => folderOf(folders, b.id) === here), search, sort)
   const path = pathTo(folders, here)
   const whereIs = (id: string) => {
     const p = pathTo(folders, folderOf(folders, id))
@@ -157,11 +158,11 @@ export function BoardsPage(props: Props) {
         ) : (
           here && (
           <nav className="boards-path" aria-label="Folder">
-            <Crumb label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => moveTo(thing, null)} />
+            <Crumb drop={TOP} label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => moveTo(thing, null)} />
             {path.map((f) => (
               <span key={f.id} className="boards-path__step">
                 <span aria-hidden="true">/</span>
-                <Crumb label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && moveTo(thing, f.id)} />
+                <Crumb drop={f.id} label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && moveTo(thing, f.id)} />
               </span>
             ))}
           </nav>
@@ -173,6 +174,7 @@ export function BoardsPage(props: Props) {
           </p>
         )}
 
+        {!searching && foldersIn(folders, here).length > 0 && <h2 className="boards-heading">folders</h2>}
         {!searching && (
           <FolderCards
             folders={folders}
@@ -185,11 +187,13 @@ export function BoardsPage(props: Props) {
             onDrop={moveTo}
           />
         )}
+        {!searching && <h2 className="boards-heading">{here ? `boards in ${folderById(folders, here)?.name}` : 'all boards'}</h2>}
         <BoardList
           {...props}
           boards={shown}
           onMove={(id) => setMoving({ kind: 'board', id })}
-          where={searching ? whereIs : undefined}
+          where={searching || !here ? whereIs : undefined}
+          onDropInto={moveTo}
           onNew={() => (here ? sessionStorage.setItem(KEYS.newBoardFolder, here) : sessionStorage.removeItem(KEYS.newBoardFolder))}
         />
         {searching && shown.length === 0 && <p className="boards-tools__none">No boards match “{search.trim()}”.</p>}
@@ -285,12 +289,13 @@ const nameOf = (thing: Dragged, boards: BoardSummary[], folders: Folders) =>
   `“${thing.kind === 'board' ? (boards.find((b) => b.id === thing.id)?.name ?? 'this board') : (folderById(folders, thing.id)?.name ?? 'this folder')}”`
 
 // One step of the folder path, which you can also drop a board or folder onto.
-function Crumb({ label, current, onOpen, onDrop }: { label: string; current: boolean; onOpen: () => void; onDrop: (thing: Dragged) => void }) {
+function Crumb({ drop, label, current, onOpen, onDrop }: { drop: string; label: string; current: boolean; onOpen: () => void; onDrop: (thing: Dragged) => void }) {
   const [over, setOver] = useState(false)
   return (
     <button
       type="button"
       className={`boards-path__crumb${over ? ' boards-path__crumb--over' : ''}`}
+      data-drop={drop}
       aria-current={current ? 'page' : undefined}
       onClick={onOpen}
       onDragOver={(e) => {
@@ -302,6 +307,7 @@ function Crumb({ label, current, onOpen, onDrop }: { label: string; current: boo
       onDrop={(e) => {
         e.preventDefault()
         setOver(false)
+        dragEnded()
         const thing = dragData(e)
         if (thing) onDrop(thing)
       }}

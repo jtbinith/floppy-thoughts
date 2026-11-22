@@ -298,10 +298,6 @@
   color: var(--muted);
 }
 
-.folders__actions {
-  margin-left: 0;
-}
-
 .boards__where {
   overflow: hidden;
   margin-top: -0.4rem;
@@ -434,4 +430,157 @@
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1;
+}
+
+/* Dragging boards and folders into folders. Cards show they can be picked up; while something's
+   being dragged, every place it could go is outlined, and the one under it lights up. */
+.boards__card[draggable='true'],
+.folders__card[draggable='true'] {
+  cursor: grab;
+}
+
+.dragging-thing .folders__card,
+.dragging-thing .boards-path__crumb {
+  border-style: dashed;
+  border-color: var(--spark);
+}
+
+.drop-over,
+.dragging-thing .folders__card--over,
+.dragging-thing .boards-path__crumb--over {
+  color: var(--spark) !important;
+  border-color: var(--spark) !important;
+  outline: 2px solid var(--spark);
+  outline-offset: 1px;
+}
+
+/* On a touch screen: the board or folder you're holding, under your finger. */
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  max-width: 12rem;
+  margin: -2.2rem 0 0 -1rem;
+  padding: 0.4rem 0.7rem;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--raised);
+  border: 2px solid var(--spark);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  /* Press and hold picks a card up, so it mustn't select its text or open the phone's menu. */
+  .boards__card,
+  .folders__card {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+}
+
+/* A folder's ⋯ menu, in the card's top corner */
+.folders__card {
+  position: relative;
+}
+
+.folder-menu {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+}
+
+.folder-menu__button {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.6rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.folder-menu__button:hover,
+.folder-menu__button[aria-expanded='true'] {
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.folder-menu__list {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 8rem;
+  padding: 0.25rem;
+  background: var(--raised);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+}
+
+.folder-menu__list button {
+  padding: 0.4rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.folder-menu__list button:hover,
+.folder-menu__list button:focus-visible {
+  background: var(--line);
+  outline: none;
+}
+
+.folder-menu__list .folder-menu__danger {
+  color: var(--error);
+}
+
+/* The folder's name leaves room for the ⋯ */
+.folders__open {
+  padding-right: 2rem;
+}
+
+/* Headings over the folders and the boards */
+.boards-page h2.boards-heading {
+  margin: 0.4rem 0 -0.4rem;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+@media (pointer: coarse) {
+  .folder-menu__button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .folder-menu__list button {
+    min-height: 44px;
+  }
+
+  .folders__open {
+    padding-right: 3rem;
+  }
 }

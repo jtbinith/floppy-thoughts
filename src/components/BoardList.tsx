@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MAX_BOARD_NAME } from '../lib/board'
 import type { BoardSummary } from '../lib/storage'
 import { BoardSketch } from './BoardSketch'
-import { DRAGGED, type Dragged } from './folderDrag'
+import { DRAGGED, dragEnded, dragStarted, holdToDrag, type Dragged } from './folderDrag'
 
 // Your boards as cards, newest first: open, rename, move to a folder or delete. With a mouse, a
 // card can also be dragged onto a folder.
@@ -18,6 +18,8 @@ type Props = {
   where?: (id: string) => string | undefined
   // The link that starts a new board (it goes in the folder you're looking at).
   onNew?: () => void
+  // Putting a board in a folder by dragging (or press and hold on a touch screen).
+  onDropInto?: (thing: Dragged, into: string | null) => void
 }
 
 const edited = (iso: string) => {
@@ -28,7 +30,7 @@ const edited = (iso: string) => {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, where, onNew }: Props) {
+export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, where, onNew, onDropInto }: Props) {
   const [renaming, setRenaming] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -48,7 +50,10 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, 
           onDragStart={(e) => {
             e.dataTransfer.setData(DRAGGED, JSON.stringify({ kind: 'board', id: b.id } satisfies Dragged))
             e.dataTransfer.effectAllowed = 'move'
+            dragStarted()
           }}
+          onDragEnd={dragEnded}
+          onTouchStart={(e) => onDropInto && renaming !== b.id && holdToDrag(e, { kind: 'board', id: b.id }, b.name, onDropInto)}
         >
           {renaming === b.id ? (
             <div className="boards__open">
