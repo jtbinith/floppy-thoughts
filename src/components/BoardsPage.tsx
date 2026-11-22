@@ -24,6 +24,7 @@ import { Dialog } from './Dialog'
 import { FolderCards, MoveTargets } from './FolderCards'
 import { DRAGGED, countOf, dragData, type Dragged } from './folderDrag'
 import { NavBar } from './NavBar'
+import { TickIcon } from './TickIcon'
 import { SiteFooter } from './InfoPages'
 
 // All your boards on their own page, outside the device (like the home page), in your folders.
@@ -213,8 +214,8 @@ export function BoardsPage(props: Props) {
             <p className="dialog__text">{here ? `Inside ${folderById(folders, here)?.name}.` : 'For a hackathon, a class or a project.'}</p>
             <input className="dialog__input" name="name" aria-label="Folder name" maxLength={80} required autoFocus />
             <div className="popup__actions">
-              <button type="submit" className="popup__stick">
-                make it
+              <button type="submit" className="popup__stick popup__tick" aria-label="Make folder" title="Make folder">
+                <TickIcon />
               </button>
               <button type="button" className="popup__back" onClick={() => setNaming(false)}>
                 cancel

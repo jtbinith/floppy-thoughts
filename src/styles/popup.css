@@ -463,3 +463,10 @@
   color: var(--text);
   border-color: var(--line);
 }
+
+/* A button that's just an icon (the tick that makes a new folder): as wide as it is tall. */
+.popup__tick {
+  display: inline-grid;
+  place-items: center;
+  min-width: 3rem;
+}

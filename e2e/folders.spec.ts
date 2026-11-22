@@ -16,7 +16,7 @@ async function makeBoards(page: Page, ...names: string[]) {
 async function newFolder(page: Page, name: string) {
   await page.getByRole('button', { name: 'new folder' }).click()
   await page.getByLabel('Folder name').fill(name)
-  await page.getByRole('button', { name: 'make it' }).click()
+  await page.getByRole('button', { name: 'Make folder' }).click()
 }
 
 async function moveTo(page: Page, what: string, folder: string) {
