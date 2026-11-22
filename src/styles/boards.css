@@ -806,3 +806,53 @@
     user-select: none;
   }
 }
+
+/* A shared board: who's on it and who shared it */
+.shared-with {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  align-items: center;
+  margin-top: -0.3rem;
+}
+
+.shared-with__faces {
+  display: inline-flex;
+  align-items: center;
+}
+
+.shared-with__faces img,
+.shared-with__faces span {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: -4px;
+  font-size: 0.55rem;
+  color: var(--text);
+  background: var(--line);
+  border: 1.5px solid var(--page);
+  border-radius: 50%;
+}
+
+.shared-with__faces > :first-child {
+  margin-left: 0;
+}
+
+.shared-with__faces small {
+  margin-left: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.shared-with__by {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.tree__shared {
+  display: inline-flex;
+  margin-left: 0.35rem;
+  color: var(--spark);
+  vertical-align: -1px;
+}

@@ -64,6 +64,11 @@ export function FolderTree({ folders, boards, at, openId, onPick, onOpenBoard, o
         <li key={b.id}>
           <Row depth={depth} current={b.id === openId} thing={{ kind: 'board', id: b.id }} label={b.name} onDrop={onDrop} onClick={() => onOpenBoard(b.id)} board>
             {b.name}
+            {b.people && (
+              <span className="tree__shared" title={`Shared: ${b.people.length} people`} aria-label={`shared with ${b.people.length - 1} others`}>
+                <PeopleIcon />
+              </span>
+            )}
           </Row>
         </li>
       ))}
@@ -129,5 +134,17 @@ function Row(props: {
         {children}
       </button>
     </div>
+  )
+}
+
+// Two little heads: a board shared with other people.
+function PeopleIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="3.2" r="2.4" />
+      <path d="M0.6 11.4c0-2.8 2-4.6 4.4-4.6s4.4 1.8 4.4 4.6z" />
+      <circle cx="11.4" cy="3.6" r="2" opacity="0.7" />
+      <path d="M8.6 11.4c0.2-2 0.9-3.4 2.8-3.9 2 0.1 3.9 1.6 4 3.9z" opacity="0.7" />
+    </svg>
   )
 }

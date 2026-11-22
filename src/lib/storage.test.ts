@@ -166,3 +166,13 @@ describe('board summaries', () => {
     expect(summaryOf({ ...board('e'), nodes: [], links: [] })).toMatchObject({ sketch: { nodes: [], links: [] } })
   })
 })
+
+describe('who is on a shared board', () => {
+  it('stays on its line in the list when the board is edited', () => {
+    const people = [{ id: 'a', name: 'you', avatarUrl: null, owner: true }, { id: 'b', name: 'edie', avatarUrl: null, owner: false }]
+    const first = { ...summaryOf(board('c')), people }
+    const next = withSummary([first], { ...board('c'), name: 'renamed', updatedAt: '2030-01-01T00:00:00.000Z' })
+    expect(next[0].name).toBe('renamed')
+    expect(next[0].people).toEqual(people)
+  })
+})

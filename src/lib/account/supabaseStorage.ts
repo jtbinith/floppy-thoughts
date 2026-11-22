@@ -118,7 +118,33 @@ export class SupabaseStorage implements StorageAdapter {
     for (const b of others) if (!this.outbox.for(b.id).length) localStorage.removeItem(KEYS.accountBoard(this.me, b.id))
     // Boards made here that haven't reached the database yet.
     const waiting = others.filter((b) => this.outbox.for(b.id).length)
-    return [...boards, ...waiting].map(summaryOf).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    const summaries = [...boards, ...waiting].map(summaryOf).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    return this.withPeople(summaries)
+  }
+
+  // Who's on each shared board, for the boards page (a board with only you on it gets nothing).
+  // One read of the members and one of their names and pictures; if either fails, the boards
+  // still show, just without faces.
+  private async withPeople(list: BoardSummary[]): Promise<BoardSummary[]> {
+    if (!list.length) return list
+    const members = await this.db.from('board_members').select('board_id, user_id, role').in('board_id', list.map((b) => b.id))
+    if (members.error) return list
+    const rows = members.data as { board_id: string; user_id: string; role: string }[]
+    const byBoard = new Map<string, typeof rows>()
+    for (const r of rows) byBoard.set(r.board_id, [...(byBoard.get(r.board_id) ?? []), r])
+    const shared = [...byBoard.values()].filter((m) => m.length > 1)
+    if (!shared.length) return list
+    const ids = [...new Set(shared.flat().map((r) => r.user_id))]
+    const profiles = await this.db.from('profiles').select('id, name, avatar_url').in('id', ids)
+    const who = new Map(((profiles.data ?? []) as { id: string; name: string; avatar_url: string | null }[]).map((p) => [p.id, p]))
+    return list.map((b) => {
+      const m = byBoard.get(b.id)
+      if (!m || m.length < 2) return b
+      const people = m
+        .map((r) => ({ id: r.user_id, name: r.user_id === this.me ? 'you' : who.get(r.user_id)?.name || 'someone', avatarUrl: who.get(r.user_id)?.avatar_url ?? null, owner: r.role === 'owner' }))
+        .sort((x, y) => Number(y.owner) - Number(x.owner))
+      return { ...b, people }
+    })
   }
 
   // Owners delete the board for everyone. Anyone else deleting a board shared with them leaves it

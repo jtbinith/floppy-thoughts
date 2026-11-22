@@ -3,6 +3,7 @@ import { MAX_BOARD_NAME } from '../lib/board'
 import type { BoardSummary } from '../lib/storage'
 import { BoardSketch } from './BoardSketch'
 import { CardMenu } from './CardMenu'
+import { SharedWith } from './SharedWith'
 import { DRAGGED, dragEnded, dragStarted, holdToDrag, type Dragged } from './folderDrag'
 
 // Your boards as cards, newest first: tap to open, and the ⋯ menu to rename, move to a folder or
@@ -83,6 +84,7 @@ export function BoardList({ boards, openId, onOpen, onRename, onDelete, onMove, 
             <button type="button" className="boards__open" onClick={() => onOpen(b.id)}>
               <BoardSketch sketch={b.sketch} />
               <strong>{b.name}</strong>
+              {b.people && <SharedWith people={b.people} />}
               {where?.(b.id) && <small className="boards__where">in {where(b.id)}</small>}
             </button>
           )}

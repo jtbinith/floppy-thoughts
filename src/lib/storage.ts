@@ -8,6 +8,9 @@ export type BoardSummary = Pick<Board, 'id' | 'name' | 'createdAt' | 'updatedAt'
   thoughts: string[]
   // A tiny map of the board: boxes (0–1 across and down) and the links between them.
   sketch: { nodes: [x: number, y: number, tone: SketchTone][]; links: [number, number][] }
+  // A shared board (signed in, more than one person on it): who's on it, the owner first. "you"
+  // for you. Not set for boards only you have.
+  people?: { id: string; name: string; avatarUrl: string | null; owner: boolean }[]
 }
 
 // How a box is coloured in the sketch: vending-machine notes by their category.
@@ -47,7 +50,9 @@ export const summaryOf = (board: Board): BoardSummary => ({
 // Puts one board's new summary into the list, newest first, without reading every board again.
 // (With accounts and a server, this keeps each change to one small write.)
 export function withSummary(list: BoardSummary[], board: Board): BoardSummary[] {
-  const summary = summaryOf(board)
+  // Who's on it doesn't change when you edit, so it's kept from the line it replaces.
+  const people = list.find((b) => b.id === board.id)?.people
+  const summary = { ...summaryOf(board), ...(people ? { people } : {}) }
   return [summary, ...list.filter((b) => b.id !== board.id)].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
