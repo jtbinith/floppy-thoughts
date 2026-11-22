@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { SORTS, findBoards, isSort, type Sort } from '../lib/findBoards'
 import {
   NO_FOLDERS,
@@ -23,8 +23,10 @@ import { BoardList } from './BoardList'
 import { Dialog } from './Dialog'
 import { FolderCards, MoveTargets } from './FolderCards'
 import { DRAGGED, TOP, countOf, dragData, dragEnded, type Dragged } from './folderDrag'
+import { FolderTree } from './FolderTree'
 import { NavBar } from './NavBar'
-import { TickIcon } from './TickIcon'
+import { usePhone } from '../lib/usePhone'
+import { CrossIcon, TickIcon } from './TickIcon'
 import { SiteFooter } from './InfoPages'
 
 // All your boards on their own page, outside the device (like the home page), in your folders.
@@ -45,6 +47,7 @@ const savedSort = (): Sort => {
 export function BoardsPage(props: Props) {
   const { boards, folderStore } = props
   const [search, setSearch] = useState('')
+  const phone = usePhone()
   const [sort, setSort] = useState<Sort>(savedSort)
   const [raw, setRaw] = useState<Folders>(NO_FOLDERS)
   // The folder you're looking at (null: the top), kept while you pop into a board and back.
@@ -134,8 +137,9 @@ export function BoardsPage(props: Props) {
   }
 
   const searching = search.trim().length > 0
-  // At the top, every board (each says which folder it's in); inside a folder, just its boards.
-  const shown = findBoards(searching || !here ? boards : boards.filter((b) => folderOf(folders, b.id) === here), search, sort)
+  // Beside the tree, just what's in the folder you've picked (at the top: boards in no folder).
+  // Searching looks through every board, and says which folder each is in.
+  const shown = findBoards(searching ? boards : boards.filter((b) => folderOf(folders, b.id) === here), search, sort)
   const path = pathTo(folders, here)
   const whereIs = (id: string) => {
     const p = pathTo(folders, folderOf(folders, id))
@@ -175,53 +179,72 @@ export function BoardsPage(props: Props) {
           </label>
         </div>
 
-        {searching ? (
-          <p className="boards-path">searching every folder</p>
-        ) : (
-          here && (
+        <div className="boards-layout">
+          <TreePanel phone={phone}>
+            <FolderTree
+              folders={folders}
+              boards={boards}
+              at={here}
+              openId={props.openId}
+              onPick={(id) => {
+                setSearch('')
+                setAt(id)
+              }}
+              onOpenBoard={props.onOpen}
+              onDrop={(thing, into) => void moveTo(thing, into)}
+            />
+          </TreePanel>
+          <div className="boards-layout__main">
+            {searching ? (
+              <p className="boards-path">searching every folder</p>
+            ) : (
+    here && (
           <nav className="boards-path" aria-label="Folder">
-            <Crumb drop={TOP} label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => void moveTo(thing, null)} />
-            {path.map((f) => (
-              <span key={f.id} className="boards-path__step">
-                <span aria-hidden="true">/</span>
-                <Crumb drop={f.id} label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && void moveTo(thing, f.id)} />
-              </span>
-            ))}
-          </nav>
-          )
-        )}
+                <Crumb drop={TOP} label="my boards" current={!here} onOpen={() => setAt(null)} onDrop={(thing) => void moveTo(thing, null)} />
+                {path.map((f) => (
+                  <span key={f.id} className="boards-path__step">
+                    <span aria-hidden="true">/</span>
+                    <Crumb drop={f.id} label={f.name} current={f.id === here} onOpen={() => setAt(f.id)} onDrop={(thing) => thing.id !== f.id && void moveTo(thing, f.id)} />
+                  </span>
+                ))}
+              </nav>
+            )
+            )}
 
-        {!searching && foldersIn(folders, here).length > 0 && <h2 className="boards-heading">folders</h2>}
-        {!searching && (
-          <FolderCards
-            folders={folders}
-            at={here}
-            boardCount={(id) => boardsInside(folders, id).length}
-            onOpen={setAt}
-            onRename={(id, name) => void change(renameFolder(raw, id, name))}
-            onMove={(id) => setMoving({ kind: 'folder', id })}
-            onDelete={setDeleting}
-            onDrop={(thing, into) => void moveTo(thing, into)}
-          />
-        )}
-        {!searching && <h2 className="boards-heading">{here ? `boards in ${folderById(folders, here)?.name}` : 'all boards'}</h2>}
-        <BoardList
-          {...props}
-          boards={shown}
-          onMove={(id) => setMoving({ kind: 'board', id })}
-          where={searching || !here ? whereIs : undefined}
-          onDropInto={(thing, into) => void moveTo(thing, into)}
-          onNew={() => (here ? sessionStorage.setItem(KEYS.newBoardFolder, here) : sessionStorage.removeItem(KEYS.newBoardFolder))}
-        />
-        {searching && shown.length === 0 && <p className="boards-tools__none">No boards match “{search.trim()}”.</p>}
-        {!searching && here && shown.length === 0 && foldersIn(folders, here).length === 0 && (
-          <p className="boards-tools__none">This folder's empty. Move a board here, or start one.</p>
-        )}
+            {!searching && foldersIn(folders, here).length > 0 && <h2 className="boards-heading">folders</h2>}
+            {!searching && (
+              <FolderCards
+                folders={folders}
+                at={here}
+                boardCount={(id) => boardsInside(folders, id).length}
+                onOpen={setAt}
+                onRename={(id, name) => void change(renameFolder(raw, id, name))}
+                onMove={(id) => setMoving({ kind: 'folder', id })}
+                onDelete={setDeleting}
+                onDrop={(thing, into) => void moveTo(thing, into)}
+              />
+            )}
+            {!searching && <h2 className="boards-heading">{here ? `boards in ${folderById(folders, here)?.name}` : 'boards not in a folder'}</h2>}
+            <BoardList
+              {...props}
+              boards={shown}
+              onMove={(id) => setMoving({ kind: 'board', id })}
+              where={searching ? whereIs : undefined}
+              onDropInto={(thing, into) => void moveTo(thing, into)}
+              onNew={() => (here ? sessionStorage.setItem(KEYS.newBoardFolder, here) : sessionStorage.removeItem(KEYS.newBoardFolder))}
+            />
+            {searching && shown.length === 0 && <p className="boards-tools__none">No boards match “{search.trim()}”.</p>}
+            {!searching && here && shown.length === 0 && foldersIn(folders, here).length === 0 && (
+              <p className="boards-tools__none">This folder's empty. Move a board here, or start one.</p>
+            )}
+          </div>
+        </div>
       </main>
       <SiteFooter />
       {notice && (
         <p key={notice.n} className={`boards-notice${notice.ok ? '' : ' boards-notice--bad'}`} role={notice.ok ? 'status' : 'alert'}>
-          {notice.text}
+          {notice.ok ? <TickIcon size={16} /> : <CrossIcon size={13} />}
+          <span>{notice.text}</span>
         </p>
       )}
 
@@ -336,5 +359,17 @@ function Crumb({ drop, label, current, onOpen, onDrop }: { drop: string; label: 
     >
       {label}
     </button>
+  )
+}
+
+// On a phone the tree folds away above the cards (tap to open it); elsewhere it's always there,
+// beside them.
+function TreePanel({ phone, children }: { phone: boolean; children: ReactNode }) {
+  if (!phone) return <aside className="boards-layout__tree">{children}</aside>
+  return (
+    <details className="boards-layout__tree boards-layout__tree--folding">
+      <summary>folders and boards</summary>
+      {children}
+    </details>
   )
 }

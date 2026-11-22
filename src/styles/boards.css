@@ -600,6 +600,9 @@
 /* After a change on the boards page: what moved where, or that it didn't save. Fixed at the
    bottom, so it shows wherever you've scrolled to. */
 .boards-notice {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
   position: fixed;
   bottom: max(1.2rem, env(safe-area-inset-bottom));
   left: 50%;
@@ -622,6 +625,15 @@
   border-color: var(--error);
 }
 
+.boards-notice svg {
+  flex: none;
+  color: var(--cat-problems-ink);
+}
+
+.boards-notice--bad svg {
+  color: var(--error);
+}
+
 @keyframes boards-notice-in {
   from {
     opacity: 0;
@@ -632,5 +644,162 @@
 @media (prefers-reduced-motion: reduce) {
   .boards-notice {
     animation: none;
+  }
+}
+
+/* The boards page: the tree of folders and boards on the left, like a code editor's files, and
+   what's in the folder you've picked on the right. */
+.boards-layout {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  align-self: stretch;
+}
+
+.boards-layout__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+
+.boards-layout__main .boards,
+.boards-layout__main .folders {
+  align-self: stretch;
+}
+
+.boards-layout__tree {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  padding: 0.5rem 0.3rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.tree,
+.tree__level {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tree__row {
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.tree__row:hover {
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+}
+
+.tree__row--current {
+  background: var(--line);
+}
+
+.tree__toggle,
+.tree__spacer {
+  flex: none;
+  width: 1.4rem;
+}
+
+.tree__toggle {
+  padding: 0.2rem 0;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tree__name {
+  display: flex;
+  flex: 1;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.25rem 0.3rem;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tree__name .folder-icon {
+  flex: none;
+  color: var(--spark);
+}
+
+.tree__row--board .tree__name {
+  display: block;
+  color: var(--muted);
+}
+
+.tree__row--board.tree__row--current {
+  background: none;
+}
+
+/* The board you had open last: in bold, not shaded like the folder you're looking at. */
+.tree__row--board.tree__row--current .tree__name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tree__row[draggable='true'] {
+  cursor: grab;
+}
+
+.dragging-thing .tree__row[data-drop] {
+  border-color: color-mix(in srgb, var(--spark) 45%, transparent);
+  border-style: dashed;
+}
+
+/* Phones: the tree folds away above the cards. */
+.boards-layout__tree--folding {
+  position: static;
+  max-height: none;
+}
+
+.boards-layout__tree--folding summary {
+  min-height: 44px;
+  padding: 0.6rem 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .boards-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .tree__name,
+  .tree__toggle {
+    min-height: 44px;
+  }
+
+  .tree__toggle {
+    width: 2.2rem;
+  }
+
+  .tree__row,
+  .tree__row .tree__name {
+    -webkit-touch-callout: none;
+    user-select: none;
   }
 }

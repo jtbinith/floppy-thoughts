@@ -56,6 +56,7 @@ async function folderAction(page: Page, folder: string, action: 'rename' | 'move
   await page.getByRole('button', { name: `Folder options for ${folder}` }).click()
   await page.getByRole('menuitem', { name: action }).click()
 }
+const crumb = (page: Page, name: string) => page.getByRole('navigation', { name: 'Folder', exact: true }).getByRole('button', { name, exact: true })
 const openFolder = (page: Page, name: string) => page.locator('.folders__open', { hasText: name }).click()
 
 test('make folders, put boards in them, and go in and out', async ({ page }) => {
@@ -66,9 +67,12 @@ test('make folders, put boards in them, and go in and out', async ({ page }) => 
 
   await moveTo(page, 'zebra', 'Hackathons')
   await expect(page.getByRole('status')).toHaveText('Moved “zebra” to “Hackathons”.')
-  // The top still lists every board, saying where each one is.
-  await expect(cards(page)).toHaveText(['kettle', 'apple', 'zebra'])
-  await expect(page.locator('.boards__card', { hasText: 'zebra' })).toContainText('in Hackathons')
+  // Beside the tree, the top shows only boards in no folder; the tree shows zebra in Hackathons.
+  await expect(cards(page)).toHaveText(['kettle', 'apple'])
+  const tree = page.getByRole('navigation', { name: 'Folders and boards' })
+  await expect(tree).not.toContainText('zebra')
+  await tree.getByRole('button', { name: 'Open Hackathons' }).click()
+  await expect(tree).toContainText('Hackathonszebra')
   await expect(page.locator('.folders__card', { hasText: 'Hackathons' })).toContainText('1 board')
 
   await openFolder(page, 'Hackathons')
@@ -77,15 +81,15 @@ test('make folders, put boards in them, and go in and out', async ({ page }) => 
   await newFolder(page, 'OxHack')
   await moveTo(page, 'zebra', 'OxHack')
   await openFolder(page, 'OxHack')
-  await expect(page.getByRole('navigation', { name: 'Folder' })).toHaveText(/my boards\s*\/\s*Hackathons\s*\/\s*OxHack/)
+  await expect(page.getByRole('navigation', { name: 'Folder', exact: true })).toHaveText(/my boards\s*\/\s*Hackathons\s*\/\s*OxHack/)
   await expect(cards(page)).toHaveText(['zebra'])
 
   // Back up the path, and still there after a reload.
-  await page.getByRole('button', { name: 'Hackathons', exact: true }).click()
+  await crumb(page, 'Hackathons').click()
   await expect(folderCards(page)).toHaveText(['OxHack'])
   await page.reload()
   await expect(folderCards(page)).toHaveText(['OxHack'])
-  await page.getByRole('button', { name: 'my boards', exact: true }).click()
+  await crumb(page, 'my boards').click()
   await expect(page.locator('.folders__card', { hasText: 'Hackathons' })).toContainText('1 board · 1 folder')
 
   // And out of a folder again.
@@ -104,7 +108,7 @@ test('search finds boards in every folder, and says where they are', async ({ pa
   await expect(cards(page)).toHaveText(['zebra'])
   await expect(page.locator('.boards__card')).toContainText('in Hackathons')
   await page.getByLabel('Search boards').fill('')
-  await expect(cards(page)).toHaveText(['apple', 'zebra'])
+  await expect(cards(page)).toHaveText(['apple'])
 })
 
 test('a folder can move into another, but never into itself or one inside it', async ({ page }) => {
@@ -113,7 +117,7 @@ test('a folder can move into another, but never into itself or one inside it', a
   await newFolder(page, 'Uni')
   await openFolder(page, 'Hackathons')
   await newFolder(page, 'OxHack')
-  await page.getByRole('button', { name: 'my boards', exact: true }).click()
+  await crumb(page, 'my boards').click()
 
   await folderAction(page, 'Hackathons', 'move')
   const targets = page.getByRole('dialog').getByRole('listitem')
@@ -139,7 +143,7 @@ test('deleting a folder asks: keep what is inside, or delete it all', async ({ p
   await moveTo(page, 'zebra', 'Hackathons')
   await openFolder(page, 'Hackathons')
   await newFolder(page, 'OxHack')
-  await page.getByRole('button', { name: 'my boards', exact: true }).click()
+  await crumb(page, 'my boards').click()
   await moveTo(page, 'apple', 'OxHack')
 
   // Keep: its board and folder move up to the top.
@@ -147,8 +151,7 @@ test('deleting a folder asks: keep what is inside, or delete it all', async ({ p
   await expect(page.getByRole('dialog')).toContainText('It has 2 boards and 1 folder in it.')
   await page.getByRole('button', { name: 'delete it, keep what’s inside' }).click()
   await expect(folderCards(page)).toHaveText(['OxHack'])
-  await expect(cards(page)).toHaveText(['kettle', 'apple', 'zebra'])
-  await expect(page.locator('.boards__card', { hasText: 'zebra' })).not.toContainText('in ')
+  await expect(cards(page)).toHaveText(['kettle', 'zebra'])
 
   // Delete it all: the board inside goes too.
   await folderAction(page, 'OxHack', 'delete')
@@ -168,8 +171,8 @@ test('a new board started inside a folder goes in that folder', async ({ page })
   await type(page, '/rename fresh')
   await page.goto('#/boards')
   await expect(cards(page)).toHaveText(['fresh'])
-  await page.getByRole('button', { name: 'my boards', exact: true }).click()
-  await expect(cards(page)).toHaveText(['fresh', 'zebra'])
+  await crumb(page, 'my boards').click()
+  await expect(cards(page)).toHaveText(['zebra'])
 })
 
 test('with a mouse, a board can be dragged onto a folder', async ({ page }) => {
@@ -177,9 +180,22 @@ test('with a mouse, a board can be dragged onto a folder', async ({ page }) => {
   await newFolder(page, 'Hackathons')
   await page.locator('.boards__card', { hasText: 'zebra' }).dragTo(page.locator('.folders__card', { hasText: 'Hackathons' }))
   await expect(page.getByRole('status')).toHaveText('Moved “zebra” to “Hackathons”.')
-  await expect(page.locator('.boards__card', { hasText: 'zebra' })).toContainText('in Hackathons')
+  await expect(cards(page)).toHaveText(['apple'])
   await openFolder(page, 'Hackathons')
   await expect(cards(page)).toHaveText(['zebra'])
+})
+
+test('the tree: pick a folder, drag a board onto one, open a board', async ({ page }) => {
+  await makeBoards(page, 'zebra', 'apple')
+  await newFolder(page, 'Hackathons')
+  const tree = page.getByRole('navigation', { name: 'Folders and boards' })
+  await tree.locator('.tree__row', { hasText: 'zebra' }).dragTo(tree.locator('.tree__row', { hasText: 'Hackathons' }))
+  await expect(page.getByRole('status')).toHaveText('Moved “zebra” to “Hackathons”.')
+  await tree.getByRole('button', { name: 'Hackathons', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'boards in Hackathons' })).toBeVisible()
+  await expect(cards(page)).toHaveText(['zebra'])
+  await tree.getByRole('button', { name: 'zebra' }).click()
+  await expect(page.locator('.screen__name-button')).toHaveText('zebra')
 })
 
 test('if a move does not save, it says so and the board stays put', async ({ page }) => {
@@ -215,14 +231,14 @@ test.describe('on a phone', () => {
     await page.getByLabel('Folder name').fill('Uni')
     await page.getByRole('button', { name: 'Make folder' }).tap()
     await openFolder(page, 'Hackathons')
-    await holdAndDrag(page, page.locator('.boards__card').first(), page.getByRole('button', { name: 'my boards', exact: true }))
+    await holdAndDrag(page, page.locator('.boards__card').first(), crumb(page, 'my boards'))
     await expect(page.locator('.boards__card')).toHaveCount(0)
-    await page.getByRole('button', { name: 'my boards', exact: true }).tap()
+    await crumb(page, 'my boards').tap()
     await holdAndDrag(page, page.locator('.boards__card').first(), page.locator('.folders__card', { hasText: 'Uni' }))
     await expect(page.locator('.folders__card', { hasText: 'Uni' })).toContainText('1 board')
     // A quick tap still opens a folder, not a drag.
     await openFolder(page, 'Uni')
-    await expect(page.getByRole('navigation', { name: 'Folder' })).toContainText('Uni')
+    await expect(page.getByRole('navigation', { name: 'Folder', exact: true })).toContainText('Uni')
     // Nothing spills off the side.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
   })
