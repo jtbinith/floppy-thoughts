@@ -389,7 +389,10 @@ export function createMachineScene(container: HTMLElement, opts: {
   scene.add(tokenHolder)
 
   // --- Sizing: draw at a fraction of the screen's pixels, so it looks like pixel art ---
-  let pixelSize = 2
+  // How big a drawn pixel is, in CSS pixels. Sharp screens (phones, tablets, Retina laptops: 2 or
+  // more screen pixels to a CSS pixel) get 1.5, so the machine keeps detail (keys, the legend, the
+  // sign) while still clearly pixel art; ordinary screens 2, which looks the same size there.
+  let pixelSize = (window.devicePixelRatio || 1) >= 2 ? 1.5 : 2
   // Zoomed in, draw finer, so the pixels stay about the same size on the machine (and small text
   // like the legend can be read in the keypad close-up).
   let drawnAt = 0
@@ -397,9 +400,19 @@ export function createMachineScene(container: HTMLElement, opts: {
   function resize() {
     const { clientWidth: w, clientHeight: h } = container
     drawnAt = scaleForZoom()
-    renderer.setPixelRatio(1 / drawnAt)
-    renderer.setSize(w, h)
-    const aspect = w / h
+    // Clean pixels: each drawn pixel covers a whole number of the screen's own pixels (on a phone
+    // with 3 screen pixels to a CSS pixel, a 2px pixel is exactly 6 of them, not 5.7, which made
+    // some 5 wide and some 6, so the edges looked smudged). The picture is drawn that many times
+    // smaller and shown at exactly that many times the size; any sliver left over is under a pixel.
+    const dpr = window.devicePixelRatio || 1
+    const screenPerPixel = Math.max(1, Math.round(drawnAt * dpr))
+    const bw = Math.max(1, Math.floor((w * dpr) / screenPerPixel))
+    const bh = Math.max(1, Math.floor((h * dpr) / screenPerPixel))
+    renderer.setPixelRatio(1)
+    renderer.setSize(bw, bh, false)
+    renderer.domElement.style.setProperty('width', `${(bw * screenPerPixel) / dpr}px`, 'important')
+    renderer.domElement.style.setProperty('height', `${(bh * screenPerPixel) / dpr}px`, 'important')
+    const aspect = bw / bh
     // In a narrow space (like the board's drawer), keep the width that fits the machine and the
     // capsule's roll, and show more above and below instead of cutting off the sides.
     const narrowest = opts.embedded ? 0.8 : 0
