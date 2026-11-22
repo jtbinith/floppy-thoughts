@@ -18,6 +18,7 @@ import { BoardCanvas } from './BoardCanvas'
 import { HeartIcon } from './HeartIcon'
 import { usePhone, useTouch } from '../lib/usePhone'
 import { useMiniMap } from '../lib/useMiniMap'
+import { fittingTypes } from '../lib/nudges/pickNudge'
 import { SelectionBar } from './SelectionBar'
 import { ScreenBar } from './workspace/ScreenBar'
 import { Dialog } from './Dialog'
@@ -182,7 +183,8 @@ export function Workspace(props: Props) {
     },
     commitAndBranch: (id, text) => branchFrom(saveEdit(id, text), id),
     branch: (id) => branchFrom(board, id),
-    nudge: (id) => void requestNudge(id),
+    nudge: (id, type) => void requestNudge(id, type),
+    nudgeTypes: (id) => fittingTypes(board, id),
     favourite,
     deleteNode: (id) => void requestDelete([id]),
     deleteMany: (ids, links) => void requestDelete(ids, links),

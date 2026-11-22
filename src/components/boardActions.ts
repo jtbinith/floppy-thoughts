@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { NudgeChoice } from '../lib/nudges/pickNudge'
 
 import type { Person } from '../lib/reactors'
 export type { Person }
@@ -13,8 +14,10 @@ export type BoardActions = {
   // Add a new idea linked to this one (Tab on a selected node).
   branch: (id: string) => void
   cancelEdit: () => void
-  // Ask for a nudge on this idea (N key).
-  nudge: (id: string) => void
+  // Ask for a nudge on this idea (N key), of a chosen type or one that fits.
+  nudge: (id: string, type?: NudgeChoice) => void
+  // The types of nudge that fit this box, for the nudge button's menu.
+  nudgeTypes: (id: string) => NudgeChoice[]
   // Favourite or unfavourite anything (F key or the heart button).
   favourite: (id: string) => void
   // Down-vote anything, or take it back (the down-vote button). Takes away your favourite on it.

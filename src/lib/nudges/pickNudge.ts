@@ -9,10 +9,23 @@ import { QUESTIONS, WILDCARDS, fillQuestion, type QuestionType } from './questio
 export type Nudge = { text: string; type: NudgeType }
 
 // The types a user can ask for.
-export const NUDGE_CHOICES = ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'push', 'wildcard'] as const
+export const NUDGE_CHOICES = ['related', 'opposite', 'described', 'rhyme', 'perspective', 'scale', 'senses', 'push', 'wildcard'] as const
 export type NudgeChoice = (typeof NUDGE_CHOICES)[number]
 
-const WORDS: readonly NudgeChoice[] = ['related', 'opposite', 'described']
+// How each type reads in the nudge button's menu.
+export const NUDGE_LABEL: Record<NudgeChoice, string> = {
+  related: 'something related',
+  opposite: 'an opposite',
+  described: 'how it\'s described',
+  rhyme: 'a rhyme or sound-alike',
+  perspective: 'someone else\'s view',
+  scale: 'bigger or smaller',
+  senses: 'how it looks, sounds or feels',
+  push: 'push it further',
+  wildcard: 'a wildcard',
+}
+
+const WORDS: readonly NudgeChoice[] = ['related', 'opposite', 'described', 'rhyme']
 
 const STOPWORDS = new Set(
   'a an the and or but of for to in on at by with from up about into over after my your our their his her its i me we you they it this that these those is are was were be been am do does did have has had not no so if then than too very can could would should will just what who how why when where which while'.split(' '),
@@ -43,15 +56,15 @@ const pick = <T,>(items: readonly T[], random: () => number): T => items[Math.fl
 
 // Which nudges make sense for a node. A nudge that doesn't fit is just noise.
 // Wildcards fit everywhere: a deliberately random leap is part of the point.
-const WORD_TYPES: readonly NudgeChoice[] = ['related', 'opposite', 'described']
+const WORD_TYPES: readonly NudgeChoice[] = ['related', 'opposite', 'described', 'rhyme']
 
 const FIT_BY_CATEGORY: Record<SparkCategory, readonly NudgeChoice[]> = {
-  theme: ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
-  words: ['related', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
-  objects: ['related', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  theme: ['related', 'rhyme', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  words: ['related', 'rhyme', 'opposite', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
+  objects: ['related', 'rhyme', 'described', 'perspective', 'scale', 'senses', 'wildcard'],
   problems: ['perspective', 'scale', 'push', 'wildcard'],
-  curiosities: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
-  nature: ['related', 'perspective', 'scale', 'senses', 'wildcard'],
+  curiosities: ['related', 'rhyme', 'perspective', 'scale', 'senses', 'wildcard'],
+  nature: ['related', 'rhyme', 'perspective', 'scale', 'senses', 'wildcard'],
   // A limit: push it further, or see it from someone else's side.
   constraints: ['perspective', 'scale', 'push', 'wildcard'],
 }
@@ -78,9 +91,10 @@ export function fittingTypes(board: Board, targetId: string): NudgeChoice[] {
   if (target.kind === 'spark') fit = FIT_BY_CATEGORY[target.category ?? 'words']
   else
     fit =
-      distanceFromSpark(board, targetId) <= 1
+      // Next to a note, or not linked to anything yet: an early idea.
+      [0, 1, Infinity].includes(distanceFromSpark(board, targetId))
         ? // An early idea: still exploring.
-          ['related', 'opposite', 'perspective', 'scale', 'senses', 'push', 'wildcard']
+          ['related', 'opposite', 'rhyme', 'perspective', 'scale', 'senses', 'push', 'wildcard']
         : // A developed idea: push it further rather than play word games.
           ['perspective', 'scale', 'push', 'wildcard']
   return fit.filter((t) => !WORD_TYPES.includes(t) || isShort(target.text))
@@ -93,8 +107,9 @@ export function chooseType(board: Board, targetId: string, random: () => number 
   const neighbours = new Set(
     board.links.filter((l) => l.from === targetId || l.to === targetId).map((l) => (l.from === targetId ? l.to : l.from)),
   )
-  const used = new Set(board.nodes.filter((n) => n.kind === 'nudge' && neighbours.has(n.id)).map((n) => n.nudgeType))
-  const fresh = fit.filter((t) => !used.has(t))
+  const used = new Set<string>(board.nodes.filter((n) => n.kind === 'nudge' && neighbours.has(n.id)).map((n) => n.nudgeType ?? ''))
+  // A rhyme is saved as a related nudge, so it counts as one here.
+  const fresh = fit.filter((t) => !used.has(t === 'rhyme' ? 'related' : t))
   return pick(fresh.length ? fresh : fit, random)
 }
 
@@ -171,14 +186,20 @@ export function chooseWord(words: readonly string[] | undefined, board: Board, r
 async function wordNudge(type: NudgeChoice, keyword: string, board: Board, random: () => number, fetchImpl?: typeof fetch): Promise<Nudge | null> {
   const found = await linksOf(keyword, fetchImpl)
   if (!found) return null
-  const kinds = type === 'related' ? RELATED_KINDS.filter((k) => found.links[k]?.length) : [type as Relation]
+  const kinds =
+    type === 'related'
+      ? RELATED_KINDS.filter((k) => found.links[k]?.length)
+      : type === 'rhyme'
+        ? (['rhymes', 'startsLike'] as Relation[])
+        : [type as Relation]
   // Try the kinds in a random order until one has a fresh word.
   const order = shuffled(kinds, random)
   for (const kind of order) {
     const word = chooseWord(found.links[kind], board, random)
     if (word) {
       remember(word)
-      return { type, text: `${LABEL[kind]!(found.word)}: ${word}` }
+      // A rhyme is saved as a related nudge (the board's nudge types don't change).
+      return { type: type === 'rhyme' ? 'related' : (type as NudgeType), text: `${LABEL[kind]!(found.word)}: ${word}` }
     }
   }
   return null

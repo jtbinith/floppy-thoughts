@@ -234,6 +234,18 @@ test.describe('nudges', () => {
     await expect(page.locator('.idea--nudge')).toHaveCount(1)
   })
 
+  test('the ▾ by the nudge button chooses the kind of nudge', async ({ page }) => {
+    await type(page, 'clock')
+    await box(page, 'n1').click()
+    await box(page, 'n1').getByRole('button', { name: 'Choose a kind of nudge for 1' }).click()
+    const menu = page.getByRole('menu', { name: 'Kind of nudge' })
+    await expect(menu.getByRole('menuitem')).toContainText(['any kind', 'something related', 'an opposite', 'a rhyme or sound-alike'])
+    await menu.getByRole('menuitem', { name: 'a rhyme or sound-alike' }).click()
+    await expect(menu).toHaveCount(0)
+    await expect(page.locator('.idea--nudge')).toHaveCount(1)
+    await expect(page.locator('.idea--nudge')).toContainText(/(rhymes with|starts like) clock: /)
+  })
+
   test('word nudges come from our own word files, nothing outside the site, and work offline once loaded', async ({ page, context }) => {
     const outside: string[] = []
     page.on('request', (r) => {

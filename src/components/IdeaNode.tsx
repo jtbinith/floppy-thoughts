@@ -8,11 +8,12 @@ import { DownvoteIcon } from './DownvoteIcon'
 import { HeartIcon } from './HeartIcon'
 import { LockIcon } from './LockIcon'
 import { Reactors } from './Reactors'
+import { NudgeButton } from './NudgeButton'
 import { useTouch } from '../lib/usePhone'
 
 // One idea on the board. Deliberately plain text, so the visuals don't steer anyone's thinking.
 export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
-  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, downvote, nudge, whoIs, personOf, linkingFrom, shared } = useBoardActions()
+  const { editingId, commitEdit, commitAndBranch, cancelEdit, deleteNode, favourite, downvote, whoIs, personOf, linkingFrom, shared } = useBoardActions()
   // On a touch screen the selected box's actions are in the bar along the bottom of the board
   // instead (see SelectionBar); here it only keeps the box in view above the on-screen keyboard.
   const touch = useTouch()
@@ -162,9 +163,7 @@ export function IdeaNode({ id, data, selected }: NodeProps<IdeaFlowNode>) {
             <DownvoteIcon filled={myDown} />
           </button>
           {data.kind !== 'nudge' && (
-            <button type="button" className="idea__tool nodrag" aria-label={`Nudge ${data.number}`} title="A word or question to push this further (N)" onClick={() => nudge(id)}>
-              nudge
-            </button>
+            <NudgeButton id={id} number={data.number} className="idea__tool nodrag" />
           )}
         </span>
       )}

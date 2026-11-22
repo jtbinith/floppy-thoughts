@@ -3,6 +3,7 @@ import { isMine, isMyDownvote, type Board } from '../lib/board'
 import { findNode } from '../lib/boardOps'
 import { useBoardActions } from './boardActions'
 import { BinIcon } from './BinIcon'
+import { NudgeButton } from './NudgeButton'
 import { DownvoteIcon } from './DownvoteIcon'
 import { HeartIcon } from './HeartIcon'
 
@@ -39,9 +40,7 @@ export function SelectionBar({ board }: { board: Board }) {
         <DownvoteIcon filled={myDown} size={14} />
       </button>
       {node.kind !== 'nudge' && (
-        <button type="button" className="selection-bar__button" aria-label={`Nudge ${n}`} onClick={() => actions.nudge(node.id)}>
-          nudge
-        </button>
+        <NudgeButton id={node.id} number={n} className="selection-bar__button" />
       )}
       {editable && (
         <button type="button" className="selection-bar__button" aria-label={`Edit ${n}`} onClick={() => actions.startEdit(node.id)}>
