@@ -359,7 +359,16 @@ export default function App() {
           </ReactFlowProvider>
         ) : (
           <div className="device__screen">
-            <p className="screen__message">{route === 'new' ? 'making your board…' : <a href="#/new">start a board →</a>}</p>
+            {route === 'new' ? (
+              <p className="screen__message">making your board…</p>
+            ) : (
+              <div className="screen__start">
+                <p className="screen__message">No boards here yet.</p>
+                <a className="popup__stick" href="#/new">
+                  start a board
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>

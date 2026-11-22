@@ -23,6 +23,21 @@
   color: var(--muted);
 }
 
+/* The board page with no boards yet: a line and a button to start one, in the middle. */
+.screen__start {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.screen__start .popup__stick {
+  text-decoration: none;
+}
+
 .screen__rename {
   width: 16rem;
   padding: 0.1rem 0.3rem;

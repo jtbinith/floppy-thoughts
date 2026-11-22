@@ -1,6 +1,11 @@
 /* The 3D scenes on their own page (used by the shrimp prototype page) */
 
 .machine {
+  /* Always dark (its background doesn't change with the site's light mode), so it keeps the dark
+     text colours too: otherwise in light mode its labels turn dark brown on dark brown. */
+  --text: #f6eedd;
+  --muted: #b3a58f;
+  --line: #3f3731;
   position: fixed;
   inset: 0;
   overflow: hidden;
